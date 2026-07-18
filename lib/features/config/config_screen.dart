@@ -47,6 +47,14 @@ class ConfigScreen extends ConsumerWidget {
             trailing: isPro ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.pro),
           ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.switch_account_outlined),
+            title: const Text('Perfis'),
+            subtitle: const Text('Cenários de preço por tipo de cliente'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.perfis),
+          ),
 
           const Divider(height: 32),
           Text('Seus dados', style: Theme.of(context).textTheme.titleSmall),
