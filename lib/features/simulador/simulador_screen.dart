@@ -7,9 +7,11 @@ import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/estimativa_seal.dart';
+import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 
 /// Simulador de projeto (Blueprint §5.6): diz se um valor dá lucro real e liga
@@ -70,7 +72,9 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
             Text('LUCRO REAL',
                 style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: Space.x1),
-            Text(moneyBRL(res.lucro), style: AppType.valueHero.copyWith(color: d.lucro)),
+            MoneyCountUp(res.lucro,
+                duration: Motion.quick,
+                style: AppType.valueHero.copyWith(color: d.lucro)),
             const SizedBox(height: Space.x1),
             Text('Valor-hora efetivo: ${moneyBRL(res.effVH)}/h', style: theme.textTheme.bodyLarge),
             if (res.abaixo && alvoVH > 0) ...<Widget>[
@@ -99,7 +103,10 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                         style: theme.textTheme.bodyMedium?.copyWith(color: d.onAlertaContainer)),
                     const SizedBox(height: Space.x2),
                     FilledButton.tonal(
-                      onPressed: () => setState(() => _valor.text = res.sugestao.toString()),
+                      onPressed: () {
+                        Haptics.select();
+                        setState(() => _valor.text = res.sugestao.toString());
+                      },
                       child: Text('Usar ${moneyBRL(res.sugestao)}'),
                     ),
                   ],

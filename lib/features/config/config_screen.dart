@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/routes.dart';
 import '../../core/config/app_config.dart';
 import '../../core/providers.dart';
+import '../../core/theme/motion.dart';
 
 /// Configurações: tema, backup (sem nuvem), apagar dados, telemetria opt-in,
 /// Pro, legal e Sobre. Controle e confiança — o usuário manda nos próprios dados.
@@ -191,6 +192,7 @@ class ConfigScreen extends ConsumerWidget {
       ),
     );
     if (ok == true) {
+      Haptics.commit();
       await ref.read(profileProvider.notifier).clear();
       messenger.showSnackBar(const SnackBar(content: Text('Dados apagados')));
     }

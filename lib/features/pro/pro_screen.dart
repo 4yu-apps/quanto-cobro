@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
+import '../../core/theme/motion.dart';
 
 /// Tela Pro (Blueprint §11): oferta transparente, no momento de valor. Preço e o
 /// que é Pro aparecem ANTES de o usuário investir trabalho (regra anti-★1 R2).
@@ -88,6 +89,7 @@ class ProScreen extends ConsumerWidget {
           onPressed: () async {
             final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
             final GoRouter router = GoRouter.of(context);
+            Haptics.commit();
             await ref.read(proProvider.notifier).grant();
             messenger.showSnackBar(const SnackBar(content: Text('Pro ativado')));
             router.pop();

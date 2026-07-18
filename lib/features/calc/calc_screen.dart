@@ -9,7 +9,9 @@ import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 
 /// Calculadora guiada (Blueprint §5.2): UMA pergunta por tela, com default e um
@@ -27,6 +29,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
 
   late Perfil _draft;
   int _step = 0;
+  int _prevStep = 0;
   final TextEditingController _renda = TextEditingController();
   final TextEditingController _horas = TextEditingController();
 
@@ -67,16 +70,26 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
 
   void _next() {
     if (!_stepValid) return;
+    FocusScope.of(context).unfocus();
     if (_step < _lastStep) {
-      setState(() => _step++);
+      Haptics.select();
+      setState(() {
+        _prevStep = _step;
+        _step++;
+      });
     } else {
+      Haptics.resultBorn();
       context.push(Routes.resultado, extra: _draft);
     }
   }
 
   void _back() {
     if (_step > 0) {
-      setState(() => _step--);
+      FocusScope.of(context).unfocus();
+      setState(() {
+        _prevStep = _step;
+        _step--;
+      });
     } else {
       context.pop();
     }
@@ -98,15 +111,15 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               child: Row(
                 children: <Widget>[
                   for (int i = 0; i <= _lastStep; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: i <= _step ? cs.primary : cs.outlineVariant,
-                        ),
+                    AnimatedContainer(
+                      duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+                      curve: MotionCurves.standard,
+                      margin: const EdgeInsets.only(right: 6),
+                      width: i == _step ? 20 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.all(Radii.full),
+                        color: i <= _step ? cs.primary : cs.outlineVariant,
                       ),
                     ),
                 ],
@@ -114,7 +127,26 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             ),
             Expanded(
               child: AnimatedSwitcher(
-                duration: Motion.base,
+                duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+                switchInCurve: MotionCurves.standard,
+                switchOutCurve: MotionCurves.standard,
+                transitionBuilder: (Widget child, Animation<double> anim) {
+                  final bool forward = _step >= _prevStep;
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(forward ? 0.12 : -0.12, 0),
+                        end: Offset.zero,
+                      ).animate(anim),
+                      child: child,
+                    ),
+                  );
+                },
+                layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
+                  alignment: Alignment.topLeft,
+                  children: <Widget>[...previous, ?current],
+                ),
                 child: SingleChildScrollView(
                   key: ValueKey<int>(_step),
                   padding: const EdgeInsets.all(Space.x6),
@@ -243,18 +275,28 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                 IconButton(
                   icon: const Icon(Icons.close),
                   tooltip: 'Remover',
-                  onPressed: () => setState(() {
-                    _draft = _draft.copyWith(
-                      custos: custos.where((Custo x) => x.id != c.id).toList(),
-                    );
-                  }),
+                  onPressed: () {
+                    Haptics.select();
+                    setState(() {
+                      _draft = _draft.copyWith(
+                        custos: custos.where((Custo x) => x.id != c.id).toList(),
+                      );
+                    });
+                  },
                 ),
               ],
             ),
           ),
         const SizedBox(height: Space.x2),
-        Text('Total: ${moneyBRL(_draft.custosTotal)}/mês',
-            style: Theme.of(context).textTheme.titleMedium),
+        Row(
+          children: <Widget>[
+            Text('Total: ', style: Theme.of(context).textTheme.titleMedium),
+            MoneyCountUp(_draft.custosTotal,
+                duration: Motion.quick,
+                style: Theme.of(context).textTheme.titleMedium ?? const TextStyle()),
+            Text('/mês', style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
         const SizedBox(height: Space.x4),
         if (faltam.isNotEmpty) ...<Widget>[
           Text('Não esqueça:', style: Theme.of(context).textTheme.bodyMedium),
@@ -267,14 +309,17 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                 ActionChip(
                   avatar: Icon(_iconFor(chip.icon), size: 18),
                   label: Text(chip.label),
-                  onPressed: () => setState(() {
+                  onPressed: () {
+                    Haptics.select();
+                    setState(() {
                     _draft = _draft.copyWith(
                       custos: <Custo>[
                         ...custos,
                         Custo(id: chip.id, label: chip.label, valor: chip.sugg),
                       ],
                     );
-                  }),
+                  });
+                  },
                 ),
             ],
           ),
@@ -299,12 +344,16 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     final ThemeData theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x2),
-      child: Material(
+      child: PressableScale(
+        child: Material(
         color: selected ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceContainerLow,
         borderRadius: const BorderRadius.all(Radii.md),
         child: InkWell(
           borderRadius: const BorderRadius.all(Radii.md),
-          onTap: () => setState(() => _draft = _draft.copyWith(regime: r.id)),
+          onTap: () {
+            Haptics.select();
+            setState(() => _draft = _draft.copyWith(regime: r.id));
+          },
           child: Padding(
             padding: const EdgeInsets.all(Space.x3),
             child: Row(
@@ -327,6 +376,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

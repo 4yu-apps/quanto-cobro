@@ -53,18 +53,19 @@ flutter:
   uses-material-design: true
 
   # Fontes do Design System — empacotadas (offline, sem download em runtime).
-  # Arquivos entram em assets/fonts nas próximas etapas (Sora p/ números, Inter p/ UI).
-  # fonts:
-  #   - family: Sora
-  #     fonts:
-  #       - asset: assets/fonts/Sora-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Sora-Bold.ttf
-  #         weight: 700
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/fonts/Inter-Regular.ttf
-  #       - asset: assets/fonts/Inter-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Inter-SemiBold.ttf
-  #         weight: 600
+  # Sora = números (o herói); Inter = UI/corpo. Licenças OFL em assets/fonts.
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Sora-Bold.ttf
+          weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600

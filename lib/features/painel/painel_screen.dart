@@ -11,6 +11,7 @@ import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/divisao_colors.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/empty_state_hero.dart';
@@ -92,40 +93,49 @@ class _PainelBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(Space.x4),
       children: <Widget>[
-        HeroValueCard(
-          valorHora: r.valorHora,
-          subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
-          onVerComoCheguei: () => context.push(Routes.detalhe),
-          staleAno: stale ? kTabelasAno : null,
+        StaggerIn(
+          index: 0,
+          child: HeroValueCard(
+            valorHora: r.valorHora,
+            subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
+            onVerComoCheguei: () => context.push(Routes.detalhe),
+            staleAno: stale ? kTabelasAno : null,
+          ),
         ),
         const SizedBox(height: Space.x6),
 
         // Os dois tools recorrentes, protagonistas (a virada) — peso >= herói.
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: ToolActionCard(
-                icon: Icons.payments_outlined,
-                title: 'Recebi um\npagamento',
-                onTap: () => context.push(Routes.reserva),
+        StaggerIn(
+          index: 1,
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: ToolActionCard(
+                  icon: Icons.payments_outlined,
+                  title: 'Recebi um\npagamento',
+                  onTap: () => context.push(Routes.reserva),
+                ),
               ),
-            ),
-            const SizedBox(width: Space.x3),
-            Expanded(
-              child: ToolActionCard(
-                icon: Icons.request_quote_outlined,
-                title: 'Vou orçar\num projeto',
-                onTap: () => context.push(Routes.simulador),
+              const SizedBox(width: Space.x3),
+              Expanded(
+                child: ToolActionCard(
+                  icon: Icons.request_quote_outlined,
+                  title: 'Vou orçar\num projeto',
+                  onTap: () => context.push(Routes.simulador),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: Space.x6),
 
         Text('DE CADA MÊS',
             style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: Space.x3),
-        DivisaoBar(lucro: div.lucro, reserva: div.reserva, custo: div.custo),
+        StaggerIn(
+          index: 2,
+          child: DivisaoBar(lucro: div.lucro, reserva: div.reserva, custo: div.custo),
+        ),
         const SizedBox(height: Space.x2),
         Text('Reserve ~${r.reservaPct}% de cada pagamento (regime: $regimeTag).',
             style: theme.textTheme.bodyMedium?.copyWith(color: d.reserva)),

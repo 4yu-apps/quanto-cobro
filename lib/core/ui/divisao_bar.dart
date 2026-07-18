@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../common/money.dart';
 import '../theme/divisao_colors.dart';
+import '../theme/motion.dart';
 import '../theme/tokens.dart';
 
 /// Qual segmento é o herói na tela (muda o peso do rótulo, nunca a ordem).
@@ -33,7 +34,6 @@ class DivisaoBar extends StatelessWidget {
     final Color hatch = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.24);
     final double total = lucro + reserva + custo;
     final double t = total <= 0 ? 1 : total;
-    int flex(double v) => (v / t * 1000).round();
     int pct(double v) => (v / t * 100).round();
 
     final String semantica =
@@ -54,20 +54,15 @@ class DivisaoBar extends StatelessWidget {
                 height: 20,
                 child: total <= 0
                     ? ColoredBox(color: d.track)
-                    : Row(
-                        children: <Widget>[
-                          Expanded(flex: flex(lucro), child: ColoredBox(color: d.lucro)),
-                          const SizedBox(width: 2),
-                          Expanded(flex: flex(reserva), child: ColoredBox(color: d.reserva)),
-                          const SizedBox(width: 2),
-                          Expanded(
-                            flex: flex(custo),
-                            child: CustomPaint(
-                              painter: _HatchPainter(hatch),
-                              child: ColoredBox(color: d.custo),
-                            ),
-                          ),
-                        ],
+                    : _AnimatedSegments(
+                        track: d.track,
+                        lucroColor: d.lucro,
+                        reservaColor: d.reserva,
+                        custoColor: d.custo,
+                        hatch: hatch,
+                        fLucro: lucro / t,
+                        fReserva: reserva / t,
+                        fCusto: custo / t,
                       ),
               ),
             ),
@@ -106,6 +101,80 @@ class DivisaoBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Barra em dois modos num mecanismo só (MOTION-SPEC §1.3):
+/// - NASCE: progresso p 0→1 escala os três segmentos juntos — a barra cresce
+///   da esquerda já repartida (Motion.fill, emphasizedDecel).
+/// - AO VIVO: com p=1, mudanças de fração animam via AnimatedContainer
+///   (Motion.quick) — a barra "respira" atrás da digitação.
+/// Em reduce-motion, pinta o estado final no primeiro frame.
+class _AnimatedSegments extends StatelessWidget {
+  const _AnimatedSegments({
+    required this.track,
+    required this.lucroColor,
+    required this.reservaColor,
+    required this.custoColor,
+    required this.hatch,
+    required this.fLucro,
+    required this.fReserva,
+    required this.fCusto,
+  });
+
+  final Color track;
+  final Color lucroColor;
+  final Color reservaColor;
+  final Color custoColor;
+  final Color hatch;
+  final double fLucro;
+  final double fReserva;
+  final double fCusto;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool reduce = reduceMotionOf(context);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        const double gap = 2;
+        final double w = (c.maxWidth - 2 * gap).clamp(0, double.infinity);
+        return TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: reduce ? 1 : 0, end: 1),
+          duration: reduce ? Duration.zero : Motion.fill,
+          curve: MotionCurves.emphasizedDecel,
+          builder: (BuildContext context, double p, Widget? _) => Stack(
+            children: <Widget>[
+              Positioned.fill(child: ColoredBox(color: track)),
+              Row(
+                children: <Widget>[
+                  AnimatedContainer(
+                    duration: reduce ? Duration.zero : Motion.quick,
+                    curve: MotionCurves.standard,
+                    width: w * fLucro * p,
+                    color: lucroColor,
+                  ),
+                  const SizedBox(width: gap),
+                  AnimatedContainer(
+                    duration: reduce ? Duration.zero : Motion.quick,
+                    curve: MotionCurves.standard,
+                    width: w * fReserva * p,
+                    color: reservaColor,
+                  ),
+                  const SizedBox(width: gap),
+                  AnimatedContainer(
+                    duration: reduce ? Duration.zero : Motion.quick,
+                    curve: MotionCurves.standard,
+                    width: w * fCusto * p,
+                    color: custoColor,
+                    child: CustomPaint(painter: _HatchPainter(hatch)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

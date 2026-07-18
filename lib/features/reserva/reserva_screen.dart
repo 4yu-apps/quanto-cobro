@@ -11,8 +11,10 @@ import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/estimativa_seal.dart';
+import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
 
@@ -79,7 +81,10 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
               const SizedBox(width: Space.x3),
               DropdownButton<RegimeId>(
                 value: regime,
-                onChanged: (RegimeId? v) => setState(() => _regime = v),
+                onChanged: (RegimeId? v) {
+                  Haptics.select();
+                  setState(() => _regime = v);
+                },
                 items: <DropdownMenuItem<RegimeId>>[
                   for (final Regime r in Regime.all.values)
                     DropdownMenuItem<RegimeId>(value: r.id, child: Text(r.tag)),
@@ -95,7 +100,9 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
             Text('RESERVE PRO LEÃO',
                 style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: Space.x1),
-            Text(moneyBRL(res.reserva), style: AppType.valueHero.copyWith(color: d.reserva)),
+            MoneyCountUp(res.reserva,
+                duration: Motion.quick,
+                style: AppType.valueHero.copyWith(color: d.reserva)),
             const SizedBox(height: Space.x1),
             Text('Sobra pra usar: ${moneyBRL(res.sobra)}', style: theme.textTheme.bodyLarge),
             const SizedBox(height: Space.x4),
@@ -104,12 +111,29 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
               borderRadius: const BorderRadius.all(Radii.sm),
               child: SizedBox(
                 height: 20,
-                child: Row(
-                  children: <Widget>[
-                    Expanded(flex: res.reserva, child: ColoredBox(color: d.reserva)),
-                    const SizedBox(width: 2),
-                    Expanded(flex: res.sobra.round(), child: ColoredBox(color: d.lucro)),
-                  ],
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints c) {
+                    final bool reduce = reduceMotionOf(context);
+                    final double w = c.maxWidth - 2;
+                    final double fR = res.reserva / amount;
+                    return Row(
+                      children: <Widget>[
+                        AnimatedContainer(
+                          duration: reduce ? Duration.zero : Motion.quick,
+                          curve: MotionCurves.standard,
+                          width: w * fR,
+                          color: d.reserva,
+                        ),
+                        const SizedBox(width: 2),
+                        AnimatedContainer(
+                          duration: reduce ? Duration.zero : Motion.quick,
+                          curve: MotionCurves.standard,
+                          width: w * (1 - fR),
+                          color: d.lucro,
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -124,6 +148,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
             const SizedBox(height: Space.x4),
             FilledButton.tonal(
               onPressed: () {
+                Haptics.commit();
                 ref.read(reservaHistoryProvider.notifier).add(
                       ReservaEntry(
                         valor: amount.toDouble(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/motion.dart';
 import '../theme/tokens.dart';
 
 /// Card-ação dos tools recorrentes (DS §6.3). Na virada, têm peso de
@@ -22,11 +23,15 @@ class ToolActionCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: title,
-      child: Material(
+      child: PressableScale(
+        child: Material(
         color: cs.secondaryContainer,
         borderRadius: const BorderRadius.all(Radii.lg),
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            Haptics.select();
+            onTap();
+          },
           borderRadius: const BorderRadius.all(Radii.lg),
           child: Container(
             constraints: const BoxConstraints(minHeight: 104),
@@ -47,6 +52,7 @@ class ToolActionCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

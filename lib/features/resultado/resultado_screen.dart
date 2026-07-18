@@ -10,6 +10,7 @@ import '../../core/model/perfil.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/estimativa_seal.dart';
@@ -83,15 +84,18 @@ class ResultadoScreen extends ConsumerWidget {
           Text('≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
               style: theme.textTheme.bodyMedium),
           const SizedBox(height: Space.x6),
-          _bloco(context, 'DE CADA PAGAMENTO, RESERVE', '${r.reservaPct}%', AppType.valueXl, d.reserva),
+          StaggerIn(index: 1, child: _bloco(context, 'DE CADA PAGAMENTO, RESERVE', '${r.reservaPct}%', AppType.valueXl, d.reserva)),
           const SizedBox(height: Space.x6),
-          _bloco(context, 'LUCRO REAL ESTIMADO', '${moneyBRL(r.lucro)}/mês', AppType.valueXl, d.lucro),
+          StaggerIn(index: 2, child: _bloco(context, 'LUCRO REAL ESTIMADO', '${moneyBRL(r.lucro)}/mês', AppType.valueXl, d.lucro)),
           const SizedBox(height: Space.x6),
-          DivisaoBar(
-            lucro: div.lucro,
-            reserva: div.reserva,
-            custo: div.custo,
-            emphasis: DivisaoEmphasis.lucro,
+          StaggerIn(
+            index: 3,
+            child: DivisaoBar(
+              lucro: div.lucro,
+              reserva: div.reserva,
+              custo: div.custo,
+              emphasis: DivisaoEmphasis.lucro,
+            ),
           ),
           if (custoMaiorQueMeta) ...<Widget>[
             const SizedBox(height: Space.x3),
@@ -105,6 +109,7 @@ class ResultadoScreen extends ConsumerWidget {
           const SizedBox(height: Space.x6),
           FilledButton(
             onPressed: () async {
+              Haptics.commit();
               await ref.read(profileProvider.notifier).save(p);
               if (context.mounted) {
                 ScaffoldMessenger.of(context)
