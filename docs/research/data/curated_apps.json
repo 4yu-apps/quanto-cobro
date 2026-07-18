@@ -1,0 +1,227 @@
+[
+ {
+  "appId": "com.appmei",
+  "bucket": "tax_mei",
+  "title": "MEI Fácil está no app Neon"
+ },
+ {
+  "appId": "br.gov.fazenda.receita.mei",
+  "bucket": "tax_mei",
+  "title": "MEI"
+ },
+ {
+  "appId": "com.supermei.supermei",
+  "bucket": "tax_mei",
+  "title": "MaisMei: Guias DAS, CNPJ e MEI"
+ },
+ {
+  "appId": "com.totalmei",
+  "bucket": "tax_mei",
+  "title": "Total MEI: INSS, DAS Fácil"
+ },
+ {
+  "appId": "com.dasmei",
+  "bucket": "tax_mei",
+  "title": "DAS MEI: Boleto, INSS, Imposto"
+ },
+ {
+  "appId": "trasco.crist.calculadorajornada",
+  "bucket": "tax_mei",
+  "title": "Calculadora Horas Trabalhadas"
+ },
+ {
+  "appId": "com.pequenosencantos.peqartfinanceiro",
+  "bucket": "pricing",
+  "title": "PeqArt- Precificação e muito +"
+ },
+ {
+  "appId": "com.aadhk.time",
+  "bucket": "tax_mei",
+  "title": "Timesheet - Horas Trabalhadas"
+ },
+ {
+  "appId": "br.com.meiemfoco",
+  "bucket": "tax_mei",
+  "title": "Mei em Foco: App para MEI"
+ },
+ {
+  "appId": "br.com.qipu.meigratis",
+  "bucket": "tax_mei",
+  "title": "MEI Gratis - CNPJ, DAS, Vendas"
+ },
+ {
+  "appId": "com.meidigital.appmei",
+  "bucket": "tax_mei",
+  "title": "MEI Digital: DAS e Abrir MEI"
+ },
+ {
+  "appId": "com.firebaseapp.recipecalculatorapp",
+  "bucket": "pricing",
+  "title": "Receitas - Quanto Cobrar"
+ },
+ {
+  "appId": "br.com.mobilesolution.fipe",
+  "bucket": "pricing",
+  "title": "PrecifiCAR"
+ },
+ {
+  "appId": "com.jsl.profit",
+  "bucket": "pricing",
+  "title": "Doce Lucro - Precificação"
+ },
+ {
+  "appId": "pt.cosmicode.imposter",
+  "bucket": "tax_mei",
+  "title": "Impostor - Quem é o Espião?"
+ },
+ {
+  "appId": "br.gov.memp.portaldoempreendedor",
+  "bucket": "tax_mei",
+  "title": "Meu MEI Digital"
+ },
+ {
+  "appId": "com.emitirnfse.appemitirnfse",
+  "bucket": "tax_mei",
+  "title": "Emitir Nota Fiscal Serviço MEI"
+ },
+ {
+  "appId": "com.flyfinapp",
+  "bucket": "tax_mei",
+  "title": "FlyFin: Effortless 1099 Taxes"
+ },
+ {
+  "appId": "co.uk.handmadeaberdeenshire.craftpricingcalculator",
+  "bucket": "pricing",
+  "title": "Craft Pricing Calculator"
+ },
+ {
+  "appId": "com.luhribeiro.precificacao",
+  "bucket": "pricing",
+  "title": "PrecificAção by Luh Ribeiro"
+ },
+ {
+  "appId": "com.barnasoba.timebetween",
+  "bucket": "tax_mei",
+  "title": "Horas trabalhadas"
+ },
+ {
+  "appId": "com.gerenciamei",
+  "bucket": "tax_mei",
+  "title": "GerenciaMEI: abrir CNPJ, DAS"
+ },
+ {
+  "appId": "com.firebaseapp.sellingpricecalculator",
+  "bucket": "pricing",
+  "title": "Calcular Preço de Venda – Mix"
+ },
+ {
+  "appId": "com.campos.mlucro_app",
+  "bucket": "pricing",
+  "title": "Lucratividade - Precificação"
+ },
+ {
+  "appId": "com.gsoft.www.cobranzafacil",
+  "bucket": "tax_mei",
+  "title": "Controle de Cobrança e Vendas"
+ },
+ {
+  "appId": "appinventor.ai_kleber_paduano.KWK3D",
+  "bucket": "pricing",
+  "title": "PRECIFICAÇÃO IMPRESSÃO 3D"
+ },
+ {
+  "appId": "com.freelance.calculator.self.employment",
+  "bucket": "tax_mei",
+  "title": "Self-Employment Tax Calculator"
+ },
+ {
+  "appId": "com.meilan.app",
+  "bucket": "tax_mei",
+  "title": "Mei-lan"
+ },
+ {
+  "appId": "com.magnus.pricer",
+  "bucket": "pricing",
+  "title": "Precificador - Preço de Venda"
+ },
+ {
+  "appId": "com.zapptax.zapptax",
+  "bucket": "tax_mei",
+  "title": "Zapptax - Shop Tax-Free"
+ },
+ {
+  "appId": "com.bfreetaxback.smarttax",
+  "bucket": "tax_mei",
+  "title": "smartTax: Tax Free b.free!"
+ },
+ {
+  "appId": "cloudtax.org.com.ctweb",
+  "bucket": "tax_mei",
+  "title": "CloudTax - Simple Tax Software"
+ },
+ {
+  "appId": "com.diordi.calctarifahoras",
+  "bucket": "pricing",
+  "title": "Time rate calculator"
+ },
+ {
+  "appId": "com.mei",
+  "bucket": "tax_mei",
+  "title": "Mei: Mensagens Texto SMS + AI"
+ },
+ {
+  "appId": "com.ustaxapp.app",
+  "bucket": "tax_mei",
+  "title": "TaxApp - Ai Tax Assistant"
+ },
+ {
+  "appId": "com.lhdn.mytax",
+  "bucket": "tax_mei",
+  "title": "MyTax"
+ },
+ {
+  "appId": "com.mlogg",
+  "bucket": "tax_mei",
+  "title": "BossTax: Self-Employed Taxes"
+ },
+ {
+  "appId": "uk.taxpie",
+  "bucket": "tax_mei",
+  "title": "#Pie Tax: Self Assessment app"
+ },
+ {
+  "appId": "com.intuit.turbotax.mobile",
+  "bucket": "tax_mei",
+  "title": "TurboTax: File Your Tax Return"
+ },
+ {
+  "appId": "de.devnova.imposter",
+  "bucket": "tax_mei",
+  "title": "Impostor"
+ },
+ {
+  "appId": "com.abp.freelancer_calculator",
+  "bucket": "pricing",
+  "title": "(seed)"
+ },
+ {
+  "appId": "com.aleckrh.freelancecalculator",
+  "bucket": "pricing",
+  "title": "(seed)"
+ },
+ {
+  "appId": "com.b20robots.calculadoravalorhora",
+  "bucket": "pricing",
+  "title": "(seed)"
+ },
+ {
+  "appId": "app.freelancecalc",
+  "bucket": "pricing",
+  "title": "(seed)"
+ },
+ {
+  "appId": "com.tfs.thefreelancesuite_android",
+  "bucket": "pricing",
+  "title": "(seed)"
+ }
+]

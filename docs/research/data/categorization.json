@@ -1,0 +1,619 @@
+{
+ "total_clean": 16961,
+ "GERAL": {
+  "stats": {
+   "n": 16961,
+   "neg": 5829,
+   "neu": 677,
+   "pos": 10455,
+   "avg": 3.53,
+   "complaints": {
+    "cobranca_paywall": {
+     "n": 820,
+     "pct_neg": 14.1
+    },
+    "anuncio": {
+     "n": 155,
+     "pct_neg": 2.7
+    },
+    "bug_crash": {
+     "n": 1003,
+     "pct_neg": 17.2
+    },
+    "cadastro_forcado": {
+     "n": 313,
+     "pct_neg": 5.4
+    },
+    "gov_confusao": {
+     "n": 83,
+     "pct_neg": 1.4
+    },
+    "suporte_ruim": {
+     "n": 287,
+     "pct_neg": 4.9
+    },
+    "impreciso": {
+     "n": 126,
+     "pct_neg": 2.2
+    },
+    "confuso_complexo": {
+     "n": 108,
+     "pct_neg": 1.9
+    },
+    "perda_dados": {
+     "n": 19,
+     "pct_neg": 0.3
+    }
+   },
+   "praises": {
+    "facil_simples": {
+     "n": 2060,
+     "pct_pos": 19.7
+    },
+    "util_resolve": {
+     "n": 3931,
+     "pct_pos": 37.6
+    },
+    "gratis_sem_ad": {
+     "n": 58,
+     "pct_pos": 0.6
+    },
+    "organiza_controle": {
+     "n": 144,
+     "pct_pos": 1.4
+    },
+    "rapido": {
+     "n": 354,
+     "pct_pos": 3.4
+    }
+   },
+   "requests_n": 310
+  },
+  "complaint_verbatims": {
+   "cobranca_paywall": [
+    {
+     "score": 1,
+     "thumbs": 143,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Venho aqui avisar q isso é golpe . pois declaçao e baixa de mei , nao tem taixas a ser pagas mais por esse aplicativo foi cobrado e nao foi avisado que era taixa do aplicativo . consegui o restorno do"
+    },
+    {
+     "score": 1,
+     "thumbs": 113,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Fiz a declaração pelo aplicativo, depois que finalizei, não consegui fazer o donwload do documento, tentei falar com algum suporte, e por não pagar mensalidade o mesmo impede que eu entre em contato p"
+    },
+    {
+     "score": 1,
+     "thumbs": 111,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Lixo de aplicativo onde você só tem suporte se pagar, mesmo que o problema seja duplicidade na cobrança do serviço no seu cartão de crédito. Esclareço que houve um erro no aplicativo deles, onde o mes"
+    },
+    {
+     "score": 1,
+     "thumbs": 105,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Não usem de jeito nenhum,coloquei meus dados tudo certinho e pediram uma taxa de 149,90 paguei já constou lá no mercado pago já até geraram a taxa pro próximo mês mas não constou no aplicativo"
+    }
+   ],
+   "anuncio": [
+    {
+     "score": 1,
+     "thumbs": 153,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "CUIDADO! Número do código de barras gerado por este aplicativo é DIFERENTE do código de barras que consta no site da Receita. O boleto parece igual, mas não é. Fora os 30 segundos de cada propaganda !"
+    },
+    {
+     "score": 1,
+     "thumbs": 24,
+     "app": "PrecifiCAR",
+     "text": "Dia 01/04 fiz minha assinatura, o débito ocorreu normalmente. Desde então tento acessar a plataforma como assinante, não sendo possível fui refazer minha assinatura. Então, aparece a informação que já"
+    },
+    {
+     "score": 1,
+     "thumbs": 15,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Não solicitei o app, não tenho interesse no serviço e não autorizei nenhuma propaganda de parceiros ou terceiros do MEI."
+    },
+    {
+     "score": 2,
+     "thumbs": 11,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Existe muita propaganda de empréstimo que aparece no app que prejudica a qualidade do app. Triste realidade!"
+    }
+   ],
+   "bug_crash": [
+    {
+     "score": 1,
+     "thumbs": 233,
+     "app": "MEI Fácil está no app Neon",
+     "text": "Não consigo acessar o app que está dando erro de senha sempre, mesmo usando a digital. Tentativa de alterar senha, também dando erro depois de fazer todo o processo com aprovação fica dando erro. já l"
+    },
+    {
+     "score": 1,
+     "thumbs": 154,
+     "app": "MEI Fácil está no app Neon",
+     "text": "Simplesmente horrível. Dá até medo de usar o cartão e não conseguir pagar porque não gera boleto, dá problema no cadastro de chave pix, trava, tudo é lento etc... Edit: continua do mesmo jeito se eu p"
+    },
+    {
+     "score": 1,
+     "thumbs": 111,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Lixo de aplicativo onde você só tem suporte se pagar, mesmo que o problema seja duplicidade na cobrança do serviço no seu cartão de crédito. Esclareço que houve um erro no aplicativo deles, onde o mes"
+    },
+    {
+     "score": 1,
+     "thumbs": 84,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Recebi a indicação pelo celular, fiz o cadastro e estou tentando entrar no aplicativo a dias, porém, a mensagem é sempre a mesma \"ocorreu um erro inesperado, tente novamente mais tarde\" até hoje não c"
+    }
+   ],
+   "cadastro_forcado": [
+    {
+     "score": 2,
+     "thumbs": 257,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "Nota baixa pq não dá pra tirar o boleto em pdf nem compartilhar. O ponto legal é que se pode incluir vários MEIs numa tela rápida sem cadastro de login, interessante devido à ideia de alguém que tem u"
+    },
+    {
+     "score": 1,
+     "thumbs": 154,
+     "app": "MEI Fácil está no app Neon",
+     "text": "Simplesmente horrível. Dá até medo de usar o cartão e não conseguir pagar porque não gera boleto, dá problema no cadastro de chave pix, trava, tudo é lento etc... Edit: continua do mesmo jeito se eu p"
+    },
+    {
+     "score": 1,
+     "thumbs": 132,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Era bom antes. Tive que formatar meu telefone, aí logo, os apps foram reiniciados. Porém quando fui levantar meus dados para acessar o total MEI, havia esquecido a senha. Bem, tive que redefinir e qua"
+    },
+    {
+     "score": 1,
+     "thumbs": 105,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Não usem de jeito nenhum,coloquei meus dados tudo certinho e pediram uma taxa de 149,90 paguei já constou lá no mercado pago já até geraram a taxa pro próximo mês mas não constou no aplicativo"
+    }
+   ],
+   "gov_confusao": [
+    {
+     "score": 1,
+     "thumbs": 83,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Boa tarde.! A abertura de MEI , está muito simples. Nao tem um órgão para fiscalizar os documentos se estão todos corretos , ou se realmente são dos titulares que estão para abrir o CNPJ....! Digo iss"
+    },
+    {
+     "score": 1,
+     "thumbs": 74,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Brincadeira o que tem de espertalhões nesse nosso Brasil. O governo federal adiou os pagamentos de DAS até outubro e esse aplicativo está dizendo que está em atrasos. Nada aqui é grátis e além disso e"
+    },
+    {
+     "score": 1,
+     "thumbs": 44,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Bom dia não gostei aplicativo pois inicie o processo de abertura e deu um problema na senha do governo mandei um email para o suporte falaram que em 7 dias eles entrava em contato já vai completa 10 d"
+    },
+    {
+     "score": 1,
+     "thumbs": 36,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Péssimo aplicativo. Ele leva a acreditar que é um aplicativo do governo federal, o que nunca foi, inclusive é pago.Estou tentando me descadastrar e não consigo. Não tenho retorno do suporte nas mensag"
+    }
+   ],
+   "suporte_ruim": [
+    {
+     "score": 1,
+     "thumbs": 113,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Fiz a declaração pelo aplicativo, depois que finalizei, não consegui fazer o donwload do documento, tentei falar com algum suporte, e por não pagar mensalidade o mesmo impede que eu entre em contato p"
+    },
+    {
+     "score": 1,
+     "thumbs": 111,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Lixo de aplicativo onde você só tem suporte se pagar, mesmo que o problema seja duplicidade na cobrança do serviço no seu cartão de crédito. Esclareço que houve um erro no aplicativo deles, onde o mes"
+    },
+    {
+     "score": 1,
+     "thumbs": 100,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "MUITO CUIDADO! Efetuei o pagamento do DAS e não consta no sistema , no comprovante de pagamento não saiu nem se quer os dados de quem recebeu o pagamento. Sem falar que não tem nenhum meio pra dá supo"
+    },
+    {
+     "score": 1,
+     "thumbs": 63,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Situação ridícula, tentei fazer o teste do plano silver porém ele não atende minha necessidade, paguei no cartão de e solicitei o cancelamento no mesmo momento, porém vocês não fizeram o extorno e não"
+    }
+   ],
+   "impreciso": [
+    {
+     "score": 1,
+     "thumbs": 49,
+     "app": "TurboTax: File Your Tax Retu",
+     "text": "Another year and more disappointment. If you have a W2 from Tennessee you cannot select TN for line 15. So I had to purposely enter in the wrong information just to get passed that screen. I did it se"
+    },
+    {
+     "score": 1,
+     "thumbs": 39,
+     "app": "FlyFin: Effortless 1099 Taxe",
+     "text": "I have only had this app for a day, and as soon as I signed up for the free trial the app completely stops working. Lovely, I agree with the other commenters saying that this apps calculations have to"
+    },
+    {
+     "score": 1,
+     "thumbs": 21,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Não dão suporte, preenchi todo o formulário e não entraram em contato mandei um e-mail e eles tem uma resposta automática dizendo que em 24hrs vão responder e já tem dias e nada de respostas pra confi"
+    },
+    {
+     "score": 1,
+     "thumbs": 14,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Baixei o app mas de alguma forma, n estou conseguindo acessar mesmo eu colocando os meus dados certinho dar errado, e não tem como entrar no suporte do app, como consigo falar com o suporte porque na "
+    }
+   ],
+   "confuso_complexo": [
+    {
+     "score": 1,
+     "thumbs": 19,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Estou desinstalando entrei em contato com eles pelo whatsapp para saber de uma fatura paga ai me pediram comprovante de pagamento então mandei aí eles me disseram que aquele valor não era referente ao"
+    },
+    {
+     "score": 1,
+     "thumbs": 11,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Não está gerando o boleto pra realizar o pagamento,como fazer para pagar?esse aplicativo deveria facilitar mas tá complicado."
+    },
+    {
+     "score": 2,
+     "thumbs": 10,
+     "app": "Craft Pricing Calculator",
+     "text": "I'm from the philippines, our currency is Php or philippine peso and it's just confusing whenever i see d pound thing next to d cost ...pls make it customizable pls pls pls for people outside uk and i"
+    },
+    {
+     "score": 1,
+     "thumbs": 8,
+     "app": "TurboTax: File Your Tax Retu",
+     "text": "Not worth the money. The flow is disorganized and explanations create more doubts than clarity. Impressed me more like a friendly phishing app. Without cross checking with AI and IRS pubs, I would not"
+    }
+   ],
+   "perda_dados": [
+    {
+     "score": 2,
+     "thumbs": 44,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "Tenho o app a um bom tempo estava tudo bem mas agora sumiu tudo as informações dos boletos de pagamento e não consigo pagar a fatura do mês está tudo em branco.nao gerar o Das."
+    },
+    {
+     "score": 1,
+     "thumbs": 5,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "Simplesmente sumiu todas as informações e comprovantes dos meus pagamentos de 2022. Muito estranho e o pior, não oferece suporte muito menos tele atendimento."
+    },
+    {
+     "score": 1,
+     "thumbs": 4,
+     "app": "PrecificAção by Luh Ribeiro",
+     "text": "Eu achei funcional, mas eu tinha salvo algumas receitas minhas, o aplicativo atualizou e perdi tudo, inclusive meu acesso. Mandei email pra vocês, pedi suporte para reaver minha conta e nunca tive res"
+    },
+    {
+     "score": 1,
+     "thumbs": 1,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Uma patifaria cliente fez o pagamento na minha conta o dinheiro simplesmente sumiu !!! Não tem um suporte pra entrar em contato. Agora estou aqui no maior problemao por conta dessa conta . Pode ter ce"
+    }
+   ]
+  },
+  "praise_verbatims": {
+   "facil_simples": [
+    {
+     "score": 5,
+     "thumbs": 127,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Aplicativo simples e funcional, consegui resolver meu problema sem ter dor de cabeça. As atendentes foram super prestativas."
+    },
+    {
+     "score": 5,
+     "thumbs": 126,
+     "app": "Mei em Foco: App para MEI",
+     "text": "o aplicativo é muito facil de entender e tem ate um fluxo de caixa, muito bom mesmo o atendimento tambem é muito bom fui atendido pela Kamila e ela me ajudou e tirou as minhas duvidas, coisa que eu na"
+    },
+    {
+     "score": 4,
+     "thumbs": 113,
+     "app": "Receitas - Quanto Cobrar",
+     "text": "Achei o app bastante prático e muito fácil de usar. Os desenvolvedores e idealizadores estão de parabéns! Como sugestão, acho que seria interessante se eu pudesse preencher os dados em um celular e, a"
+    },
+    {
+     "score": 5,
+     "thumbs": 107,
+     "app": "MEI Gratis - CNPJ, DAS, Vend",
+     "text": "Estava com dificuldade para abrir um novo meu, entrei no app consegui me formalizar e já paguei meu primeiro boleto com facilidade. Sem nenhuma complicação. Entrei em um app que se chama meu fácil me "
+    }
+   ],
+   "util_resolve": [
+    {
+     "score": 5,
+     "thumbs": 243,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Quero expressar minha imensa gratidão à Cristiane do 'MEI em Foco' pelo atendimento excepcional que recebi durante a regularização do meu MEI. Sua dedicação, profissionalismo e empenho em resolver as "
+    },
+    {
+     "score": 5,
+     "thumbs": 240,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Aplicativo ótimo, resolveram minhas dúvidas, deram suporte necessários , resolveram rapidamente pendências que tinha. Agradeço de coração a toda equipe, em especial a Cristiane que não poupou esforço "
+    },
+    {
+     "score": 5,
+     "thumbs": 209,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Fui atendida pelo analista Eros e foi um ótimo atendimento. Profissional altamente qualificado, educado, experiente. Me passou muita segurança e resolveu meu problema. Eu não estava conseguindo acessa"
+    },
+    {
+     "score": 5,
+     "thumbs": 172,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Comecei a utilizar o app, e estou gostando muito. Fui atendida pela Kamila, muito prestativa resolveu tudo o que precisava com muita rapidez e eficiência. Super índico."
+    }
+   ],
+   "gratis_sem_ad": [
+    {
+     "score": 5,
+     "thumbs": 66,
+     "app": "Mei em Foco: App para MEI",
+     "text": "App muito intuitivo e o melhor, sem propagandas. Amei o fluxo de caixa, isso ajuda muito quem quer começar a separar as finanças. Até agora só usei os serviços gratuitos mas pela seriedade do app, em "
+    },
+    {
+     "score": 5,
+     "thumbs": 40,
+     "app": "TurboTax: File Your Tax Retu",
+     "text": "Great app. So easy and help if needed is always available. The Free filings was so easy anyone could do it. No computer experience needed. The questions were appropriate for my tax situation , and I t"
+    },
+    {
+     "score": 4,
+     "thumbs": 37,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "Precisa deixar sem anúncios, pois pela importância do aplicativo, pode prejudicar o processo de uso do mesmo"
+    },
+    {
+     "score": 4,
+     "thumbs": 31,
+     "app": "FlyFin: Effortless 1099 Taxe",
+     "text": "this. is. awesome. a stress-sucking, relief-making experience. fr sure! the AI gets aallmost just about every type of charge/possible deduction correct... and the few it categorized incorrectly, were "
+    }
+   ],
+   "organiza_controle": [
+    {
+     "score": 4,
+     "thumbs": 85,
+     "app": "PeqArt- Precificação e muito",
+     "text": "Bem intuitivo. Senti falta do espaço para inserir redes sociais no cadastro de clientes e de ter a data de aniversário automaticamente inawrida no planner com lembrete. No PDF do orçamento não tem a o"
+    },
+    {
+     "score": 4,
+     "thumbs": 80,
+     "app": "PeqArt- Precificação e muito",
+     "text": "A experiência tem sido maravilhosa! Sugiro algumas melhorias, a possibilidade de parcelamento, melhor as entradas, e uma totalização no valor do estoque, para sabermos quanto temos de materia prima, s"
+    },
+    {
+     "score": 5,
+     "thumbs": 51,
+     "app": "DAS MEI: Boleto, INSS, Impos",
+     "text": "Gostei muito do aplicativo, bem organizado, as informações claras e fáceis de localizar, super acessível a compreensão de qualquer usuário."
+    },
+    {
+     "score": 5,
+     "thumbs": 44,
+     "app": "MEI Digital: DAS e Abrir MEI",
+     "text": "Aplicativo simplesmente excelente! Muito bem desenvolvido, fácil de usar, prático e extremamente útil para quem é MEI. Todas as informações são claras, organizadas e acessíveis, o que facilita muito n"
+    }
+   ],
+   "rapido": [
+    {
+     "score": 5,
+     "thumbs": 130,
+     "app": "Total MEI: INSS, DAS Fácil",
+     "text": "Eu tinha dado nota baixa pois não tinha recebido um estorno. Acabei de receber. Faz duas faturas o serviço então é dentro do prazo como informado, fora esse pequeno desentendimento entre mim e o app. "
+    },
+    {
+     "score": 5,
+     "thumbs": 96,
+     "app": "Mei em Foco: App para MEI",
+     "text": "Facil de usar , bem esclarecedor, atendimento online rápido. Tira todas as dúvidas, ótimo suporte. Prático e.de grande valia. A atendente Kamila pelo whats está de parabéns super atenciosa. Ajuda muit"
+    },
+    {
+     "score": 5,
+     "thumbs": 81,
+     "app": "Receitas - Quanto Cobrar",
+     "text": "Es una app muy buena, contiene lo necesario para llevar el costeo perfecto de tu negocio de repostería si vas iniciando o para tener un control más rápido. **mi sugerencia sería agregar un apartado pa"
+    },
+    {
+     "score": 5,
+     "thumbs": 76,
+     "app": "Mei em Foco: App para MEI",
+     "text": "sério, atendimento muito bom via Whatsapp rápido eficaz, obtive todas as minhas questões solucionadas muito rápido, com o App não foi diferente resolvia via Whatsapp e em seguida já estava disponível "
+    }
+   ]
+  },
+  "request_verbatims": [
+   {
+    "score": 2,
+    "thumbs": 257,
+    "app": "DAS MEI: Boleto, INSS, Impos",
+    "text": "Nota baixa pq não dá pra tirar o boleto em pdf nem compartilhar. O ponto legal é que se pode incluir vários MEIs numa tela rápida sem cadastro de login, interessante devido à ideia de alguém que tem u"
+   },
+   {
+    "score": 1,
+    "thumbs": 233,
+    "app": "MEI Fácil está no app Neon",
+    "text": "Não consigo acessar o app que está dando erro de senha sempre, mesmo usando a digital. Tentativa de alterar senha, também dando erro depois de fazer todo o processo com aprovação fica dando erro. já l"
+   },
+   {
+    "score": 5,
+    "thumbs": 143,
+    "app": "Receitas - Quanto Cobrar",
+    "text": "Estou gostando bastante do app! Porém,gostaria de dar algumas sugestões. Exemplo:Seria interessante poder salvar os dados(backup)caso precisasse formatar o aparelho ou trocar o mesmo. Poderia também a"
+   },
+   {
+    "score": 4,
+    "thumbs": 113,
+    "app": "Receitas - Quanto Cobrar",
+    "text": "Achei o app bastante prático e muito fácil de usar. Os desenvolvedores e idealizadores estão de parabéns! Como sugestão, acho que seria interessante se eu pudesse preencher os dados em um celular e, a"
+   },
+   {
+    "score": 4,
+    "thumbs": 85,
+    "app": "PeqArt- Precificação e muito",
+    "text": "Bem intuitivo. Senti falta do espaço para inserir redes sociais no cadastro de clientes e de ter a data de aniversário automaticamente inawrida no planner com lembrete. No PDF do orçamento não tem a o"
+   },
+   {
+    "score": 1,
+    "thumbs": 39,
+    "app": "MEI Gratis - CNPJ, DAS, Vend",
+    "text": "Não consigo falar com nenhuma pessoa responsável, quero consertar meu nome fantasia, e queria saber como emito os papéis para fazer o pagamento todo mês! O meu Google está aparecendo que esse aplicati"
+   }
+  ]
+ },
+ "PRICING": {
+  "stats": {
+   "n": 3118,
+   "neg": 344,
+   "neu": 129,
+   "pos": 2645,
+   "avg": 4.42,
+   "complaints": {
+    "cobranca_paywall": {
+     "n": 20,
+     "pct_neg": 5.8
+    },
+    "anuncio": {
+     "n": 23,
+     "pct_neg": 6.7
+    },
+    "bug_crash": {
+     "n": 73,
+     "pct_neg": 21.2
+    },
+    "cadastro_forcado": {
+     "n": 34,
+     "pct_neg": 9.9
+    },
+    "gov_confusao": {
+     "n": 1,
+     "pct_neg": 0.3
+    },
+    "suporte_ruim": {
+     "n": 4,
+     "pct_neg": 1.2
+    },
+    "impreciso": {
+     "n": 4,
+     "pct_neg": 1.2
+    },
+    "confuso_complexo": {
+     "n": 8,
+     "pct_neg": 2.3
+    },
+    "perda_dados": {
+     "n": 2,
+     "pct_neg": 0.6
+    }
+   },
+   "praises": {
+    "facil_simples": {
+     "n": 662,
+     "pct_pos": 25.0
+    },
+    "util_resolve": {
+     "n": 1215,
+     "pct_pos": 45.9
+    },
+    "gratis_sem_ad": {
+     "n": 24,
+     "pct_pos": 0.9
+    },
+    "organiza_controle": {
+     "n": 74,
+     "pct_pos": 2.8
+    },
+    "rapido": {
+     "n": 46,
+     "pct_pos": 1.7
+    }
+   },
+   "requests_n": 135
+  }
+ },
+ "TAX_MEI": {
+  "stats": {
+   "n": 13843,
+   "neg": 5485,
+   "neu": 548,
+   "pos": 7810,
+   "avg": 3.33,
+   "complaints": {
+    "cobranca_paywall": {
+     "n": 800,
+     "pct_neg": 14.6
+    },
+    "anuncio": {
+     "n": 132,
+     "pct_neg": 2.4
+    },
+    "bug_crash": {
+     "n": 930,
+     "pct_neg": 17.0
+    },
+    "cadastro_forcado": {
+     "n": 279,
+     "pct_neg": 5.1
+    },
+    "gov_confusao": {
+     "n": 82,
+     "pct_neg": 1.5
+    },
+    "suporte_ruim": {
+     "n": 283,
+     "pct_neg": 5.2
+    },
+    "impreciso": {
+     "n": 122,
+     "pct_neg": 2.2
+    },
+    "confuso_complexo": {
+     "n": 100,
+     "pct_neg": 1.8
+    },
+    "perda_dados": {
+     "n": 17,
+     "pct_neg": 0.3
+    }
+   },
+   "praises": {
+    "facil_simples": {
+     "n": 1398,
+     "pct_pos": 17.9
+    },
+    "util_resolve": {
+     "n": 2716,
+     "pct_pos": 34.8
+    },
+    "gratis_sem_ad": {
+     "n": 34,
+     "pct_pos": 0.4
+    },
+    "organiza_controle": {
+     "n": 70,
+     "pct_pos": 0.9
+    },
+    "rapido": {
+     "n": 308,
+     "pct_pos": 3.9
+    }
+   },
+   "requests_n": 175
+  }
+ }
+}
