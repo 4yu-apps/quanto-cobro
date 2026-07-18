@@ -26,8 +26,9 @@ class SettingsRepository {
   bool onboardingDone() => _prefs.getBool(_kOnboarding) ?? false;
   Future<void> setOnboardingDone() => _prefs.setBool(_kOnboarding, true);
 
-  // Telemetria (analytics/crash) — opt-in, LGPD. Default ligado, trocável em Config.
+  // Telemetria (analytics/crash) — opt-in de verdade (LGPD + promessa do onboarding
+  // "sem enviar seus dados"). Default DESLIGADO; liga só se o usuário aceitar em Config.
   static const String _kTelemetry = 'telemetry_enabled';
-  bool telemetryEnabled() => _prefs.getBool(_kTelemetry) ?? true;
+  bool telemetryEnabled() => _prefs.getBool(_kTelemetry) ?? false;
   Future<void> setTelemetry(bool value) => _prefs.setBool(_kTelemetry, value);
 }

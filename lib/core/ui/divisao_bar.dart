@@ -30,19 +30,22 @@ class DivisaoBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 18,
-            child: total <= 0
-                ? ColoredBox(color: d.track)
-                : Row(
-                    children: <Widget>[
-                      Expanded(flex: flex(lucro), child: ColoredBox(color: d.lucro)),
-                      Expanded(flex: flex(reserva), child: ColoredBox(color: d.reserva)),
-                      Expanded(flex: flex(custo), child: ColoredBox(color: d.custo)),
-                    ],
-                  ),
+        // Barra é decorativa: os valores/percentuais são lidos na legenda abaixo.
+        ExcludeSemantics(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 18,
+              child: total <= 0
+                  ? ColoredBox(color: d.track)
+                  : Row(
+                      children: <Widget>[
+                        Expanded(flex: flex(lucro), child: ColoredBox(color: d.lucro)),
+                        Expanded(flex: flex(reserva), child: ColoredBox(color: d.reserva)),
+                        Expanded(flex: flex(custo), child: ColoredBox(color: d.custo)),
+                      ],
+                    ),
+            ),
           ),
         ),
         const SizedBox(height: 12),

@@ -32,4 +32,16 @@ void main() {
       expect(s.sugestao, greaterThan(3000));
     });
   });
+
+  group('estimarHorasFaturaveis', () {
+    test('valores típicos caem numa faixa realista (nunca 160h)', () {
+      final int h = estimarHorasFaturaveis(ferias: 4, pct: 60, feriados: 12);
+      expect(h, greaterThan(60));
+      expect(h, lessThan(140));
+    });
+
+    test('nunca retorna zero ou negativo (evita divisão por zero adiante)', () {
+      expect(estimarHorasFaturaveis(ferias: 52, pct: 30, feriados: 20), greaterThan(0));
+    });
+  });
 }

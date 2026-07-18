@@ -50,7 +50,9 @@ class ResultadoScreen extends ConsumerWidget {
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
     final ValorHoraResult r = computeValorHora(p);
     final Divisao div = divisaoFromProfile(p, r);
-    final bool custoMaiorQueMeta = div.lucro <= 0;
+    // Sinal de input incoerente (Blueprint §5.9): custos fixos maiores que a
+    // renda que a pessoa quer tirar — vale revisar antes de fechar o preço.
+    final bool custoMaiorQueMeta = p.custosTotal > p.renda;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Seu resultado')),

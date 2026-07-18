@@ -143,9 +143,11 @@ class ConfigScreen extends ConsumerWidget {
         ],
       ),
     );
+    final String texto = controller.text;
+    controller.dispose();
     if (ok != true) return;
     try {
-      await ref.read(backupServiceProvider).importJson(controller.text);
+      await ref.read(backupServiceProvider).importJson(texto);
       ref.invalidate(profileProvider);
       messenger.showSnackBar(const SnackBar(content: Text('Backup restaurado')));
     } on FormatException catch (e) {

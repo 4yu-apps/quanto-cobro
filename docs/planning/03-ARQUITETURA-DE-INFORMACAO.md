@@ -139,7 +139,9 @@ Para cada uma: **objetivo · o que o usuário quer · o que tem · o que ele pod
 - **Objetivo:** converter no **momento de valor**, não como pop-up.
 - **Usuário quer:** entender o que ganha, sem se sentir empurrado.
 - **Tem:** benefícios (vários perfis · exportar PDF · modo avançado por regime · remover
-  anúncios) · **preço único** (sem assinatura) · CTA · "restaurar compras".
+  anúncios) · **preços transparentes** (vitalício sem assinatura + anual/mensal opcionais,
+  conforme o modelo híbrido validado em [05 §6](05-ESCOPO-E-ROADMAP.md)) · CTA · "restaurar
+  compras". O núcleo é sempre grátis; o preço aparece antes de qualquer trabalho (anti-★1).
 - **Aparece em:** tocar "exportar PDF", criar 2º perfil, abrir "modo avançado".
 
 ### 2.12 Histórico de reservas — **v2** (gancho de hábito)

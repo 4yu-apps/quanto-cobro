@@ -32,6 +32,21 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
 
   int _digits(String s) => int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
 
+  Widget _legenda(BuildContext context, Color color, String label, double valor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+        ),
+        const SizedBox(width: 6),
+        Text('$label ${moneyBRL(valor)}', style: Theme.of(context).textTheme.labelLarge),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -90,6 +105,28 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
             const SizedBox(height: 8),
             Text('${res.pct}% do que entrou é do leão, o resto é seu.',
                 style: theme.textTheme.bodyMedium?.copyWith(color: d.reserva)),
+            const SizedBox(height: 16),
+            // Barra colapsada: Reserva x Sobra (DS §6.2).
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                height: 18,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(flex: res.reserva, child: ColoredBox(color: d.reserva)),
+                    Expanded(flex: res.sobra.round(), child: ColoredBox(color: d.lucro)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                _legenda(context, d.reserva, 'Reserva', res.reserva.toDouble()),
+                const SizedBox(width: 16),
+                _legenda(context, d.lucro, 'Sobra', res.sobra),
+              ],
+            ),
             const SizedBox(height: 24),
             const EstimativaSeal(short: true),
           ],

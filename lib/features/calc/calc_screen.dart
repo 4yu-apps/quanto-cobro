@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
+import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
 import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
@@ -171,14 +172,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             'estudo). Quase ninguém fatura mais que ~70%.',
             style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 8),
-        TextButton(
-          onPressed: () {
-            setState(() {
-              _draft = _draft.copyWith(horas: 110);
-              _horas.text = '110';
-            });
-          },
-          child: const Text('Não sei, estimar pra mim'),
+        TextButton.icon(
+          onPressed: _abrirEstimador,
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Não sei, estimar pra mim'),
         ),
       ],
     );
@@ -305,5 +302,84 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _abrirEstimador() async {
+    int ferias = 4;
+    int pct = 60;
+    int feriados = 12;
+
+    final int? horas = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext c) {
+        return StatefulBuilder(
+          builder: (BuildContext c, void Function(void Function()) setSheet) {
+            final int estimado =
+                estimarHorasFaturaveis(ferias: ferias, pct: pct, feriados: feriados);
+            final TextTheme t = Theme.of(c).textTheme;
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 8,
+                bottom: 24 + MediaQuery.of(c).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Vamos achar suas horas reais', style: t.titleLarge),
+                  const SizedBox(height: 16),
+                  Text('Semanas de férias por ano: $ferias', style: t.bodyMedium),
+                  Slider(
+                    value: ferias.toDouble(),
+                    max: 8,
+                    divisions: 8,
+                    label: '$ferias',
+                    onChanged: (double v) => setSheet(() => ferias = v.round()),
+                  ),
+                  Text('Do seu tempo, quanto é trabalho pago: $pct%', style: t.bodyMedium),
+                  Slider(
+                    value: pct.toDouble(),
+                    min: 30,
+                    max: 90,
+                    divisions: 12,
+                    label: '$pct%',
+                    onChanged: (double v) => setSheet(() => pct = v.round()),
+                  ),
+                  Text('Feriados por ano: $feriados', style: t.bodyMedium),
+                  Slider(
+                    value: feriados.toDouble(),
+                    max: 20,
+                    divisions: 20,
+                    label: '$feriados',
+                    onChanged: (double v) => setSheet(() => feriados = v.round()),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('≈ $estimado h/mês', style: t.headlineSmall),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(c, estimado),
+                      child: Text('Usar $estimado h/mês'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (horas != null && mounted) {
+      setState(() {
+        _draft = _draft.copyWith(horas: horas);
+        _horas.text = horas.toString();
+      });
+    }
   }
 }

@@ -125,6 +125,16 @@ class SimuladorResult {
   final Divisao divisao;
 }
 
+/// Estima horas faturáveis/mês a partir de 3 perguntas simples (Blueprint §7.1):
+/// semanas de férias, % do tempo que é trabalho pago, feriados. Resolve o erro
+/// nº1 (dividir por 160h) sem o usuário precisar saber a fórmula.
+int estimarHorasFaturaveis({required int ferias, required int pct, required int feriados}) {
+  final int semanas = (52 - ferias).clamp(1, 52);
+  final int rawAno = semanas * 40 - feriados * 8;
+  final double faturavel = rawAno * pct / 100;
+  return (faturavel / 12).round().clamp(1, 400);
+}
+
 SimuladorResult computeSimulador(
   double valor,
   int horas,

@@ -52,9 +52,10 @@ class ProScreen extends ConsumerWidget {
             ),
           const Divider(height: 32),
           if (!isPro) ...<Widget>[
-            _preco(context, ref, 'Vitalício', 'R\$ 129 uma vez', destaque: true),
-            _preco(context, ref, 'Anual', 'R\$ 89,90/ano'),
-            _preco(context, ref, 'Mensal', 'R\$ 12,90/mês'),
+            _preco(context, ref, 'Vitalício (sem assinatura)', 'R\$ 129, uma vez só',
+                cta: 'Comprar', destaque: true),
+            _preco(context, ref, 'Anual', 'R\$ 89,90/ano', cta: 'Assinar'),
+            _preco(context, ref, 'Mensal', 'R\$ 12,90/mês', cta: 'Assinar'),
             const SizedBox(height: 8),
             Text(
               'Preços provisórios. O pagamento real é ligado com a configuração da loja; '
@@ -77,7 +78,7 @@ class ProScreen extends ConsumerWidget {
   }
 
   Widget _preco(BuildContext context, WidgetRef ref, String titulo, String valor,
-      {bool destaque = false}) {
+      {required String cta, bool destaque = false}) {
     return Card(
       color: destaque ? Theme.of(context).colorScheme.secondaryContainer : null,
       child: ListTile(
@@ -91,7 +92,7 @@ class ProScreen extends ConsumerWidget {
             messenger.showSnackBar(const SnackBar(content: Text('Pro ativado')));
             router.pop();
           },
-          child: const Text('Assinar'),
+          child: Text(cta),
         ),
       ),
     );
