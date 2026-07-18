@@ -20,4 +20,14 @@ class SettingsRepository {
   }
 
   Future<void> setThemeMode(ThemeMode mode) => _prefs.setString(_kTheme, mode.name);
+
+  // Onboarding: mostrado uma vez no primeiro uso.
+  static const String _kOnboarding = 'onboarding_done';
+  bool onboardingDone() => _prefs.getBool(_kOnboarding) ?? false;
+  Future<void> setOnboardingDone() => _prefs.setBool(_kOnboarding, true);
+
+  // Telemetria (analytics/crash) — opt-in, LGPD. Default ligado, trocável em Config.
+  static const String _kTelemetry = 'telemetry_enabled';
+  bool telemetryEnabled() => _prefs.getBool(_kTelemetry) ?? true;
+  Future<void> setTelemetry(bool value) => _prefs.setBool(_kTelemetry, value);
 }

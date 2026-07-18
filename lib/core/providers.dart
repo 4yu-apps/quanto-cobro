@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'billing/entitlement.dart';
+import 'data/backup_service.dart';
 import 'data/profile_repository.dart';
 import 'model/perfil.dart';
 import 'settings/settings_repository.dart';
@@ -78,3 +80,49 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
 final NotifierProvider<ThemeModeNotifier, ThemeMode> themeModeProvider =
     NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+
+// ---- Backup (export/import por texto, sem nuvem) ----
+final Provider<BackupService> backupServiceProvider = Provider<BackupService>(
+  (Ref ref) => BackupService(ref.watch(profileRepositoryProvider)),
+);
+
+// ---- Entitlement Pro ----
+final Provider<EntitlementRepository> entitlementRepositoryProvider =
+    Provider<EntitlementRepository>(
+  (Ref ref) => EntitlementRepository(ref.watch(sharedPreferencesProvider)),
+);
+
+class ProNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(entitlementRepositoryProvider).isPro();
+
+  /// Concede o Pro. Hoje grava o entitlement local; quando a compra real
+  /// (in_app_purchase) for ligada com os IDs da Play, ela chama isto no sucesso.
+  Future<void> grant() async {
+    await ref.read(entitlementRepositoryProvider).setPro(true);
+    state = true;
+  }
+
+  Future<void> revoke() async {
+    await ref.read(entitlementRepositoryProvider).setPro(false);
+    state = false;
+  }
+}
+
+final NotifierProvider<ProNotifier, bool> proProvider =
+    NotifierProvider<ProNotifier, bool>(ProNotifier.new);
+
+// ---- Telemetria (opt-in, LGPD) ----
+class TelemetryNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(settingsRepositoryProvider).telemetryEnabled();
+
+  Future<void> set(bool value) async {
+    await ref.read(settingsRepositoryProvider).setTelemetry(value);
+    state = value;
+    // Quando o Firebase for ligado, aplicar aqui o opt-in de Analytics/Crashlytics.
+  }
+}
+
+final NotifierProvider<TelemetryNotifier, bool> telemetryProvider =
+    NotifierProvider<TelemetryNotifier, bool>(TelemetryNotifier.new);

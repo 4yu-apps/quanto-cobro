@@ -5,8 +5,9 @@ import 'package:quantocobro/core/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('primeiro uso: Painel mostra o estado vazio com "Começar"', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
+  testWidgets('sem perfil: Painel mostra o estado vazio com "Começar"', (WidgetTester tester) async {
+    // onboarding já visto → cai direto no Painel (que está vazio, sem perfil).
+    SharedPreferences.setMockInitialValues(<String, Object>{'onboarding_done': true});
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(
