@@ -1,0 +1,80 @@
+/* ============================================================
+   QUANTO EU COBRO?  ·  stage.css
+   Cromo de review (fora do app): backdrop, rail e aparelho.
+   ============================================================ */
+:root { --qc-accent: #6FDEB5; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background: #101311;
+  background-image: radial-gradient(1200px 600px at 80% -10%, #16221c 0%, transparent 60%),
+                    radial-gradient(900px 500px at -10% 110%, #161b28 0%, transparent 55%);
+  color: #cdd3cd;
+  overflow: hidden;
+}
+
+.qc-stage { display: flex; height: 100vh; gap: 0; }
+
+/* ---------- RAIL ---------- */
+.qc-rail {
+  width: 268px; flex-shrink: 0; height: 100%; overflow-y: auto;
+  background: #121513;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  padding: 22px 18px; display: flex; flex-direction: column;
+}
+.qc-rail-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.qc-rail-logo { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(160deg, #1FA67F, #00513C); display: flex; align-items: center; justify-content: center; }
+.qc-rail-logo .material-symbols-rounded { color: #C4FFE6; font-size: 24px; }
+.qc-rail-title { font-family: "Sora", sans-serif; font-weight: 800; font-size: 16px; color: #eef2ee; margin: 0; letter-spacing: -0.02em; }
+.qc-rail-sub { font-size: 12px; color: #7d867e; margin: 2px 0 0; }
+.qc-rail-section { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #6b746c; margin: 18px 4px 8px; }
+.qc-rail-seg { display: flex; gap: 4px; background: rgba(255,255,255,0.04); padding: 4px; border-radius: 12px; }
+.qc-rail-seg button {
+  flex: 1; min-height: 36px; border: none; border-radius: 9px; background: transparent; cursor: pointer;
+  font-family: "Inter", sans-serif; font-size: 12.5px; font-weight: 600; color: #9aa39b;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s;
+}
+.qc-rail-seg button .material-symbols-rounded { font-size: 16px; }
+.qc-rail-seg button.on { background: #6FDEB5; color: #00271c; }
+.qc-rail-nav { display: flex; flex-direction: column; gap: 2px; }
+.qc-rail-link {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: none; border-radius: 10px;
+  background: transparent; cursor: pointer; color: #aab2aa; font-family: "Inter", sans-serif; font-size: 13.5px; font-weight: 500; text-align: left;
+  transition: all .14s;
+}
+.qc-rail-link .material-symbols-rounded { font-size: 18px; color: #7d867e; }
+.qc-rail-link:hover { background: rgba(255,255,255,0.05); color: #e6ebe6; }
+.qc-rail-link.on { background: rgba(111,222,181,0.14); color: #aef0d3; }
+.qc-rail-link.on .material-symbols-rounded { color: #6FDEB5; }
+.qc-rail-foot { font-size: 11.5px; line-height: 1.5; color: #6b746c; margin-top: auto; padding-top: 22px; }
+
+/* ---------- PHONE ---------- */
+.qc-phone-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 24px; }
+.qc-device {
+  width: 390px; height: 844px; border-radius: 46px; flex-shrink: 0;
+  background: #000; padding: 6px;
+  box-shadow: 0 0 0 8px #1b1f1c, 0 40px 80px -20px rgba(0,0,0,0.7), 0 0 0 9px #2a2f2b;
+  transform-origin: center center;
+}
+.qc-app {
+  width: 100%; height: 100%; border-radius: 40px; overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+}
+.qc-viewport { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.qc-viewport > * { flex: 1; min-height: 0; }
+
+/* status bar */
+.qc-statusbar { height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; padding-top: 6px; }
+.qc-sb-time { font-family: "Sora", sans-serif; font-weight: 700; font-size: 15px; color: var(--color-onSurface); }
+.qc-sb-icons { display: inline-flex; align-items: center; gap: 6px; }
+.qc-sb-icons .material-symbols-rounded { color: var(--color-onSurface); }
+
+/* reduce motion */
+.qc-app.qc-reduce *, .qc-app.qc-reduce *::before, .qc-app.qc-reduce *::after { animation: none !important; transition: none !important; }
+
+@media (max-width: 720px) {
+  .qc-rail { position: fixed; z-index: 100; transform: translateX(-100%); transition: transform .2s; }
+  .qc-phone-wrap { padding: 12px; }
+}

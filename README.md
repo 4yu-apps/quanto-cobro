@@ -18,6 +18,19 @@ Finanças
 
 Flutter · 100% offline · alíquotas locais (DAS, Simples, IRPF)
 
+## Design & docs de referência
+
+O pensamento de produto já está adiantado (saída dos agentes 1–3 da fábrica 4YU):
+
+- [`docs/UX-Blueprint.md`](docs/UX-Blueprint.md) — arquitetura da informação, sitemap
+  hub-and-spoke, inventário de telas, matriz de estados, fluxos e trade-offs.
+- [`docs/Design-System.md`](docs/Design-System.md) — identidade visual e tokens.
+- [`docs/design-reference/`](docs/design-reference/) — protótipo do Claude Design
+  (HTML/JSX/CSS + mockups). É **especificação visual**, não código-fonte: o app é
+  reescrito em Flutter idiomático (regra da casa, ver `PADRAO-4YU-APPS.md`).
+
 ## Status
 
-🗂️ Backlog — em desenvolvimento pela equipe [4YU Apps](https://linear.app/4yu-apps)
+🔎 **Descoberta de produto** — antes de codar, mineração de reviews de concorrentes
+(BR + internacionais) para validar/enxugar o blueprint. Nome de exibição ainda em
+validação (o identificador técnico `quanto-cobro` é estável). Equipe [4YU Apps](https://linear.app/4yu-apps).

@@ -1,0 +1,180 @@
+/* ============================================================
+   QUANTO EU COBRO? — Design tokens  ·  "A Divisão"
+   Handoff bundle → conversão direta para core/theme (Flutter)
+   Nomes idênticos ao Design System (§3, §5, §9).
+   Tema ESCURO é o padrão; CLARO tem paridade total.
+   ============================================================ */
+
+/* ---------- TEMA ESCURO (padrão) ---------- */
+.qc-app[data-theme="dark"] {
+  /* color roles (ColorScheme — §3.1) */
+  --color-primary:               #6FDEB5;
+  --color-onPrimary:             #003828;
+  --color-primaryContainer:      #00513C;
+  --color-onPrimaryContainer:    #93FBD0;
+  --color-secondary:             #B8C4FF;
+  --color-onSecondary:           #002B75;
+  --color-secondaryContainer:    #0B409F;
+  --color-onSecondaryContainer:  #DCE1FF;
+  --color-tertiary:              #FBBE48;
+  --color-onTertiary:            #402D00;
+  --color-tertiaryContainer:     #5C4200;
+  --color-onTertiaryContainer:   #FFDEAD;
+  --color-error:                 #FFB4AB;
+  --color-onError:               #690005;
+  --color-errorContainer:        #93000A;
+  --color-onErrorContainer:      #FFDAD6;
+
+  --color-surface:               #0F1513;
+  --color-onSurface:             #DFE4DE;
+  --color-surfaceVariant:        #404943;
+  --color-onSurfaceVariant:      #C0C9C0;
+  --color-surfaceContainerLowest:#0A0F0D;
+  --color-surfaceContainerLow:   #171D1A;
+  --color-surfaceContainer:      #1B211E;
+  --color-surfaceContainerHigh:  #252B28;
+  --color-surfaceContainerHighest:#2F3633;
+  --color-outline:               #8A938B;
+  --color-outlineVariant:        #404943;
+  --color-inverseSurface:        #DFE4DE;
+  --color-inverseOnSurface:      #2B312E;
+  --color-inversePrimary:        #006C50;
+  --color-scrim:                 #000000;
+
+  /* A Divisão (§2.3) — cores fixas por significado */
+  --divisao-lucro:    #6FDEB5;
+  --divisao-reserva:  #B8C4FF;
+  --divisao-custo:    #A4ADA5;
+  --divisao-track:    #2F3633;
+
+  /* tokens customizados (§3.3) */
+  --alerta:           #FBBE48;
+  --alertaContainer:  #5C4200;
+  --onAlertaContainer:#FFDEAD;
+  --seal-bg:          #252B28;
+  --seal-fg:          #C0C9C0;
+  --stale-bg:         #0B409F;
+  --stale-fg:         #DCE1FF;
+  --ad-surface:       #171D1A;
+  --ad-label:         #C0C9C0;
+  --brand-4yu:        #6C4BD6;
+
+  /* sombras calmas (escuro: hierarquia vem do tom, sombra mínima) */
+  --shadow-1: 0 1px 2px rgba(0,0,0,.30);
+  --shadow-2: 0 2px 8px rgba(0,0,0,.38);
+  --shadow-3: 0 8px 24px rgba(0,0,0,.46);
+  --hairline: var(--color-outlineVariant);
+  color-scheme: dark;
+}
+
+/* ---------- TEMA CLARO ---------- */
+.qc-app[data-theme="light"] {
+  --color-primary:               #006C50;
+  --color-onPrimary:             #FFFFFF;
+  --color-primaryContainer:      #93FBD0;
+  --color-onPrimaryContainer:    #00201A;
+  --color-secondary:             #2C57B8;
+  --color-onSecondary:           #FFFFFF;
+  --color-secondaryContainer:    #DCE1FF;
+  --color-onSecondaryContainer:  #00174B;
+  --color-tertiary:              #7C5800;
+  --color-onTertiary:            #FFFFFF;
+  --color-tertiaryContainer:     #FFDEAD;
+  --color-onTertiaryContainer:   #261900;
+  --color-error:                 #BA1A1A;
+  --color-onError:               #FFFFFF;
+  --color-errorContainer:        #FFDAD6;
+  --color-onErrorContainer:      #410002;
+
+  --color-surface:               #F5FBF4;
+  --color-onSurface:             #171D1A;
+  --color-surfaceVariant:        #DCE5DB;
+  --color-onSurfaceVariant:      #404943;
+  --color-surfaceContainerLowest:#FFFFFF;
+  --color-surfaceContainerLow:   #EFF5ED;
+  --color-surfaceContainer:      #E9F0E8;
+  --color-surfaceContainerHigh:  #E4EAE2;
+  --color-surfaceContainerHighest:#DFE4DE;
+  --color-outline:               #707972;
+  --color-outlineVariant:        #C0C9C0;
+  --color-inverseSurface:        #2B312E;
+  --color-inverseOnSurface:      #EFF5ED;
+  --color-inversePrimary:        #6FDEB5;
+  --color-scrim:                 #000000;
+
+  --divisao-lucro:    #006C50;
+  --divisao-reserva:  #2C57B8;
+  --divisao-custo:    #586259;
+  --divisao-track:    #DCE5DB;
+
+  --alerta:           #7C5800;
+  --alertaContainer:  #FFDEAD;
+  --onAlertaContainer:#261900;
+  --seal-bg:          #E4EAE2;
+  --seal-fg:          #404943;
+  --stale-bg:         #DCE1FF;
+  --stale-fg:         #00174B;
+  --ad-surface:       #EFF5ED;
+  --ad-label:         #404943;
+  --brand-4yu:        #6C4BD6;
+
+  --shadow-1: 0 1px 2px rgba(20,40,30,.10);
+  --shadow-2: 0 2px 10px rgba(20,40,30,.10);
+  --shadow-3: 0 10px 30px rgba(20,40,30,.14);
+  --hairline: var(--color-outlineVariant);
+  color-scheme: light;
+}
+
+/* ---------- TOKENS NÃO-CROMÁTICOS (iguais nos dois temas) ---------- */
+.qc-app {
+  /* espaçamento — grid base 4dp (§5.1) */
+  --space-0: 0px;   --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
+  --space-4: 16px;  --space-5: 20px;  --space-6: 24px;  --space-8: 32px;
+  --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+  /* raio (§5.2) */
+  --radius-sm: 12px; --radius-md: 16px; --radius-lg: 20px;
+  --radius-xl: 24px; --radius-2xl: 28px; --radius-full: 999px;
+
+  /* motion (§5.4) */
+  --motion-quick: 120ms; --motion-base: 200ms; --motion-emphasized: 350ms;
+  --motion-slow: 500ms;  --motion-fill: 450ms;
+  --ease-standard: cubic-bezier(0.2,0,0,1);
+  --ease-emphasized: cubic-bezier(0.05,0.7,0.1,1);
+
+  /* tipografia — famílias (§4.1) */
+  --font-num: "Sora", system-ui, sans-serif;   /* números, herói — tabular */
+  --font-ui:  "Inter", system-ui, sans-serif;  /* UI, corpo, helpers */
+
+  /* escala de número (§4.2) */
+  --value-hero: 72px;    --value-xl: 56px;   --value-lg: 44px;
+  --value-md: 32px;      --value-display: 40px;
+}
+
+/* ============================================================
+   Reset + base do app
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+.qc-app {
+  font-family: var(--font-ui);
+  color: var(--color-onSurface);
+  background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* figuras tabulares em todo número — não "dançam" (§4.1) */
+.tnum { font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums; }
+
+/* Material Symbols Rounded (§5.5) */
+.material-symbols-rounded {
+  font-family: "Material Symbols Rounded";
+  font-weight: normal; font-style: normal;
+  line-height: 1; letter-spacing: normal;
+  text-transform: none; display: inline-block;
+  white-space: nowrap; word-wrap: normal; direction: ltr;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  -webkit-font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
+}
+.material-symbols-rounded.fill { font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24; }

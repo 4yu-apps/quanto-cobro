@@ -1,0 +1,24 @@
+# OS / editor / WSL
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+.thumbnail
+.idea/
+.vscode/
+
+# Segredos — NUNCA versionar (ver 4yu-apps/CLAUDE.md)
+.env
+.env.*
+*.jks
+*.keystore
+key.properties
+android/key.properties
+google-services.json
+
+# Flutter / Dart (quando o app for scaffoldado)
+.dart_tool/
+.fvm/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock.bak
