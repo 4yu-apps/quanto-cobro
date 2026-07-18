@@ -26,6 +26,12 @@ class SettingsRepository {
   bool onboardingDone() => _prefs.getBool(_kOnboarding) ?? false;
   Future<void> setOnboardingDone() => _prefs.setBool(_kOnboarding, true);
 
+  // Modo BR x internacional (freela pra gringo). Capturado no onboarding; hoje
+  // pré-seleciona o regime na calculadora. 'br' | 'intl'.
+  static const String _kModo = 'modo';
+  String modo() => _prefs.getString(_kModo) ?? 'br';
+  Future<void> setModo(String value) => _prefs.setString(_kModo, value);
+
   // Telemetria (analytics/crash) — opt-in de verdade (LGPD + promessa do onboarding
   // "sem enviar seus dados"). Default DESLIGADO; liga só se o usuário aceitar em Config.
   static const String _kTelemetry = 'telemetry_enabled';

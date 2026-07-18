@@ -40,4 +40,22 @@ abstract final class AppType {
     fontWeight: FontWeight.w600,
     fontFeatures: tnum,
   );
+
+  /// Campo monetário em foco (DS §4.2).
+  static const TextStyle valueDisplay = TextStyle(
+    fontFamily: numberFamily,
+    fontSize: 40,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -1,
+    height: 1.0,
+    fontFeatures: tnum,
+  );
+
+  /// Teclas do keypad numérico próprio (DS §4.2 — uso opcional).
+  static const TextStyle valueKeypadKey = TextStyle(
+    fontFamily: numberFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w600,
+    fontFeatures: tnum,
+  );
 }

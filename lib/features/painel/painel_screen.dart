@@ -4,19 +4,22 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
+import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
 import '../../core/config/app_config.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
-import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
+import '../../core/theme/tokens.dart';
 import '../../core/ui/divisao_bar.dart';
+import '../../core/ui/empty_state_hero.dart';
 import '../../core/ui/estimativa_seal.dart';
+import '../../core/ui/hero_value_card.dart';
+import '../../core/ui/tool_action_card.dart';
 
-/// Painel (hub). Três estados explícitos (Blueprint §5.9): vazio (primeiro uso),
-/// pronto (com cálculo) e erro (dado salvo corrompido). A virada validada dá à
-/// Divisão e a "Recebi um pagamento" o peso de protagonistas.
+/// Painel (hub). Três estados (Blueprint §5.9). A virada validada dá à Divisão
+/// e aos tools recorrentes o peso de protagonistas (UI-SPEC §2.1).
 class PainelScreen extends ConsumerWidget {
   const PainelScreen({super.key});
 
@@ -35,7 +38,7 @@ class PainelScreen extends ConsumerWidget {
         ],
       ),
       body: switch (state) {
-        ProfileEmpty() => const _EmptyView(),
+        ProfileEmpty() => EmptyStateHero(onComecar: () => context.push(Routes.calc)),
         ProfileError(message: final String m) => _ErrorView(message: m),
         ProfileReady(perfil: final Perfil p) => _PainelBody(perfil: p),
       },
@@ -43,43 +46,6 @@ class PainelScreen extends ConsumerWidget {
   }
 }
 
-/// Estado vazio (§5.8): fisga a dor, promete pouco esforço, reforça privacidade.
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
-  @override
-  Widget build(BuildContext context) {
-    final TextTheme t = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text('Você provavelmente cobra menos do que deveria.', style: t.headlineSmall),
-          const SizedBox(height: 12),
-          Text('Descubra seu valor-hora justo em 5 perguntas.', style: t.bodyLarge),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () => context.push(Routes.calc),
-            child: const Text('Começar'),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Icon(Icons.lock_outline, size: 16),
-              const SizedBox(width: 6),
-              Text('Leva 2 minutos · 100% offline', style: t.labelMedium),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Erro de leitura (§5.9): distinto de vazio — o dado existia mas não abriu.
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.message});
 
@@ -87,21 +53,23 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Icon(Icons.error_outline, size: 40),
-          const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () => context.push(Routes.calc),
-            child: const Text('Começar'),
-          ),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Space.x6),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Icon(Icons.error_outline, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(height: Space.x3),
+            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+            const SizedBox(height: Space.x6),
+            FilledButton(
+              onPressed: () => context.push(Routes.calc),
+              child: const Text('Começar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -119,53 +87,56 @@ class _PainelBody extends StatelessWidget {
     final ValorHoraResult r = computeValorHora(perfil);
     final Divisao div = divisaoFromProfile(perfil, r);
     final String regimeTag = Regime.of(perfil.regime).tag;
+    final bool stale = tabelasDefasadas(DateTime.now());
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(Space.x4),
       children: <Widget>[
-        Text('SEU VALOR-HORA', style: theme.textTheme.labelLarge),
-        const SizedBox(height: 4),
-        Text(
-          '${moneyBRL(r.valorHora)} /hora',
-          style: AppType.valueHero.copyWith(color: theme.colorScheme.primary),
+        HeroValueCard(
+          valorHora: r.valorHora,
+          subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
+          onVerComoCheguei: () => context.push(Routes.detalhe),
+          staleAno: stale ? kTabelasAno : null,
         ),
-        Text('pra ganhar ${moneyBRL(r.lucro)}/mês', style: theme.textTheme.bodyLarge),
-        const SizedBox(height: 24),
+        const SizedBox(height: Space.x6),
 
-        // Os dois tools recorrentes — protagonistas (a virada).
-        FilledButton.icon(
-          onPressed: () => context.push(Routes.reserva),
-          icon: const Icon(Icons.payments_outlined),
-          label: const Text('Recebi um pagamento'),
+        // Os dois tools recorrentes, protagonistas (a virada) — peso >= herói.
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: ToolActionCard(
+                icon: Icons.payments_outlined,
+                title: 'Recebi um\npagamento',
+                onTap: () => context.push(Routes.reserva),
+              ),
+            ),
+            const SizedBox(width: Space.x3),
+            Expanded(
+              child: ToolActionCard(
+                icon: Icons.request_quote_outlined,
+                title: 'Vou orçar\num projeto',
+                onTap: () => context.push(Routes.simulador),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => context.push(Routes.simulador),
-          icon: const Icon(Icons.request_quote_outlined),
-          label: const Text('Vou orçar um projeto'),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: Space.x6),
 
-        // A Divisão — a assinatura, mostrando pra onde vai cada real.
-        Text('DE CADA MÊS', style: theme.textTheme.labelLarge),
-        const SizedBox(height: 8),
+        Text('DE CADA MÊS',
+            style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: Space.x3),
         DivisaoBar(lucro: div.lucro, reserva: div.reserva, custo: div.custo),
-        const SizedBox(height: 8),
-        Text(
-          'Reserve ~${r.reservaPct}% de cada pagamento (regime: $regimeTag).',
-          style: theme.textTheme.bodyMedium?.copyWith(color: d.reserva),
-        ),
-        const SizedBox(height: 24),
+        const SizedBox(height: Space.x2),
+        Text('Reserve ~${r.reservaPct}% de cada pagamento (regime: $regimeTag).',
+            style: theme.textTheme.bodyMedium?.copyWith(color: d.reserva)),
+        const SizedBox(height: Space.x6),
 
-        TextButton(
-          onPressed: () => context.push(Routes.detalhe),
-          child: const Text('Ver como cheguei'),
-        ),
-        TextButton(
+        FilledButton.icon(
           onPressed: () => context.push(Routes.calc),
-          child: const Text('Recalcular'),
+          icon: const Icon(Icons.calculate_outlined),
+          label: const Text('Recalcular'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.x4),
         const EstimativaSeal(),
       ],
     );

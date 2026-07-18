@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'billing/entitlement.dart';
 import 'data/backup_service.dart';
 import 'data/profile_repository.dart';
+import 'data/reserva_history_repository.dart';
 import 'model/perfil.dart';
+import 'model/reserva_entry.dart';
 import 'settings/settings_repository.dart';
 
 /// Injetado em main() via override (prefs já carregado no boot).
@@ -126,3 +128,27 @@ class TelemetryNotifier extends Notifier<bool> {
 
 final NotifierProvider<TelemetryNotifier, bool> telemetryProvider =
     NotifierProvider<TelemetryNotifier, bool>(TelemetryNotifier.new);
+
+// ---- Histórico de reservas (gancho de hábito, IA §2.12) ----
+final Provider<ReservaHistoryRepository> reservaHistoryRepositoryProvider =
+    Provider<ReservaHistoryRepository>(
+  (Ref ref) => ReservaHistoryRepository(ref.watch(sharedPreferencesProvider)),
+);
+
+class ReservaHistoryNotifier extends Notifier<List<ReservaEntry>> {
+  @override
+  List<ReservaEntry> build() => ref.read(reservaHistoryRepositoryProvider).loadAll();
+
+  Future<void> add(ReservaEntry entry) async {
+    await ref.read(reservaHistoryRepositoryProvider).add(entry);
+    state = ref.read(reservaHistoryRepositoryProvider).loadAll();
+  }
+
+  Future<void> clear() async {
+    await ref.read(reservaHistoryRepositoryProvider).clear();
+    state = <ReservaEntry>[];
+  }
+}
+
+final NotifierProvider<ReservaHistoryNotifier, List<ReservaEntry>> reservaHistoryProvider =
+    NotifierProvider<ReservaHistoryNotifier, List<ReservaEntry>>(ReservaHistoryNotifier.new);
