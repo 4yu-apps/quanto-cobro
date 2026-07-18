@@ -4,6 +4,7 @@ import '../core/model/perfil.dart';
 import '../features/calc/calc_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/detalhe/detalhe_screen.dart';
+import '../features/historico/historico_screen.dart';
 import '../features/legal/legal_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/painel/painel_screen.dart';
@@ -34,6 +35,7 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       GoRoute(path: Routes.config, builder: (_, _) => const ConfigScreen()),
       GoRoute(path: Routes.pro, builder: (_, _) => const ProScreen()),
       GoRoute(path: Routes.legal, builder: (_, _) => const LegalScreen()),
+      GoRoute(path: Routes.historico, builder: (_, _) => const HistoricoScreen()),
     ],
   );
 }

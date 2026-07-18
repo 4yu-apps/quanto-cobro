@@ -12,4 +12,5 @@ abstract final class Routes {
   static const String config = '/config';
   static const String pro = '/pro';
   static const String legal = '/legal';
+  static const String historico = '/historico';
 }
