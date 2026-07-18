@@ -63,8 +63,31 @@ abstract final class AppTheme {
       ),
 
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: Space.x6),
-      chipTheme: const ChipThemeData(shape: StadiumBorder()),
+      // Chips de custo: ambar-lembranca (DS 6.8) — o "custo invisivel" puxa o olho.
+      chipTheme: ChipThemeData(
+        shape: const StadiumBorder(),
+        backgroundColor: scheme.tertiaryContainer,
+        side: BorderSide.none,
+        labelStyle: textTheme.labelMedium?.copyWith(color: scheme.onTertiaryContainer),
+        iconTheme: IconThemeData(color: scheme.onTertiaryContainer, size: 18),
+      ),
       listTileTheme: const ListTileThemeData(minVerticalPadding: 12),
+      // No claro os tons de superficie quase nao separam: borda sutil resolve
+      // (COLOR-GUIDE 3.2). No escuro a hierarquia e tonal, sem borda.
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(Radii.lg),
+          side: scheme.brightness == Brightness.light
+              ? BorderSide(color: scheme.outlineVariant)
+              : BorderSide.none,
+        ),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radii.sm)),
+        insetPadding: EdgeInsets.all(Space.x4),
+      ),
     );
   }
 

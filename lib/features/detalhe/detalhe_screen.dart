@@ -5,19 +5,24 @@ import 'package:go_router/go_router.dart';
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
+import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 
 /// Detalhamento ("como cheguei aqui", Blueprint §5.4): a conta linha a linha,
-/// com renda e horas EDITÁVEIS inline e recálculo ao vivo (causa -> efeito).
-/// Transparência = confiança em app de dinheiro.
+/// custo a custo, com renda e horas editáveis inline e recálculo ao vivo.
+/// Aceita o perfil via rota (extra) — assim o Resultado mostra a conta CERTA
+/// mesmo antes de salvar (confiança é a função desta tela).
 class DetalheScreen extends ConsumerStatefulWidget {
-  const DetalheScreen({super.key});
+  const DetalheScreen({super.key, this.perfil});
+
+  final Perfil? perfil;
 
   @override
   ConsumerState<DetalheScreen> createState() => _DetalheScreenState();
@@ -25,17 +30,25 @@ class DetalheScreen extends ConsumerStatefulWidget {
 
 class _DetalheScreenState extends ConsumerState<DetalheScreen> {
   Perfil? _perfil;
+  bool _dirty = false;
   final TextEditingController _renda = TextEditingController();
   final TextEditingController _horas = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    final ProfileState st = ref.read(profileProvider);
-    if (st is ProfileReady) {
-      _perfil = st.perfil;
-      _renda.text = st.perfil.renda.round().toString();
-      _horas.text = st.perfil.horas.toString();
+    // Prioridade: perfil vindo da rota (draft do Resultado) > perfil salvo.
+    final Perfil? fromRoute = widget.perfil;
+    if (fromRoute != null) {
+      _perfil = fromRoute;
+    } else {
+      final ProfileState st = ref.read(profileProvider);
+      if (st is ProfileReady) _perfil = st.perfil;
+    }
+    final Perfil? p = _perfil;
+    if (p != null) {
+      _renda.text = p.renda.round().toString();
+      _horas.text = p.horas.toString();
     }
   }
 
@@ -47,6 +60,11 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
   }
 
   int _digits(String s) => int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
+  void _edit(Perfil novo) => setState(() {
+        _perfil = novo;
+        _dirty = true;
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +81,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                     const Text('Você ainda não tem um cálculo salvo.'),
                     const SizedBox(height: Space.x4),
                     FilledButton(
-                      onPressed: () => context.go(Routes.calc),
+                      onPressed: () => context.push(Routes.calc),
                       child: const Text('Fazer meu cálculo'),
                     ),
                   ],
@@ -87,8 +105,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                 controller: _renda,
                 label: 'Renda desejada',
                 prefix: r'R$ ',
-                onChanged: (String v) =>
-                    setState(() => _perfil = p.copyWith(renda: _digits(v).toDouble())),
+                onChanged: (String v) => _edit(p.copyWith(renda: _digits(v).toDouble())),
               ),
             ),
             const SizedBox(width: Space.x3),
@@ -97,22 +114,22 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                 controller: _horas,
                 label: 'Horas',
                 suffix: 'h',
-                onChanged: (String v) => setState(() => _perfil = p.copyWith(horas: _digits(v))),
+                onChanged: (String v) => _edit(p.copyWith(horas: _digits(v))),
               ),
             ),
           ],
         ),
         const SizedBox(height: Space.x6),
         Card(
-          elevation: 0,
           color: theme.colorScheme.surfaceContainerLow,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radii.lg)),
           child: Padding(
             padding: const EdgeInsets.all(Space.x5),
             child: Column(
               children: <Widget>[
                 _linha(context, 'Renda desejada', moneyBRL(p.renda)),
                 _linha(context, '+ Custos fixos', moneyBRL(r.custos)),
+                // A transparência mora aqui: cada custo, linha a linha.
+                for (final Custo c in p.custos) _sublinha(context, c.label, moneyBRL(c.valor)),
                 if (p.provisaoOn) _linha(context, '+ Provisão férias/13º', moneyBRL(r.provisao)),
                 _linha(context, '+ Imposto estimado (${r.reservaPct}%)', moneyBRL(r.imposto)),
                 const Divider(),
@@ -123,8 +140,11 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text('= Valor-hora', style: theme.textTheme.titleMedium),
-                    MoneyCountUp(r.valorHora,
-                        style: AppType.valueMd.copyWith(color: theme.colorScheme.primary)),
+                    MoneyCountUp(
+                      r.valorHora,
+                      style: AppType.valueLg.copyWith(color: theme.colorScheme.primary),
+                      semanticLabel: 'Valor-hora: ${moneyBRL(r.valorHora)}',
+                    ),
                   ],
                 ),
               ],
@@ -139,13 +159,16 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         ),
         const SizedBox(height: Space.x2),
         FilledButton(
-          onPressed: () async {
-            await ref.read(profileProvider.notifier).save(p);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('Alterações salvas')));
-            }
-          },
+          onPressed: !_dirty
+              ? null
+              : () async {
+                  Haptics.commit();
+                  await ref.read(profileProvider.notifier).save(p);
+                  if (context.mounted) {
+                    setState(() => _dirty = false);
+                    if (context.canPop()) context.pop();
+                  }
+                },
           child: const Text('Salvar alterações'),
         ),
         const SizedBox(height: Space.x4),
@@ -156,9 +179,27 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
 
   Widget _linha(BuildContext context, String label, String valor, {bool forte = false}) {
     final TextTheme t = Theme.of(context).textTheme;
-    final TextStyle? style = forte ? t.titleMedium : t.bodyLarge;
+    final TextStyle? style = (forte ? t.titleMedium : t.bodyLarge)
+        ?.copyWith(fontFeatures: AppType.tnum);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Space.x1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Flexible(child: Text(label, style: style)),
+          Text(valor, style: style),
+        ],
+      ),
+    );
+  }
+
+  Widget _sublinha(BuildContext context, String label, String valor) {
+    final TextStyle? style = Theme.of(context)
+        .textTheme
+        .labelMedium
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFeatures: AppType.tnum);
+    return Padding(
+      padding: const EdgeInsets.only(left: Space.x4, top: 2, bottom: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[

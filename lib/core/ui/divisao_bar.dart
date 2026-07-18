@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../common/money.dart';
+import '../theme/app_typography.dart';
 import '../theme/divisao_colors.dart';
 import '../theme/motion.dart';
 import '../theme/tokens.dart';
@@ -82,6 +83,7 @@ class DivisaoBar extends StatelessWidget {
   Widget _legend(BuildContext context, Color color, IconData icon, String label, double value,
       int pct, bool forte) {
     final TextTheme t = Theme.of(context).textTheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x1),
       child: Row(
@@ -89,15 +91,25 @@ class DivisaoBar extends StatelessWidget {
           Container(
             width: 12,
             height: 12,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(3),
+              // O segmento-heroi ganha sinal por FORMA, nao so por peso.
+              border: forte
+                  ? Border.all(color: cs.onSurface.withValues(alpha: 0.35))
+                  : null,
+            ),
           ),
           const SizedBox(width: Space.x2),
-          Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(icon, size: 16, color: cs.onSurfaceVariant),
           const SizedBox(width: Space.x2),
-          Expanded(child: Text(label, style: t.bodyMedium)),
+          Expanded(
+            child: Text(label, style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+          ),
           Text(
             '${moneyBRL(value)}  ·  $pct%',
-            style: forte ? t.labelLarge?.copyWith(fontWeight: FontWeight.w700) : t.labelLarge,
+            style: (forte ? t.labelLarge?.copyWith(fontWeight: FontWeight.w700) : t.labelLarge)
+                ?.copyWith(fontFeatures: AppType.tnum, color: cs.onSurface),
           ),
         ],
       ),

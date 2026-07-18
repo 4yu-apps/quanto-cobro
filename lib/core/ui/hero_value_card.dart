@@ -26,10 +26,22 @@ class HeroValueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    return Card(
-      elevation: 0,
-      color: cs.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radii.xl)),
+    final bool dark = theme.brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        // "Wash de vitrine" (COLOR-GUIDE 5.1): gradiente tonal sutil no escuro;
+        // no claro, superficie chapada + borda sutil.
+        gradient: dark
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[cs.surfaceContainerHigh, cs.surfaceContainer],
+              )
+            : null,
+        color: dark ? null : cs.surfaceContainerHigh,
+        borderRadius: const BorderRadius.all(Radii.xl),
+        border: dark ? null : Border.all(color: cs.outlineVariant),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(Space.x6),
         child: Column(

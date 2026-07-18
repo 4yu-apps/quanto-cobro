@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
 import '../../core/providers.dart';
+import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/divisao_bar.dart';
 
@@ -38,7 +39,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_page == _last) {
       _finish();
     } else {
-      _pc.nextPage(duration: Motion.base, curve: Curves.easeOut);
+      _pc.nextPage(
+        duration: reduceMotionOf(context) ? const Duration(milliseconds: 1) : Motion.base,
+        curve: MotionCurves.standard,
+      );
     }
   }
 
@@ -68,12 +72,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 for (int i = 0; i <= _last; i++)
-                  Container(
-                    width: 8,
+                  AnimatedContainer(
+                    duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+                    curve: MotionCurves.standard,
+                    width: i == _page ? 20 : 8,
                     height: 8,
                     margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
+                      borderRadius: const BorderRadius.all(Radii.full),
                       color: i == _page ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
                     ),
                   ),
@@ -103,7 +109,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (icon != null) ...<Widget>[
-            Icon(icon, size: 48, color: theme.colorScheme.primary),
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 44, color: theme.colorScheme.onPrimaryContainer),
+            ),
             const SizedBox(height: Space.x6),
           ],
           Text(title, style: theme.textTheme.headlineMedium),
@@ -127,7 +141,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       icon: null,
       title: 'Veja pra onde vai cada real.',
       body: 'Toda vez que um pagamento cair, o app mostra o que é seu, o que é do Leão e o que foi custo.',
-      extra: const DivisaoBar(lucro: 5000, reserva: 1600, custo: 850));
+      extra: Card(
+        color: theme.colorScheme.surfaceContainerHigh,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radii.xl)),
+        child: const Padding(
+          padding: EdgeInsets.all(Space.x5),
+          child: ExcludeSemantics(child: DivisaoBar(lucro: 5000, reserva: 1600, custo: 850)),
+        ),
+      ));
 
   Widget _page3(ThemeData theme) => _pageBody(theme,
       icon: Icons.lock_outline,

@@ -19,8 +19,8 @@ import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
 
 /// Reserva por pagamento (Blueprint §5.5) — o CAMINHO DE OURO (uso recorrente).
-/// Resultado ao vivo, sem botão "calcular". Regime herdado do perfil. Pode
-/// salvar no histórico (gancho de hábito).
+/// Resultado ao vivo dentro de um "cofre" visual; salvar fecha o loop
+/// (Guardado + Desfazer + Registrar outro), sem duplicata acidental.
 class ReservaScreen extends ConsumerStatefulWidget {
   const ReservaScreen({super.key});
 
@@ -31,6 +31,7 @@ class ReservaScreen extends ConsumerStatefulWidget {
 class _ReservaScreenState extends ConsumerState<ReservaScreen> {
   final TextEditingController _valor = TextEditingController();
   RegimeId? _regime;
+  bool _saved = false;
 
   @override
   void dispose() {
@@ -43,6 +44,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
     final ProfileState st = ref.watch(profileProvider);
@@ -52,6 +54,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
     final int amount = _digits(_valor.text);
     final bool temValor = amount > 0;
     final ReservaResult? res = temValor ? computeReserva(amount.toDouble(), regime) : null;
+    final bool dark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -59,7 +62,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.history),
-            tooltip: 'Histórico',
+            tooltip: 'Histórico de reservas',
             onPressed: () => context.push(Routes.historico),
           ),
         ],
@@ -72,105 +75,213 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
             label: 'Quanto você recebeu?',
             prefix: r'R$ ',
             autofocus: true,
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => setState(() => _saved = false),
           ),
           const SizedBox(height: Space.x3),
-          Row(
+          // Regime: chips na linguagem do app (alvo generoso, sem dropdown 2014).
+          Wrap(
+            spacing: Space.x2,
             children: <Widget>[
-              Text('Regime:', style: theme.textTheme.bodyMedium),
-              const SizedBox(width: Space.x3),
-              DropdownButton<RegimeId>(
-                value: regime,
-                onChanged: (RegimeId? v) {
-                  Haptics.select();
-                  setState(() => _regime = v);
-                },
-                items: <DropdownMenuItem<RegimeId>>[
-                  for (final Regime r in Regime.all.values)
-                    DropdownMenuItem<RegimeId>(value: r.id, child: Text(r.tag)),
-                ],
-              ),
+              for (final Regime r in Regime.all.values)
+                ChoiceChip(
+                  label: Text(r.tag),
+                  selected: regime == r.id,
+                  backgroundColor: cs.surfaceContainerLow,
+                  selectedColor: cs.secondaryContainer,
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(
+                    color: regime == r.id ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+                  ),
+                  side: regime == r.id
+                      ? BorderSide(color: cs.primary, width: 1.5)
+                      : BorderSide(color: cs.outlineVariant),
+                  onSelected: (_) {
+                    Haptics.select();
+                    setState(() {
+                      _regime = r.id;
+                      _saved = false;
+                    });
+                  },
+                ),
             ],
           ),
           const SizedBox(height: Space.x6),
-          if (res == null)
-            Text('Digite o valor que caiu pra ver quanto guardar.',
-                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.outline))
-          else ...<Widget>[
-            Text('RESERVE PRO LEÃO',
-                style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            const SizedBox(height: Space.x1),
-            MoneyCountUp(res.reserva,
-                duration: Motion.quick,
-                style: AppType.valueHero.copyWith(color: d.reserva)),
-            const SizedBox(height: Space.x1),
-            Text('Sobra pra usar: ${moneyBRL(res.sobra)}', style: theme.textTheme.bodyLarge),
-            const SizedBox(height: Space.x4),
-            // Barra colapsada: Reserva x Sobra (DS §6.2).
-            ClipRRect(
-              borderRadius: const BorderRadius.all(Radii.sm),
-              child: SizedBox(
-                height: 20,
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints c) {
-                    final bool reduce = reduceMotionOf(context);
-                    final double w = c.maxWidth - 2;
-                    final double fR = res.reserva / amount;
-                    return Row(
+          AnimatedSwitcher(
+            duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+            child: res == null
+                ? Padding(
+                    key: const ValueKey<bool>(true),
+                    padding: const EdgeInsets.only(top: Space.x8),
+                    child: Column(
                       children: <Widget>[
-                        AnimatedContainer(
-                          duration: reduce ? Duration.zero : Motion.quick,
-                          curve: MotionCurves.standard,
-                          width: w * fR,
-                          color: d.reserva,
-                        ),
-                        const SizedBox(width: 2),
-                        AnimatedContainer(
-                          duration: reduce ? Duration.zero : Motion.quick,
-                          curve: MotionCurves.standard,
-                          width: w * (1 - fR),
-                          color: d.lucro,
+                        Icon(Icons.payments_outlined, size: 40, color: cs.onSurfaceVariant),
+                        const SizedBox(height: Space.x3),
+                        Text(
+                          'Digite o valor que caiu pra ver quanto guardar.',
+                          textAlign: TextAlign.center,
+                          style:
+                              theme.textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
                         ),
                       ],
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: Space.x2),
-            Row(
-              children: <Widget>[
-                _legenda(context, d.reserva, 'Reserva', res.reserva.toDouble()),
-                const SizedBox(width: Space.x4),
-                _legenda(context, d.lucro, 'Sobra', res.sobra),
-              ],
-            ),
-            const SizedBox(height: Space.x4),
-            FilledButton.tonal(
-              onPressed: () {
-                Haptics.commit();
-                ref.read(reservaHistoryProvider.notifier).add(
-                      ReservaEntry(
-                        valor: amount.toDouble(),
-                        reserva: res.reserva,
-                        regimeTag: Regime.of(regime).tag,
-                        at: DateTime.now(),
+                    ),
+                  )
+                : Column(
+                    key: const ValueKey<bool>(false),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      // O "cofre": o dinheiro cai dentro de uma superfície.
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: dark
+                              ? LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: <Color>[cs.surfaceContainerHigh, cs.surfaceContainer],
+                                )
+                              : null,
+                          color: dark ? null : cs.surfaceContainerHigh,
+                          borderRadius: const BorderRadius.all(Radii.xl),
+                          border: dark ? null : Border.all(color: cs.outlineVariant),
+                        ),
+                        padding: const EdgeInsets.all(Space.x6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('RESERVE PRO LEÃO',
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                    color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+                            const SizedBox(height: Space.x1),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: MoneyCountUp(
+                                res.reserva,
+                                duration: Motion.quick,
+                                style: AppType.valueHero.copyWith(color: d.reserva),
+                                semanticLabel:
+                                    'Reserve ${moneyBRL(res.reserva)} deste pagamento',
+                              ),
+                            ),
+                            const SizedBox(height: Space.x1),
+                            Text('Sobra pra usar: ${moneyBRL(res.sobra)}',
+                                style: theme.textTheme.bodyLarge),
+                            const SizedBox(height: Space.x4),
+                            _barraColapsada(context, d, res, amount),
+                            const SizedBox(height: Space.x2),
+                            Row(
+                              children: <Widget>[
+                                _legenda(context, d.reserva, 'Reserva', res.reserva.toDouble()),
+                                const SizedBox(width: Space.x4),
+                                _legenda(context, d.lucro, 'Sobra', res.sobra),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Guardado no histórico')),
-                );
-              },
-              child: const Text('Salvar no histórico'),
-            ),
-            const SizedBox(height: Space.x4),
-            if (tabelasDefasadas(DateTime.now())) ...<Widget>[
-              StaleBanner(ano: kTabelasAno),
-              const SizedBox(height: Space.x3),
-            ],
-            const EstimativaSeal(short: true),
-          ],
+                      const SizedBox(height: Space.x4),
+                      if (_saved)
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: FilledButton.tonal(
+                                onPressed: null,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const <Widget>[
+                                    Icon(Icons.check, size: 20),
+                                    SizedBox(width: Space.x2),
+                                    Text('Guardado'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: Space.x3),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _valor.clear();
+                                  _saved = false;
+                                });
+                              },
+                              child: const Text('Registrar outro'),
+                            ),
+                          ],
+                        )
+                      else
+                        FilledButton.tonal(
+                          onPressed: () {
+                            Haptics.commit();
+                            final ReservaEntry entry = ReservaEntry(
+                              valor: amount.toDouble(),
+                              reserva: res.reserva,
+                              regimeTag: Regime.of(regime).tag,
+                              at: DateTime.now(),
+                            );
+                            ref.read(reservaHistoryProvider.notifier).add(entry);
+                            setState(() => _saved = true);
+                            ScaffoldMessenger.of(context)
+                              ..clearSnackBars()
+                              ..showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('${moneyBRL(res.reserva)} guardado no histórico'),
+                                  action: SnackBarAction(
+                                    label: 'Desfazer',
+                                    onPressed: () {
+                                      ref
+                                          .read(reservaHistoryProvider.notifier)
+                                          .remove(entry);
+                                      if (mounted) setState(() => _saved = false);
+                                    },
+                                  ),
+                                ),
+                              );
+                          },
+                          child: const Text('Salvar no histórico'),
+                        ),
+                      const SizedBox(height: Space.x4),
+                      if (tabelasDefasadas(DateTime.now())) ...<Widget>[
+                        StaleBanner(ano: kTabelasAno),
+                        const SizedBox(height: Space.x3),
+                      ],
+                      const EstimativaSeal(short: true),
+                    ],
+                  ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _barraColapsada(
+      BuildContext context, DivisaoColors d, ReservaResult res, int amount) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radii.sm),
+      child: SizedBox(
+        height: 20,
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints c) {
+            final bool reduce = reduceMotionOf(context);
+            final double w = c.maxWidth - 2;
+            final double fR = amount <= 0 ? 0 : res.reserva / amount;
+            return Row(
+              children: <Widget>[
+                AnimatedContainer(
+                  duration: reduce ? Duration.zero : Motion.quick,
+                  curve: MotionCurves.standard,
+                  width: w * fR,
+                  color: d.reserva,
+                ),
+                const SizedBox(width: 2),
+                AnimatedContainer(
+                  duration: reduce ? Duration.zero : Motion.quick,
+                  curve: MotionCurves.standard,
+                  width: w * (1 - fR),
+                  color: d.lucro,
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -185,7 +296,11 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
           decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
         ),
         const SizedBox(width: Space.x2),
-        Text('$label ${moneyBRL(valor)}', style: Theme.of(context).textTheme.labelLarge),
+        Text('$label ${moneyBRL(valor)}',
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontFeatures: AppType.tnum)),
       ],
     );
   }

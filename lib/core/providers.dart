@@ -85,7 +85,10 @@ final NotifierProvider<ThemeModeNotifier, ThemeMode> themeModeProvider =
 
 // ---- Backup (export/import por texto, sem nuvem) ----
 final Provider<BackupService> backupServiceProvider = Provider<BackupService>(
-  (Ref ref) => BackupService(ref.watch(profileRepositoryProvider)),
+  (Ref ref) => BackupService(
+    ref.watch(profileRepositoryProvider),
+    ref.watch(reservaHistoryRepositoryProvider),
+  ),
 );
 
 // ---- Entitlement Pro ----
@@ -147,6 +150,23 @@ class ReservaHistoryNotifier extends Notifier<List<ReservaEntry>> {
   Future<void> clear() async {
     await ref.read(reservaHistoryRepositoryProvider).clear();
     state = <ReservaEntry>[];
+  }
+
+  /// Remove uma entrada (Desfazer / swipe). Reescreve a lista persistida.
+  Future<void> remove(ReservaEntry entry) async {
+    final List<ReservaEntry> all = List<ReservaEntry>.of(state)
+      ..removeWhere((ReservaEntry e) => e.at == entry.at && e.valor == entry.valor);
+    await ref.read(reservaHistoryRepositoryProvider).replaceAll(all);
+    state = all;
+  }
+
+  /// Reinsere uma entrada (Desfazer do swipe).
+  Future<void> restore(ReservaEntry entry) async {
+    final List<ReservaEntry> all = List<ReservaEntry>.of(state)
+      ..insert(0, entry)
+      ..sort((ReservaEntry a, ReservaEntry b) => b.at.compareTo(a.at));
+    await ref.read(reservaHistoryRepositoryProvider).replaceAll(all);
+    state = all;
   }
 }
 

@@ -17,8 +17,9 @@ import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/stale_banner.dart';
 
-/// Resultado (Blueprint §5.3): as 3 respostas com hierarquia clara. O perfil
-/// chega da calculadora via `extra`. Momento "aha": o herói faz count-up.
+/// Resultado (Blueprint §5.3): as 3 respostas com hierarquia clara. Regra da
+/// casa: resposta de dinheiro vive numa SUPERFÍCIE, nunca solta no fundo —
+/// resposta-mãe em cima (card vitrine), anatomia embaixo (card de leitura).
 class ResultadoScreen extends ConsumerWidget {
   const ResultadoScreen({super.key, this.perfil});
 
@@ -40,7 +41,7 @@ class ResultadoScreen extends ConsumerWidget {
                     textAlign: TextAlign.center),
                 const SizedBox(height: Space.x4),
                 FilledButton(
-                  onPressed: () => context.go(Routes.calc),
+                  onPressed: () => context.push(Routes.calc),
                   child: const Text('Refazer cálculo'),
                 ),
               ],
@@ -51,56 +52,133 @@ class ResultadoScreen extends ConsumerWidget {
     }
 
     final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
     final ValorHoraResult r = computeValorHora(p);
     final Divisao div = divisaoFromProfile(p, r);
     final bool custoMaiorQueMeta = p.custosTotal > p.renda;
     final bool stale = tabelasDefasadas(DateTime.now());
+    final bool dark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Seu resultado')),
       body: ListView(
         padding: const EdgeInsets.all(Space.x4),
         children: <Widget>[
-          Text('COBRE POR HORA',
-              style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          const SizedBox(height: Space.x1),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: <Widget>[
-              MoneyCountUp(
-                r.valorHora,
-                style: AppType.valueHero.copyWith(color: theme.colorScheme.primary),
-                semanticLabel: 'Cobre ${moneyBRL(r.valorHora)} por hora',
-              ),
-              Text(' /hora',
-                  style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            ],
-          ),
-          Text('Esse é o seu piso. Cobre mais quando o trabalho valer mais.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          const SizedBox(height: Space.x2),
-          Text('≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
-              style: theme.textTheme.bodyMedium),
-          const SizedBox(height: Space.x6),
-          StaggerIn(index: 1, child: _bloco(context, 'DE CADA PAGAMENTO, RESERVE', '${r.reservaPct}%', AppType.valueXl, d.reserva)),
-          const SizedBox(height: Space.x6),
-          StaggerIn(index: 2, child: _bloco(context, 'LUCRO REAL ESTIMADO', '${moneyBRL(r.lucro)}/mês', AppType.valueXl, d.lucro)),
-          const SizedBox(height: Space.x6),
+          // Card-vitrine: a resposta-mãe (mesma moldura do herói do Painel).
           StaggerIn(
-            index: 3,
-            child: DivisaoBar(
-              lucro: div.lucro,
-              reserva: div.reserva,
-              custo: div.custo,
-              emphasis: DivisaoEmphasis.lucro,
+            index: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: dark
+                    ? LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: <Color>[cs.surfaceContainerHigh, cs.surfaceContainer],
+                      )
+                    : null,
+                color: dark ? null : cs.surfaceContainerHigh,
+                borderRadius: const BorderRadius.all(Radii.xl),
+                border: dark ? null : Border.all(color: cs.outlineVariant),
+              ),
+              padding: const EdgeInsets.all(Space.x6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('COBRE POR HORA',
+                      style: theme.textTheme.labelLarge
+                          ?.copyWith(color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+                  const SizedBox(height: Space.x1),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: <Widget>[
+                        MoneyCountUp(
+                          r.valorHora,
+                          style: AppType.valueHero.copyWith(color: cs.primary),
+                          semanticLabel: 'Cobre ${moneyBRL(r.valorHora)} por hora',
+                        ),
+                        Text(' /hora',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(color: cs.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: Space.x1),
+                  Text('Esse é o seu piso. Cobre mais quando o trabalho valer mais.',
+                      style:
+                          theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  const SizedBox(height: Space.x2),
+                  Text(
+                      '≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
+                      style: theme.textTheme.bodyMedium),
+                ],
+              ),
             ),
           ),
+          const SizedBox(height: Space.x4),
+
+          // Card de anatomia: as outras 2 respostas + a Divisão.
+          StaggerIn(
+            index: 1,
+            child: Card(
+              color: cs.surfaceContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(Space.x5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    MergeSemantics(
+                      child: _bloco(
+                          context, 'DE CADA PAGAMENTO, RESERVE', '${r.reservaPct}%', d.reserva),
+                    ),
+                    const Divider(),
+                    MergeSemantics(
+                      child: _bloco(
+                          context, 'LUCRO REAL ESTIMADO', '${moneyBRL(r.lucro)}/mês', d.lucro),
+                    ),
+                    const Divider(),
+                    DivisaoBar(
+                      lucro: div.lucro,
+                      reserva: div.reserva,
+                      custo: div.custo,
+                      emphasis: DivisaoEmphasis.lucro,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           if (custoMaiorQueMeta) ...<Widget>[
             const SizedBox(height: Space.x3),
-            Text('Seus custos estão maiores que a renda que você quer. Vale rever.',
-                style: theme.textTheme.bodyMedium?.copyWith(color: d.alerta)),
+            StaggerIn(
+              index: 2,
+              child: Container(
+                padding: const EdgeInsets.all(Space.x3),
+                decoration: BoxDecoration(
+                  color: d.alertaContainer,
+                  borderRadius: const BorderRadius.all(Radii.md),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(Icons.trending_down, size: 20, color: d.onAlertaContainer),
+                    const SizedBox(width: Space.x2),
+                    Expanded(
+                      child: Text(
+                        'Seus custos estão maiores que a renda que você quer. Vale rever.',
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: d.onAlertaContainer),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
           if (stale) ...<Widget>[
             const SizedBox(height: Space.x3),
@@ -111,16 +189,14 @@ class ResultadoScreen extends ConsumerWidget {
             onPressed: () async {
               Haptics.commit();
               await ref.read(profileProvider.notifier).save(p);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(const SnackBar(content: Text('Perfil salvo')));
-                context.go(Routes.painel);
-              }
+              // Sem snackbar: o count-up + stagger do Painel É a confirmação
+              // (e o haptic já selou o gesto).
+              if (context.mounted) context.go(Routes.painel);
             },
             child: const Text('Salvar este perfil'),
           ),
           TextButton(
-            onPressed: () => context.push(Routes.detalhe),
+            onPressed: () => context.push(Routes.detalhe, extra: p),
             child: const Text('Ver detalhamento'),
           ),
           const SizedBox(height: Space.x4),
@@ -130,16 +206,22 @@ class ResultadoScreen extends ConsumerWidget {
     );
   }
 
-  Widget _bloco(BuildContext context, String label, String value, TextStyle style, Color color) {
+  Widget _bloco(BuildContext context, String label, String value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  letterSpacing: 0.5,
                 )),
         const SizedBox(height: Space.x1),
-        Text(value, style: style.copyWith(color: color)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(value,
+              maxLines: 1, style: AppType.valueXl.copyWith(color: color)),
+        ),
       ],
     );
   }

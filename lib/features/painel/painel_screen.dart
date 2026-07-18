@@ -9,7 +9,9 @@ import '../../core/common/money.dart';
 import '../../core/config/app_config.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
+import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
@@ -29,7 +31,15 @@ class PainelScreen extends ConsumerWidget {
     final ProfileState state = ref.watch(profileProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppConfig.appName),
+        title: Builder(
+          builder: (BuildContext context) => Text(
+            AppConfig.appName,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontFamily: AppType.numberFamily,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -76,19 +86,24 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-class _PainelBody extends StatelessWidget {
+class _PainelBody extends ConsumerWidget {
   const _PainelBody({required this.perfil});
 
   final Perfil perfil;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
     final ValorHoraResult r = computeValorHora(perfil);
     final Divisao div = divisaoFromProfile(perfil, r);
     final String regimeTag = Regime.of(perfil.regime).tag;
     final bool stale = tabelasDefasadas(DateTime.now());
+    final DateTime now = DateTime.now();
+    final int guardadoMes = ref
+        .watch(reservaHistoryProvider)
+        .where((ReservaEntry e) => e.at.year == now.year && e.at.month == now.month)
+        .fold<int>(0, (int s, ReservaEntry e) => s + e.reserva);
 
     return ListView(
       padding: const EdgeInsets.all(Space.x4),
@@ -107,38 +122,105 @@ class _PainelBody extends StatelessWidget {
         // Os dois tools recorrentes, protagonistas (a virada) — peso >= herói.
         StaggerIn(
           index: 1,
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: ToolActionCard(
-                  icon: Icons.payments_outlined,
-                  title: 'Recebi um\npagamento',
-                  onTap: () => context.push(Routes.reserva),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: ToolActionCard(
+                    icon: Icons.payments_outlined,
+                    title: 'Recebi um pagamento',
+                    onTap: () => context.push(Routes.reserva),
+                  ),
                 ),
-              ),
-              const SizedBox(width: Space.x3),
-              Expanded(
-                child: ToolActionCard(
-                  icon: Icons.request_quote_outlined,
-                  title: 'Vou orçar\num projeto',
-                  onTap: () => context.push(Routes.simulador),
+                const SizedBox(width: Space.x3),
+                Expanded(
+                  child: ToolActionCard(
+                    icon: Icons.request_quote_outlined,
+                    title: 'Vou orçar um projeto',
+                    onTap: () => context.push(Routes.simulador),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: Space.x6),
 
-        Text('DE CADA MÊS',
-            style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: Space.x3),
         StaggerIn(
           index: 2,
-          child: DivisaoBar(lucro: div.lucro, reserva: div.reserva, custo: div.custo),
+          child: Card(
+            color: theme.colorScheme.surfaceContainer,
+            child: InkWell(
+              onTap: () => context.push(Routes.detalhe),
+              borderRadius: const BorderRadius.all(Radii.lg),
+              child: Padding(
+                padding: const EdgeInsets.all(Space.x5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text('DE CADA MÊS',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.5,
+                        )),
+                    const SizedBox(height: Space.x3),
+                    DivisaoBar(lucro: div.lucro, reserva: div.reserva, custo: div.custo),
+                    const SizedBox(height: Space.x2),
+                    Row(
+                      children: <Widget>[
+                        Icon(Icons.lock_outline, size: 16, color: d.reserva),
+                        const SizedBox(width: Space.x2),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: <InlineSpan>[
+                                const TextSpan(text: 'Reserve '),
+                                TextSpan(
+                                  text: '~${r.reservaPct}%',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: d.reserva,
+                                    fontFeatures: AppType.tnum,
+                                  ),
+                                ),
+                                TextSpan(text: ' de cada pagamento (regime: $regimeTag).'),
+                              ],
+                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (guardadoMes > 0) ...<Widget>[
+                      const SizedBox(height: Space.x3),
+                      InkWell(
+                        onTap: () => context.push(Routes.historico),
+                        borderRadius: const BorderRadius.all(Radii.sm),
+                        child: Row(
+                          children: <Widget>[
+                            Icon(Icons.savings_outlined, size: 16, color: d.reserva),
+                            const SizedBox(width: Space.x2),
+                            Expanded(
+                              child: Text(
+                                'Você já guardou ${moneyBRL(guardadoMes)} este mês',
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right,
+                                size: 18, color: theme.colorScheme.onSurfaceVariant),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-        const SizedBox(height: Space.x2),
-        Text('Reserve ~${r.reservaPct}% de cada pagamento (regime: $regimeTag).',
-            style: theme.textTheme.bodyMedium?.copyWith(color: d.reserva)),
         const SizedBox(height: Space.x6),
 
         FilledButton.icon(

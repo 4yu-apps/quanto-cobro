@@ -89,7 +89,8 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       // Tools/consulta: gaveta lateral rápida.
       GoRoute(
           path: Routes.detalhe,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const DetalheScreen())),
+          pageBuilder: (_, GoRouterState s) =>
+              _toolPage(s, const DetalheScreen())),
       GoRoute(
           path: Routes.reserva,
           pageBuilder: (_, GoRouterState s) => _toolPage(s, const ReservaScreen())),

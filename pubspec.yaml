@@ -31,16 +31,17 @@ dependencies:
   path: ^1.9.1
 
   # Features (declaradas na fundação 06; ligadas nas próximas etapas)
-  google_mobile_ads: ^9.0.0
   in_app_purchase: ^3.3.0
   share_plus: ^13.2.0
   url_launcher: ^6.3.2
   in_app_review: ^2.0.12
 
-  # Analytics + crash (opt-in / LGPD) — wiring nas próximas etapas
-  firebase_core: ^4.12.1
-  firebase_analytics: ^12.4.5
-  firebase_crashlytics: ^5.2.6
+  # REMOVIDOS até a configuração real (aprendido com crash em produção):
+  # - google_mobile_ads: o MobileAdsInitProvider DERRUBA o app no boot se o
+  #   APPLICATION_ID do AdMob não estiver no AndroidManifest. Recolocar JUNTO
+  #   com o meta-data com.google.android.gms.ads.APPLICATION_ID.
+  # - firebase_core/analytics/crashlytics: exigem google-services.json.
+  #   Recolocar junto com o arquivo e o plugin gradle google-services.
 
 dev_dependencies:
   flutter_test:

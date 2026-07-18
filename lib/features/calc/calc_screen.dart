@@ -9,6 +9,7 @@ import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/money_count_up.dart';
@@ -32,6 +33,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   int _prevStep = 0;
   final TextEditingController _renda = TextEditingController();
   final TextEditingController _horas = TextEditingController();
+  final FocusNode _rendaFocus = FocusNode();
+  final FocusNode _horasFocus = FocusNode();
 
   @override
   void initState() {
@@ -52,7 +55,21 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   void dispose() {
     _renda.dispose();
     _horas.dispose();
+    _rendaFocus.dispose();
+    _horasFocus.dispose();
     super.dispose();
+  }
+
+  /// Foca o campo do passo corrente APOS o slide (teclado nao pula no meio
+  /// da transicao). Passos sem campo nao roubam foco.
+  void _focusStep() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(Motion.base, () {
+        if (!mounted) return;
+        if (_step == 0) _rendaFocus.requestFocus();
+        if (_step == 1) _horasFocus.requestFocus();
+      });
+    });
   }
 
   int _digits(String s) => int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -77,6 +94,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         _prevStep = _step;
         _step++;
       });
+      _focusStep();
     } else {
       Haptics.resultBorn();
       context.push(Routes.resultado, extra: _draft);
@@ -90,6 +108,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         _prevStep = _step;
         _step--;
       });
+      _focusStep();
     } else {
       context.pop();
     }
@@ -196,6 +215,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         const SizedBox(height: Space.x4),
         MoneyField(
           controller: _renda,
+          focusNode: _rendaFocus,
+          autofocus: true,
           label: 'Renda no bolso',
           prefix: r'R$ ',
           helper: 'É o que você quer que sobre pra você, não o faturamento.',
@@ -216,6 +237,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         const SizedBox(height: Space.x4),
         MoneyField(
           controller: _horas,
+          focusNode: _horasFocus,
           label: 'Horas faturáveis',
           suffix: 'h/mês',
           errorText: erro ? 'Preciso de pelo menos 1 hora faturável pra fazer a conta.' : null,
@@ -348,6 +370,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         child: Material(
         color: selected ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceContainerLow,
         borderRadius: const BorderRadius.all(Radii.md),
+        shape: selected
+            ? RoundedRectangleBorder(
+                borderRadius: const BorderRadius.all(Radii.md),
+                side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+              )
+            : null,
         child: InkWell(
           borderRadius: const BorderRadius.all(Radii.md),
           onTap: () {
@@ -390,14 +418,36 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         const SizedBox(height: Space.x2),
         Text('Autônomo não ganha de graça.', style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: Space.x4),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _draft.provisaoOn,
-          onChanged: (bool v) => setState(() => _draft = _draft.copyWith(provisaoOn: v)),
-          title: Text(_draft.provisaoOn
-              ? 'Sim, reservar ${moneyBRL(_draft.provisao)}/mês'
-              : 'Agora não'),
+        Card(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          child: SwitchListTile(
+            value: _draft.provisaoOn,
+            onChanged: (bool v) {
+              Haptics.select();
+              setState(() => _draft = _draft.copyWith(provisaoOn: v));
+            },
+            title: Text(_draft.provisaoOn ? 'Sim, provisionar' : 'Agora não'),
+          ),
         ),
+        if (_draft.provisaoOn) ...<Widget>[
+          const SizedBox(height: Space.x3),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: <Widget>[
+              MoneyCountUp(
+                _draft.provisao,
+                duration: Motion.quick,
+                style: AppType.valueMd.copyWith(color: Theme.of(context).colorScheme.primary),
+              ),
+              Text('/mês entram na conta',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -489,7 +539,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: () => Navigator.pop(c, estimado),
+                      onPressed: () {
+                        Haptics.select();
+                        Navigator.pop(c, estimado);
+                      },
                       child: Text('Usar $estimado h/mês'),
                     ),
                   ),

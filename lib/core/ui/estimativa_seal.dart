@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/divisao_colors.dart';
+import '../theme/tokens.dart';
 
 /// Selo "estimativa de planejamento" (Blueprint §5.9 / DS §6.11): onipresente e
 /// CALMO. Nunca vermelho/âmbar — é informação, não alarme.
@@ -13,16 +14,16 @@ class EstimativaSeal extends StatelessWidget {
   Widget build(BuildContext context) {
     final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: Space.x3, vertical: Space.x2),
       decoration: BoxDecoration(
         color: d.sealBg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(Radii.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Icon(Icons.info_outline, size: 16, color: d.sealFg),
-          const SizedBox(width: 8),
+          const SizedBox(width: Space.x2),
           Flexible(
             child: Text(
               short
