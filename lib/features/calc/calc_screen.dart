@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,10 +9,12 @@ import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
+import '../../core/theme/tokens.dart';
+import '../../core/ui/money_field.dart';
 
 /// Calculadora guiada (Blueprint §5.2): UMA pergunta por tela, com default e um
-/// momento didático. Cada passo tem sua validação (erro humano, nunca "input
-/// inválido"). O caminho free entrega um número credível em 5 passos.
+/// momento didático. Cada passo tem sua validação (erro humano). O caminho free
+/// entrega um número credível em 5 passos.
 class CalcScreen extends ConsumerStatefulWidget {
   const CalcScreen({super.key});
 
@@ -32,9 +33,14 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   @override
   void initState() {
     super.initState();
-    // Recalcular parte do perfil salvo; primeiro uso parte dos defaults honestos.
     final ProfileState st = ref.read(profileProvider);
-    _draft = st is ProfileReady ? st.perfil : Perfil.padrao();
+    if (st is ProfileReady) {
+      _draft = st.perfil;
+    } else {
+      // Primeiro uso: defaults honestos + regime pré-selecionado pelo modo BR/intl.
+      final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
+      _draft = Perfil.padrao().copyWith(regime: intl ? RegimeId.intl : RegimeId.mei);
+    }
     _renda.text = _draft.renda.round().toString();
     _horas.text = _draft.horas.toString();
   }
@@ -55,7 +61,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       case 1:
         return _draft.horas > 0;
       default:
-        return true; // custos (vazio ok), regime (default), provisão (toggle)
+        return true;
     }
   }
 
@@ -78,6 +84,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _back),
@@ -86,15 +93,37 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            LinearProgressIndicator(value: (_step + 1) / (_lastStep + 1)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Space.x4, vertical: Space.x2),
+              child: Row(
+                children: <Widget>[
+                  for (int i = 0; i <= _lastStep; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: i <= _step ? cs.primary : cs.outlineVariant,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: _buildStep(),
+              child: AnimatedSwitcher(
+                duration: Motion.base,
+                child: SingleChildScrollView(
+                  key: ValueKey<int>(_step),
+                  padding: const EdgeInsets.all(Space.x6),
+                  child: _buildStep(),
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(Space.x4),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -132,46 +161,56 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Quanto você quer GANHAR por mês?'),
-        const SizedBox(height: 16),
-        TextField(
+        const SizedBox(height: Space.x4),
+        MoneyField(
           controller: _renda,
-          keyboardType: TextInputType.number,
-          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            prefixText: r'R$ ',
-            errorText: erro ? 'Coloque quanto você quer ganhar pra eu calcular.' : null,
-          ),
+          label: 'Renda no bolso',
+          prefix: r'R$ ',
+          helper: 'É o que você quer que sobre pra você, não o faturamento.',
+          errorText: erro ? 'Coloque quanto você quer ganhar pra eu calcular.' : null,
           onChanged: (String v) => setState(() => _draft = _draft.copyWith(renda: _digits(v).toDouble())),
         ),
-        const SizedBox(height: 8),
-        Text('É o que você quer que sobre pra você, não o faturamento.',
-            style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }
 
   Widget _stepHoras() {
+    final ThemeData theme = Theme.of(context);
     final bool erro = _horas.text.isNotEmpty && _draft.horas <= 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Quantas horas você realmente FATURA por mês?'),
-        const SizedBox(height: 16),
-        TextField(
+        const SizedBox(height: Space.x4),
+        MoneyField(
           controller: _horas,
-          keyboardType: TextInputType.number,
-          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            suffixText: 'h/mês',
-            errorText: erro ? 'Preciso de pelo menos 1 hora faturável pra fazer a conta.' : null,
-          ),
+          label: 'Horas faturáveis',
+          suffix: 'h/mês',
+          errorText: erro ? 'Preciso de pelo menos 1 hora faturável pra fazer a conta.' : null,
           onChanged: (String v) => setState(() => _draft = _draft.copyWith(horas: _digits(v))),
         ),
-        const SizedBox(height: 8),
-        Text('Não são 160h. Tire férias, feriados e o tempo sem cliente (vendas, e-mail, '
-            'estudo). Quase ninguém fatura mais que ~70%.',
-            style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.x4),
+        Container(
+          padding: const EdgeInsets.all(Space.x3),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.tertiaryContainer,
+            borderRadius: const BorderRadius.all(Radii.md),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(Icons.schedule, size: 20, color: theme.colorScheme.onTertiaryContainer),
+              const SizedBox(width: Space.x2),
+              Expanded(
+                child: Text(
+                  'Não são 160h. Tire férias, feriados e o tempo sem cliente (vendas, e-mail, estudo). Quase ninguém fatura mais que ~70%.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onTertiaryContainer),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Space.x2),
         TextButton.icon(
           onPressed: _abrirEstimador,
           icon: const Icon(Icons.auto_awesome),
@@ -191,11 +230,11 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Seus custos pra trabalhar?'),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.x4),
         for (final Custo c in custos)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.check_circle_outline),
+            leading: Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.primary),
             title: Text(c.label),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -213,20 +252,21 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               ],
             ),
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.x2),
         Text('Total: ${moneyBRL(_draft.custosTotal)}/mês',
             style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.x4),
         if (faltam.isNotEmpty) ...<Widget>[
           Text('Não esqueça:', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.x2),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: Space.x2,
+            runSpacing: Space.x2,
             children: <Widget>[
               for (final CostChip chip in faltam)
                 ActionChip(
-                  label: Text('${chip.label}  +'),
+                  avatar: Icon(_iconFor(chip.icon), size: 18),
+                  label: Text(chip.label),
                   onPressed: () => setState(() {
                     _draft = _draft.copyWith(
                       custos: <Custo>[
@@ -248,7 +288,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Como você recebe hoje?'),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.x4),
         for (final Regime r in Regime.all.values) _regimeOption(r),
       ],
     );
@@ -257,28 +297,36 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   Widget _regimeOption(Regime r) {
     final bool selected = _draft.regime == r.id;
     final ThemeData theme = Theme.of(context);
-    return InkWell(
-      onTap: () => setState(() => _draft = _draft.copyWith(regime: r.id)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.x2),
+      child: Material(
+        color: selected ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceContainerLow,
+        borderRadius: const BorderRadius.all(Radii.md),
+        child: InkWell(
+          borderRadius: const BorderRadius.all(Radii.md),
+          onTap: () => setState(() => _draft = _draft.copyWith(regime: r.id)),
+          child: Padding(
+            padding: const EdgeInsets.all(Space.x3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(
+                  selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                ),
+                const SizedBox(width: Space.x3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(r.label, style: theme.textTheme.titleMedium),
+                      Text(r.sub, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(r.label, style: theme.textTheme.titleMedium),
-                  Text(r.sub, style: theme.textTheme.bodyMedium),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -289,9 +337,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Quer provisionar férias e 13º?'),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.x2),
         Text('Autônomo não ganha de graça.', style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.x4),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _draft.provisaoOn,
@@ -302,6 +350,35 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         ),
       ],
     );
+  }
+
+  IconData _iconFor(String name) {
+    switch (name) {
+      case 'calculate':
+        return Icons.calculate;
+      case 'chair':
+        return Icons.chair;
+      case 'school':
+        return Icons.school;
+      case 'bolt':
+        return Icons.bolt;
+      case 'wifi':
+        return Icons.wifi;
+      case 'devices':
+        return Icons.devices;
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'health_and_safety':
+        return Icons.health_and_safety;
+      case 'apps':
+        return Icons.apps;
+      case 'campaign':
+        return Icons.campaign;
+      case 'directions_car':
+        return Icons.directions_car;
+      default:
+        return Icons.attach_money;
+    }
   }
 
   Future<void> _abrirEstimador() async {
@@ -316,22 +393,21 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       builder: (BuildContext c) {
         return StatefulBuilder(
           builder: (BuildContext c, void Function(void Function()) setSheet) {
-            final int estimado =
-                estimarHorasFaturaveis(ferias: ferias, pct: pct, feriados: feriados);
+            final int estimado = estimarHorasFaturaveis(ferias: ferias, pct: pct, feriados: feriados);
             final TextTheme t = Theme.of(c).textTheme;
             return Padding(
               padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 8,
-                bottom: 24 + MediaQuery.of(c).viewInsets.bottom,
+                left: Space.x6,
+                right: Space.x6,
+                top: Space.x2,
+                bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text('Vamos achar suas horas reais', style: t.titleLarge),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: Space.x4),
                   Text('Semanas de férias por ano: $ferias', style: t.bodyMedium),
                   Slider(
                     value: ferias.toDouble(),
@@ -357,9 +433,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                     label: '$feriados',
                     onChanged: (double v) => setSheet(() => feriados = v.round()),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: Space.x2),
                   Text('≈ $estimado h/mês', style: t.headlineSmall),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: Space.x4),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(

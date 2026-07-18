@@ -55,6 +55,14 @@ class ConfigScreen extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(Routes.perfis),
           ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.history),
+            title: const Text('Histórico de reservas'),
+            subtitle: const Text('Quanto você já guardou pro Leão'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.historico),
+          ),
 
           const Divider(height: 32),
           Text('Seus dados', style: Theme.of(context).textTheme.titleSmall),
@@ -99,7 +107,7 @@ class ConfigScreen extends ConsumerWidget {
           Text('Sobre', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           Text('${AppConfig.appName} · versão 0.1.0'),
-          Text('por ${AppConfig.parentBrand} · ${AppConfig.contactEmail}',
+          Text('by ${AppConfig.parentBrand} · ${AppConfig.contactEmail}',
               style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
