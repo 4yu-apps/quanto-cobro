@@ -24,6 +24,44 @@ Se o app só "fizer a conta", ele empata com a calculadora genérica. Ele ganha 
 
 ---
 
+## 0.1 Atualização pós-pesquisa — VALIDADA (2026-07-18)
+
+> Este blueprint foi confrontado com **pesquisa real** (16.961 reviews de concorrentes
+> categorizados + sizing de mercado + voz do freelancer). A tese central se sustentou; o que
+> muda é **ênfase**, não estrutura. Detalhe em [`planning/`](planning/README.md) e
+> [`research/`](research/ANALISE-QUANTITATIVA-REVIEWS.md). Decisões abaixo estão **aprovadas**.
+
+**A virada (ajuste de ênfase, nada é descartado):**
+1. **"A Divisão" é o coração do produto**, não só um recurso visual. O app é "mostrar pra onde
+   vai cada real que você recebe" — a calculadora de valor-hora vira **setup estratégico** (raro),
+   não a função-título.
+2. **A Reserva por pagamento é o caminho de ouro** (uso recorrente = motor de hábito). No Painel,
+   a Divisão + "Recebi um pagamento" ganham peso ≥ ao card do valor-hora. *Ajusta §5.1 e §4.2.*
+3. **Alcance ampliado:** o modelo antigo retinha bem só o iniciante (job raro). A virada pega o
+   **freela em atividade**, o **recém-MEI** e o **freela pra gringo** (USD/carnê-leão) — ver
+   [personas](planning/02-PERSONAS-E-JOBS.md).
+
+**Ajustes por evidência (o que enxugar / estender):**
+- ➕ **Backup/restore** e **exportar PDF** sobem de prioridade (pedidos recorrentes reais). Backup
+  é grátis (confiança); PDF é âncora de Pro. *Adiciona ao §13 MVP e §11.*
+- ➕ **Alíquota efetiva visível**, **modificadores de preço** (urgência/cliente difícil) e
+  **histórico de reservas** entram no roadmap (v2). *Estende §13.*
+- 🔧 O diferencial **não é profundidade de cálculo** — é leveza + confiança + o job do imposto.
+  Estabilidade e transparência de preço viram **requisitos de produto**, não detalhes.
+- 🔧 **Monetização (ajusta §11):** ads sozinho não sustenta no BR (rende centavos). Modelo passa a
+  **freemium híbrido transparente** — núcleo grátis + Pro que o usuário escolhe (**vitalício
+  ~R$129-149 OU anual ~R$89,90**), cálculo básico sempre grátis. O mercado odeia assinatura
+  **escondida**, não assinatura. Ver [05](planning/05-ESCOPO-E-ROADMAP.md).
+
+**Regras da casa reforçadas por dado (anti-★1, 31% das queixas do mercado):** não travar ·
+nunca cobrar escondido · rodar **sem login/cadastro** · não imitar app do governo · nunca dar
+número fiscal errado · anúncio nunca sobre número. Ver [04](planning/04-DIFERENCIAIS-E-REGRAS.md).
+
+**Fundação técnica (validada):** Flutter (Android+iOS), **local-first, 100% offline, SEM login**,
+Riverpod + Drift + go_router, `in_app_purchase` + AdMob. Ver [06](planning/06-FUNDACAO-TECNICA.md).
+
+---
+
 ## 1. Contexto, público e a verdade incômoda
 
 **Público-alvo real:**

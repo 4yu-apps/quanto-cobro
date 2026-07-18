@@ -1,12 +1,4 @@
-# OS / editor / WSL
-.DS_Store
-Thumbs.db
-*:Zone.Identifier
-.thumbnail
-.idea/
-.vscode/
-
-# Segredos — NUNCA versionar (ver 4yu-apps/CLAUDE.md)
+# ===== Segredos — NUNCA versionar (ver 4yu-apps/CLAUDE.md) =====
 .env
 .env.*
 *.jks
@@ -14,11 +6,37 @@ Thumbs.db
 key.properties
 android/key.properties
 google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
 
-# Flutter / Dart (quando o app for scaffoldado)
+# ===== OS / editor / WSL =====
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+.thumbnail
+.idea/
+.vscode/
+*.iml
+
+# ===== Flutter / Dart =====
 .dart_tool/
-.fvm/
-build/
 .flutter-plugins
 .flutter-plugins-dependencies
+build/
 pubspec.lock.bak
+*.g.dart.bak
+
+# fvm — versiona só o .fvmrc (a versão pinada), não o SDK baixado
+.fvm/
+
+# ===== Android =====
+android/.gradle/
+android/local.properties
+android/.kotlin/
+
+# ===== iOS =====
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh

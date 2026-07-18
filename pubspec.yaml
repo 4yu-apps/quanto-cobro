@@ -1,0 +1,70 @@
+name: quantocobro
+description: "Quanto Cobro? - calculadora do freelancer BR (valor-hora, reserva de imposto, lucro real)."
+publish_to: 'none'
+
+# versionName+versionCode. Nome de EXIBIÇÃO fica em lib/core/config/app_config.dart.
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Estado + navegação (padrão da casa)
+  flutter_riverpod: ^3.3.2
+  go_router: ^17.3.0
+
+  # Formatação de moeda/i18n
+  intl: ^0.20.3
+
+  # Settings locais
+  shared_preferences: ^2.5.5
+
+  # Dados local-first (SQLite) — camada de dados nas próximas etapas
+  drift: ^2.34.2
+  drift_flutter: ^0.3.1
+  sqlite3_flutter_libs: ^0.6.0+eol
+  path_provider: ^2.1.6
+  path: ^1.9.1
+
+  # Features (declaradas na fundação 06; ligadas nas próximas etapas)
+  google_mobile_ads: ^9.0.0
+  in_app_purchase: ^3.3.0
+  share_plus: ^13.2.0
+  url_launcher: ^6.3.2
+  in_app_review: ^2.0.12
+
+  # Analytics + crash (opt-in / LGPD) — wiring nas próximas etapas
+  firebase_core: ^4.12.1
+  firebase_analytics: ^12.4.5
+  firebase_crashlytics: ^5.2.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # drift_dev + build_runner (code-gen do schema) entram na etapa da camada de
+  # dados, com versões alinhadas ao riverpod. Fora daqui pra o esqueleto resolver.
+
+flutter:
+  uses-material-design: true
+
+  # Fontes do Design System — empacotadas (offline, sem download em runtime).
+  # Arquivos entram em assets/fonts nas próximas etapas (Sora p/ números, Inter p/ UI).
+  # fonts:
+  #   - family: Sora
+  #     fonts:
+  #       - asset: assets/fonts/Sora-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Sora-Bold.ttf
+  #         weight: 700
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-SemiBold.ttf
+  #         weight: 600
