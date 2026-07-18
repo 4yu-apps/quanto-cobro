@@ -9,6 +9,14 @@ class Custo {
 
   Custo copyWith({String? id, String? label, double? valor}) =>
       Custo(id: id ?? this.id, label: label ?? this.label, valor: valor ?? this.valor);
+
+  Map<String, dynamic> toJson() => <String, dynamic>{'id': id, 'label': label, 'valor': valor};
+
+  factory Custo.fromJson(Map<String, dynamic> json) => Custo(
+        id: json['id'] as String,
+        label: json['label'] as String,
+        valor: (json['valor'] as num).toDouble(),
+      );
 }
 
 /// Chip de custo sugerido ("não esqueça"): contador, coworking, cursos...

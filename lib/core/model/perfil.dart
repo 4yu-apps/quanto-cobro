@@ -60,4 +60,26 @@ class Perfil {
       custos: custos ?? this.custos,
     );
   }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'nome': nome,
+        'renda': renda,
+        'horas': horas,
+        'provisao': provisao,
+        'provisaoOn': provisaoOn,
+        'regime': regime.name,
+        'custos': custos.map((Custo c) => c.toJson()).toList(),
+      };
+
+  factory Perfil.fromJson(Map<String, dynamic> json) => Perfil(
+        nome: json['nome'] as String? ?? 'Padrão',
+        renda: (json['renda'] as num).toDouble(),
+        horas: (json['horas'] as num).toInt(),
+        provisao: (json['provisao'] as num).toDouble(),
+        provisaoOn: json['provisaoOn'] as bool? ?? true,
+        regime: RegimeId.values.byName(json['regime'] as String),
+        custos: (json['custos'] as List<dynamic>)
+            .map((dynamic e) => Custo.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
 }

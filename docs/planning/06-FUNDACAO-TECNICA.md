@@ -68,8 +68,11 @@ lib/
 
 - **Estado:** Riverpod (padrão da casa).
 - **Navegação:** go_router (hub-and-spoke — Painel é o hub; ver [IA](03-ARQUITETURA-DE-INFORMACAO.md)).
-- **Dados:** **Drift (SQLite)** para perfis/custos/histórico de reservas; **shared_preferences**
-  para settings simples (tema, moeda, flags). Tudo no aparelho.
+- **Dados:** o dado do MVP é um **documento único** (1 perfil + custos + settings). Começa
+  com **repositório JSON via `shared_preferences`** atrás de uma interface (`ProfileRepository`)
+  — zero code-gen, backup/export trivial (já é JSON), e sem o conflito de versão Drift×Riverpod.
+  **Drift (SQLite)** entra quando o dado virar relacional/consultável (histórico de reservas em
+  escala). A interface deixa a troca indolor.
 - **`core/platform` com interfaces + fakes:** ads, share, in-app-review por trás de interface —
   testável sem depender do device.
 
@@ -165,7 +168,7 @@ custo > meta). Análise estática (`flutter analyze`) limpa como gate.
 | Plataforma | Flutter, Android+iOS, Android-first | mesma base 2 lojas; mercado é 92% Android |
 | Login | **Nenhum** (local-first) | elimina 5% das ★1 (cadastro) + vira marketing |
 | Backend | Nenhum (offline) | sem servidor = sem "saldo sumido/login quebrado" |
-| Dados | Drift (SQLite) local | rápido, offline, privado |
+| Dados | Repo JSON (prefs) agora; Drift quando crescer | rápido, offline, privado, backup trivial |
 | Backup | arquivo export/import, sem nuvem | resolve "trocar de celular" sem exigir conta |
 | Estado/Nav | Riverpod + go_router | padrão da casa, testável |
 | Pro | in_app_purchase, híbrido | preço transparente antes do trabalho (anti-TurboTax) |
