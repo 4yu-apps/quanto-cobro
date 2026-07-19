@@ -139,7 +139,7 @@ class _PainelBody extends ConsumerWidget {
         ? 'Seu DAS: ${moneyBRLCents(r.dasMensal!)}/mês, já dentro da conta. De cada pagamento, o resto é seu.'
         : 'Separe ~${r.reservaPct}% de cada pagamento (sua faixa real, regime: $regimeTag).';
 
-    return ListView(
+    return _ambientWash(context, ListView(
       padding: const EdgeInsets.all(Space.x4),
       children: <Widget>[
         StaggerIn(
@@ -344,8 +344,35 @@ class _PainelBody extends ConsumerWidget {
         const SizedBox(height: Space.x4),
         const EstimativaSeal(),
       ],
-    );
+    ));
   }
+}
+
+Widget _ambientWash(BuildContext context, Widget child) {
+  final ColorScheme cs = Theme.of(context).colorScheme;
+  final bool dark = Theme.of(context).brightness == Brightness.dark;
+  if (!dark) return child; // claro é sóbrio
+  return RepaintBoundary(
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(-0.9, -1),
+          radius: 1.3,
+          colors: <Color>[cs.primary.withValues(alpha: 0.04), cs.surface.withValues(alpha: 0)],
+        ),
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: const Alignment(1, 1),
+            radius: 1.3,
+            colors: <Color>[cs.tertiary.withValues(alpha: 0.025), cs.surface.withValues(alpha: 0)],
+          ),
+        ),
+        child: child,
+      ),
+    ),
+  );
 }
 
 String _mesNome(DateTime date) {
