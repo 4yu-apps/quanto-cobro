@@ -117,7 +117,10 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
             // (e o haptic já selou o gesto).
             if (context.mounted) context.go(Routes.painel);
           },
-          child: const Text('Salvar este trabalho'),
+          child: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('Salvar este trabalho'),
+          ),
         ),
       ),
       body: ListView(

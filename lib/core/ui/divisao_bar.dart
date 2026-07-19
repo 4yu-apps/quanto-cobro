@@ -150,13 +150,24 @@ class DivisaoBar extends StatelessWidget {
               style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
-          Text(
-            '${moneyBRL(value)}  ·  $pct%',
-            style:
-                (forte
-                        ? t.labelLarge?.copyWith(fontWeight: FontWeight.w700)
-                        : t.labelLarge)
-                    ?.copyWith(fontFeatures: AppType.tnum, color: cs.onSurface),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                '${moneyBRL(value)}  ·  $pct%',
+                style:
+                    (forte
+                            ? t.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              )
+                            : t.labelLarge)
+                        ?.copyWith(
+                          fontFeatures: AppType.tnum,
+                          color: cs.onSurface,
+                        ),
+              ),
+            ),
           ),
         ],
       ),

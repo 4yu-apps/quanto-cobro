@@ -269,7 +269,9 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                               sobra: res.sobra,
                             ),
                             const SizedBox(height: Space.x2),
-                            Row(
+                            Wrap(
+                              spacing: Space.x4,
+                              runSpacing: Space.x2,
                               children: <Widget>[
                                 _legenda(
                                   context,
@@ -277,7 +279,6 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                   'Pra usar',
                                   res.sobra,
                                 ),
-                                const SizedBox(width: Space.x4),
                                 _legenda(
                                   context,
                                   d.reserva,

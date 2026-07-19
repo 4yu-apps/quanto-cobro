@@ -201,13 +201,20 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     Text('= Valor-hora', style: theme.textTheme.titleMedium),
-                    MoneyCountUp(
-                      r.valorHora,
-                      duration: Motion.quick,
-                      style: AppType.valueLg.copyWith(
-                        color: theme.colorScheme.primary,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: MoneyCountUp(
+                          r.valorHora,
+                          duration: Motion.quick,
+                          style: AppType.valueLg.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                          semanticLabel:
+                              'Valor-hora: ${moneyBRL(r.valorHora)}',
+                        ),
                       ),
-                      semanticLabel: 'Valor-hora: ${moneyBRL(r.valorHora)}',
                     ),
                   ],
                 ),
@@ -219,7 +226,10 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         OutlinedButton.icon(
           onPressed: () => context.push(Routes.calc, extra: p),
           icon: const Icon(Icons.tune),
-          label: const Text('Refazer com o passo a passo'),
+          label: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('Refazer com o passo a passo'),
+          ),
         ),
         const SizedBox(height: Space.x2),
         FilledButton(
@@ -233,7 +243,10 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                     if (context.canPop()) context.pop();
                   }
                 },
-          child: const Text('Salvar alterações'),
+          child: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text('Salvar alterações'),
+          ),
         ),
         const SizedBox(height: Space.x4),
         const EstimativaSeal(),
@@ -257,7 +270,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Flexible(child: Text(label, style: style)),
-          Text(valor, style: style),
+          Flexible(child: Text(valor, style: style, textAlign: TextAlign.end)),
         ],
       ),
     );
