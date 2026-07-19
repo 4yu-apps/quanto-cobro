@@ -33,4 +33,30 @@ void main() {
       expect(back.provisaoEfetiva, closeTo(back.renda / 12, 0.01));
     },
   );
+
+  test('Perfil.tipoContrato sobrevive a um round-trip por JSON', () {
+    final Perfil p = Perfil.padrao().copyWith(
+      tipoContrato: TipoContrato.mensal,
+    );
+    final Perfil back = Perfil.fromJson(p.toJson());
+    expect(back.tipoContrato, TipoContrato.mensal);
+  });
+
+  test(
+    'JSON legado (sem tipoContrato) migra pra avulso, resto intacto',
+    () {
+      final Perfil original = Perfil.padrao();
+      final Map<String, dynamic> legado = original.toJson()
+        ..remove('tipoContrato');
+      final Perfil back = Perfil.fromJson(legado);
+      expect(back.tipoContrato, TipoContrato.avulso);
+      expect(back.id, original.id);
+      expect(back.nome, original.nome);
+      expect(back.renda, original.renda);
+      expect(back.horas, original.horas);
+      expect(back.regime, original.regime);
+      expect(back.custos.length, original.custos.length);
+      expect(back.custosTotal, original.custosTotal);
+    },
+  );
 }

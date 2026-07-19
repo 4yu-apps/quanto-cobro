@@ -1,6 +1,9 @@
 import 'custo.dart';
 import 'regime.dart';
 
+/// Como o trabalho é cobrado: mensal (recorrente) ou avulso (por job).
+enum TipoContrato { mensal, avulso }
+
 /// Perfil de cálculo (permanente/estratégico). Cada CASO do usuário é um
 /// perfil: "Freela design", "Consultoria", "Cliente fixo"... Alimenta de
 /// defaults os tools recorrentes (reserva, simulador). Na UI o nome é sempre
@@ -18,6 +21,7 @@ class Perfil {
     this.horasDia,
     required this.regime,
     required this.custos,
+    this.tipoContrato = TipoContrato.avulso,
   });
 
   final String id;
@@ -41,6 +45,9 @@ class Perfil {
   final RegimeId regime;
   final List<Custo> custos;
 
+  /// Mensal (recorrente) ou avulso (por job). Default avulso.
+  final TipoContrato tipoContrato;
+
   double get custosTotal => custos.fold(0, (double s, Custo c) => s + c.valor);
 
   /// Provisão que entra na conta: manual quando o usuário editou; senão
@@ -59,6 +66,7 @@ class Perfil {
         diasSemana: 5,
         horasDia: 6,
         regime: RegimeId.mei,
+        tipoContrato: TipoContrato.avulso,
         custos: const <Custo>[
           Custo(id: 'software', label: 'Software/ferramentas', valor: 120),
           Custo(id: 'internet', label: 'Internet/telefone', valor: 100),
@@ -80,6 +88,7 @@ class Perfil {
     int? horasDia,
     RegimeId? regime,
     List<Custo>? custos,
+    TipoContrato? tipoContrato,
   }) {
     return Perfil(
       id: id ?? this.id,
@@ -93,6 +102,7 @@ class Perfil {
       horasDia: horasDia ?? this.horasDia,
       regime: regime ?? this.regime,
       custos: custos ?? this.custos,
+      tipoContrato: tipoContrato ?? this.tipoContrato,
     );
   }
 
@@ -108,6 +118,7 @@ class Perfil {
         if (horasDia != null) 'horasDia': horasDia,
         'regime': regime.name,
         'custos': custos.map((Custo c) => c.toJson()).toList(),
+        'tipoContrato': tipoContrato.name,
       };
 
   factory Perfil.fromJson(Map<String, dynamic> json) => Perfil(
@@ -125,5 +136,9 @@ class Perfil {
         custos: (json['custos'] as List<dynamic>)
             .map((dynamic e) => Custo.fromJson(e as Map<String, dynamic>))
             .toList(),
+        // Legado (sem tipoContrato): default avulso.
+        tipoContrato: json['tipoContrato'] != null
+            ? TipoContrato.values.byName(json['tipoContrato'] as String)
+            : TipoContrato.avulso,
       );
 }
