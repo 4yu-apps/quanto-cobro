@@ -32,10 +32,10 @@ void main() {
 
       // Os 4 níveis existem, com a prévia ao vivo.
       expect(find.byType(RadioListTile<double>), findsNWidgets(4));
-      expect(find.text('Compacto'), findsOneWidget);
+      expect(find.text('Pequeno'), findsOneWidget);
       expect(find.text('Padrão'), findsOneWidget);
       expect(find.text('Grande'), findsOneWidget);
-      expect(find.text('Enorme'), findsOneWidget);
+      expect(find.text('Muito grande'), findsOneWidget);
       expect(find.textContaining('Prévia: R\$ 1.234/hora'), findsOneWidget);
 
       // Estado inicial: Padrão (1.0).

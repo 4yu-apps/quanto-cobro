@@ -11,8 +11,8 @@ class TextScaleLevel {
 }
 
 const List<TextScaleLevel> kTextScaleLevels = <TextScaleLevel>[
-  TextScaleLevel('Compacto', 0.90),
+  TextScaleLevel('Pequeno', 0.90),
   TextScaleLevel('Padrão', 1.00),
   TextScaleLevel('Grande', 1.15),
-  TextScaleLevel('Enorme', 1.30),
+  TextScaleLevel('Muito grande', 1.30),
 ];

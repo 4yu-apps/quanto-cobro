@@ -357,7 +357,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       children: <Widget>[
         _title('Quanto você trabalha por semana?'),
         _subtitle(
-          'Não precisa saber "horas faturáveis". Me conta sua rotina que eu faço a conta.',
+          'Me conta sua rotina que eu faço a conta pra você.',
         ),
         const SizedBox(height: Space.x6),
         _stepper(

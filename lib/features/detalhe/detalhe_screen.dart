@@ -195,7 +195,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                   moneyBRL(r.faturamento),
                   forte: true,
                 ),
-                _linha(context, '÷ Horas faturáveis', '${p.horas} h'),
+                _linha(context, '÷ Horas de trabalho no mês', '${p.horas} h'),
                 const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -270,7 +270,13 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Flexible(child: Text(label, style: style)),
-          Flexible(child: Text(valor, style: style, textAlign: TextAlign.end)),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(valor, style: style, textAlign: TextAlign.end),
+            ),
+          ),
         ],
       ),
     );
@@ -295,7 +301,13 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Flexible(child: Text(label, style: style)),
-            Flexible(child: Text(valor, style: style, textAlign: TextAlign.end)),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(valor, style: style, textAlign: TextAlign.end),
+              ),
+            ),
           ],
         ),
       ),
