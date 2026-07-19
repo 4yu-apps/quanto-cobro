@@ -205,6 +205,20 @@ reduceTransparencyProvider = NotifierProvider<ReduceTransparencyNotifier, bool>(
   ReduceTransparencyNotifier.new,
 );
 
+// ---- Escala de texto (tamanho relativo da fonte) ----
+class TextScaleNotifier extends Notifier<double> {
+  @override
+  double build() => ref.read(settingsRepositoryProvider).textScale();
+
+  Future<void> set(double v) async {
+    await ref.read(settingsRepositoryProvider).setTextScale(v);
+    state = v;
+  }
+}
+
+final NotifierProvider<TextScaleNotifier, double> textScaleProvider =
+    NotifierProvider<TextScaleNotifier, double>(TextScaleNotifier.new);
+
 // ---- Histórico de reservas (gancho de hábito, IA §2.12) ----
 final Provider<ReservaHistoryRepository> reservaHistoryRepositoryProvider =
     Provider<ReservaHistoryRepository>(

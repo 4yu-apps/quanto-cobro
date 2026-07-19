@@ -46,6 +46,11 @@ class SettingsRepository {
   Future<void> setReduceTransparency(bool v) =>
       _prefs.setBool(_kReduceTransparency, v);
 
+  // Escala de texto: tamanho relativo da fonte. Default 1.0 (100%).
+  static const String _kTextScale = 'text_scale';
+  double textScale() => _prefs.getDouble(_kTextScale) ?? 1.0;
+  Future<void> setTextScale(double v) => _prefs.setDouble(_kTextScale, v);
+
   // Reserva: uma troca pontual de regime fica nesta sessão de trabalho, mas é
   // ignorada automaticamente se o regime-base do trabalho mudar.
   static const String _kReservaRegimes = 'reserva_regimes';
