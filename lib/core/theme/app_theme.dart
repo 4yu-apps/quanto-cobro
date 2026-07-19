@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'color_scheme.dart';
 import 'divisao_colors.dart';
+import 'materials.dart';
 import 'tokens.dart';
 
 /// Monta os dois ThemeData a partir do Design System. O ESCURO é o padrão.
@@ -19,7 +20,10 @@ abstract final class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
       textTheme: textTheme,
-      extensions: <ThemeExtension<dynamic>>[divisao],
+      extensions: <ThemeExtension<dynamic>>[
+        divisao,
+        scheme.brightness == Brightness.dark ? Materials.dark : Materials.light,
+      ],
 
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
