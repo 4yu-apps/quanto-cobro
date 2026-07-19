@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/routes.dart';
 import '../../core/common/money.dart';
+import '../../core/data/reserva_history_csv.dart';
+import '../../core/data/reserva_history_repository.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
@@ -34,6 +40,10 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
   Widget build(BuildContext context) {
     final List<ReservaEntry> all = ref.watch(reservaHistoryProvider);
     final List<Perfil> perfis = ref.watch(profilesProvider).perfis;
+    final ReservaHistoryRepository repo = ref.watch(
+      reservaHistoryRepositoryProvider,
+    );
+    final bool isPro = ref.watch(proProvider);
     final DateTime now = DateTime.now();
     final List<ReservaEntry> filtered = _perfilId == null
         ? all
@@ -41,13 +51,26 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
     bool doMes(ReservaEntry e) =>
         e.at.year == now.year && e.at.month == now.month;
     final List<ReservaEntry> atuais = filtered.where(doMes).toList();
-    final List<ReservaEntry> anteriores = filtered
-        .where((ReservaEntry e) => !doMes(e))
-        .toList();
     final int totalMes = atuais.fold<int>(
       0,
       (int total, ReservaEntry e) => total + e.reserva,
     );
+
+    // Agrupa "filtered" por mês (ano+mês) — cada seção mostra quanto ENTROU
+    // (bruto) e quanto foi GUARDADO naquele mês. mesesComReserva() dá a
+    // ordem canônica (mais recente primeiro); filtra aqui pra só listar
+    // meses com registro depois do filtro por trabalho dos chips.
+    final Map<DateTime, List<ReservaEntry>> porMes =
+        <DateTime, List<ReservaEntry>>{};
+    for (final ReservaEntry e in filtered) {
+      final DateTime chave = DateTime(e.at.year, e.at.month);
+      (porMes[chave] ??= <ReservaEntry>[]).add(e);
+    }
+    final List<DateTime> meses = repo
+        .mesesComReserva()
+        .where((DateTime mes) => porMes.containsKey(mes))
+        .toList();
+
     final bool pago = ref.watch(leaoPagoProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
@@ -55,7 +78,18 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
     final DateFormat df = DateFormat('d MMM', 'pt_BR');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Guardado')),
+      appBar: AppBar(
+        title: const Text('Guardado'),
+        actions: all.isEmpty
+            ? null
+            : <Widget>[
+                IconButton(
+                  icon: const Icon(Icons.ios_share),
+                  tooltip: 'Exportar CSV',
+                  onPressed: () => _exportarCsv(context, all, isPro),
+                ),
+              ],
+      ),
       body: all.isEmpty
           ? _empty(context)
           : ListView(
@@ -145,8 +179,7 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                   ),
                 ),
                 const SizedBox(height: Space.x4),
-                if (atuais.isNotEmpty) _list(context, atuais, perfis, d, df),
-                if (atuais.isEmpty)
+                if (meses.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: Space.x6),
                     child: Text(
@@ -156,24 +189,149 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                         color: cs.onSurfaceVariant,
                       ),
                     ),
-                  ),
-                if (anteriores.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: Space.x4),
-                  Text(
-                    'MESES ANTERIORES',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      letterSpacing: 0.5,
+                  )
+                else
+                  for (int i = 0; i < meses.length; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(height: Space.x4),
+                    StaggerIn(
+                      index: i,
+                      child: _mesHeader(
+                        context,
+                        meses[i],
+                        porMes[meses[i]]!,
+                        repo,
+                        now,
+                        theme,
+                        cs,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: Space.x2),
-                  _list(context, anteriores, perfis, d, df),
-                ],
+                    const SizedBox(height: Space.x2),
+                    _list(context, porMes[meses[i]]!, perfis, d, df),
+                  ],
                 const SizedBox(height: Space.x4),
                 const EstimativaSeal(short: true),
               ],
             ),
     );
+  }
+
+  /// Cabeçalho de uma seção de mês: quanto ENTROU (bruto) e quanto foi
+  /// GUARDADO naquele mês. Mês corrente fala "este mês"; meses passados
+  /// nomeiam o mês, senão "ganhou este mês" em janeiro passado confundiria.
+  Widget _mesHeader(
+    BuildContext context,
+    DateTime mes,
+    List<ReservaEntry> entries,
+    ReservaHistoryRepository repo,
+    DateTime now,
+    ThemeData theme,
+    ColorScheme cs,
+  ) {
+    final bool ehMesAtual = mes.year == now.year && mes.month == now.month;
+    final double ganhou = repo.brutoDoMes(mes, perfilId: _perfilId);
+    final int guardou = entries.fold<int>(
+      0,
+      (int total, ReservaEntry e) => total + e.reserva,
+    );
+    final String rotulo = ehMesAtual
+        ? 'GANHOU ESTE MÊS'
+        : 'GANHOU EM ${_mesNome(mes).toUpperCase()} DE ${mes.year}';
+    return Semantics(
+      header: true,
+      label:
+          '$rotulo: ${moneyBRL(ganhou)}. Guardou ${moneyBRL(guardou)} nesse mês.',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              rotulo,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: cs.onSurfaceVariant,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: Space.x1),
+            Row(
+              children: <Widget>[
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      moneyBRL(ganhou),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontFeatures: AppType.tnum,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Space.x2),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'guardou ${moneyBRL(guardou)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontFeatures: AppType.tnum,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Exporta o histórico (todos os registros, sem o filtro dos chips) como
+  /// CSV e abre o share sheet — mesmo padrão do backup em config_screen.dart.
+  /// Pro: se ainda não é, avisa e leva pra tela Pro; volta e retoma sozinho
+  /// se a compra aconteceu (mesmo padrão de trabalho_switcher.novoTrabalho).
+  Future<void> _exportarCsv(
+    BuildContext context,
+    List<ReservaEntry> entries,
+    bool isPro,
+  ) async {
+    if (!isPro) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Exportar CSV é recurso Pro.')),
+        );
+      await context.push(Routes.pro);
+      if (!context.mounted || !ref.read(proProvider)) return;
+      announce(context, 'Pro ativado. Exportando seu CSV.');
+    }
+    if (!context.mounted) return;
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    try {
+      final String csv = reservaHistoryCsv(entries);
+      final DateTime now = DateTime.now();
+      final String dia =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final Directory dir = await getTemporaryDirectory();
+      final File file = File('${dir.path}/guardado-$dia.csv');
+      await file.writeAsString(csv);
+      if (!context.mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(file.path, mimeType: 'text/csv')],
+          subject: 'Guardado — Quanto Cobro',
+          text: 'Histórico de reservas exportado do Quanto Cobro?.',
+        ),
+      );
+    } catch (_) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Não consegui gerar o CSV.')),
+        );
+    }
   }
 
   Widget _empty(BuildContext context) {
@@ -284,11 +442,18 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
               subtitle: Text(
                 '${df.format(entry.at)} · ${entry.regimeTag} · $trabalho',
               ),
-              trailing: Text(
-                moneyBRL(entry.reserva),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: colors.reserva,
-                  fontFeatures: AppType.tnum,
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 96),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    moneyBRL(entry.reserva),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colors.reserva,
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
                 ),
               ),
             ),
