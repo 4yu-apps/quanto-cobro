@@ -12,6 +12,7 @@ import '../../core/common/money.dart';
 import '../../core/fx/fx_rate.dart';
 import '../../core/fx/fx_service.dart';
 import '../../core/model/moeda.dart';
+import '../../core/model/projeto.dart';
 import '../../core/model/regime.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
@@ -31,7 +32,12 @@ import 'reserva_bar.dart';
 /// Resultado ao vivo dentro de um "cofre" visual; salvar fecha o loop
 /// (Guardado + Desfazer + Registrar outro), sem duplicata acidental.
 class ReservaScreen extends ConsumerStatefulWidget {
-  const ReservaScreen({super.key});
+  const ReservaScreen({super.key, this.projetoId});
+
+  /// Projeto que pagou, quando a tela veio de um "Recebi" (07 §B.4). Muda três
+  /// coisas: o valor já chega preenchido, o registro nasce com `projetoId`, e
+  /// salvar avança o ciclo do projeto.
+  final String? projetoId;
 
   @override
   ConsumerState<ReservaScreen> createState() => _ReservaScreenState();
@@ -58,6 +64,11 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
   /// (sem câmbio nenhum), `null` quando é moeda estrangeira sem cotação.
   double? get _taxaConversao => _moeda == Moeda.brl ? 1.0 : _rate?.taxa;
 
+  /// O projeto que pagou (quando veio de um "Recebi"). Lido uma vez no init:
+  /// a tela representa UM pagamento, e trocar o projeto por baixo dela no meio
+  /// do preenchimento não é um cenário real.
+  Projeto? _projeto;
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +79,12 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
           .reservaRegime(state.perfil.id, state.perfil.regime.name);
       if (saved != null) _regime = RegimeId.values.byName(saved);
     }
+
+    _projeto = ref.read(projetosProvider.notifier).byId(widget.projetoId);
+    final Projeto? p = _projeto;
+    // Pré-preenche o valor do ciclo, mas deixa EDITÁVEL: cliente que paga
+    // metade, paga adiantado ou paga a mais é o caso comum, não a exceção.
+    if (p != null) _valor.text = moneyFieldText(p.valor);
   }
 
   @override
@@ -186,7 +203,9 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('Não entendi esse número.')));
+        ..showSnackBar(
+          const SnackBar(content: Text('Não entendi esse número.')),
+        );
       return;
     }
     await ref.read(fxRepositoryProvider).setManual(_par, taxa, DateTime.now());
@@ -310,7 +329,14 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recebi um pagamento'),
+        // Vindo de um projeto, o título diz de QUEM é o dinheiro: some a
+        // dúvida "será que estou registrando no lugar certo?".
+        title: Text(
+          _projeto == null
+              ? 'Recebi um pagamento'
+              : 'Recebi de ${_projeto!.nome}',
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.history),
@@ -351,8 +377,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                 ],
                 selected: <Moeda>{_moeda},
                 showSelectedIcon: false,
-                onSelectionChanged: (Set<Moeda> s) =>
-                    _onMoedaChanged(s.first),
+                onSelectionChanged: (Set<Moeda> s) => _onMoedaChanged(s.first),
               ),
             ],
           ),
@@ -537,18 +562,35 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                           onPressed: () {
                             Haptics.commit();
                             final bool mei = res.isMei;
+                            final DateTime pagoEm = DateTime.now();
                             final ReservaEntry entry = ReservaEntry(
                               valor: amountBRL,
                               reserva: res.reserva,
                               regimeTag: Regime.of(regime).tag,
-                              at: DateTime.now(),
+                              at: pagoEm,
                               perfilId: perfilId,
+                              // O DAS é imposto do mês, não faturamento de um
+                              // cliente: carimbar um projeto nele inflaria o
+                              // "já recebeu" daquele projeto com dinheiro que
+                              // nunca entrou por ele.
+                              projetoId: mei ? null : _projeto?.id,
                               tipo: mei ? 'das' : 'pct',
                             );
                             final ReservaHistoryNotifier historyN = ref.read(
                               reservaHistoryProvider.notifier,
                             );
                             historyN.add(entry);
+
+                            final Projeto? projeto = _projeto;
+                            if (projeto != null && !mei) {
+                              ref
+                                  .read(projetosProvider.notifier)
+                                  .registrarRecebimento(
+                                    projeto.id,
+                                    pagoEm: pagoEm,
+                                  );
+                            }
+
                             setState(() => _saved = true);
                             ScaffoldMessenger.of(context)
                               ..clearSnackBars()
@@ -557,12 +599,23 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                   content: Text(
                                     mei
                                         ? '${moneyBRLCents(res.dasMensal!)} guardados pro DAS de ${_mesNome(now)}'
+                                        : projeto != null
+                                        ? '${moneyBRL(res.reserva)} guardado — "${projeto.nome}" em dia'
                                         : '${moneyBRL(res.reserva)} guardado no histórico',
                                   ),
                                   action: SnackBarAction(
                                     label: 'Desfazer',
                                     onPressed: () {
                                       historyN.remove(entry);
+                                      // Desfazer tem que desfazer TUDO: sem
+                                      // isto o projeto ficaria com o ciclo
+                                      // adiantado por um pagamento que a
+                                      // pessoa acabou de dizer que não houve.
+                                      if (projeto != null && !mei) {
+                                        ref
+                                            .read(projetosProvider.notifier)
+                                            .save(projeto);
+                                      }
                                       if (mounted) {
                                         setState(() => _saved = false);
                                       }

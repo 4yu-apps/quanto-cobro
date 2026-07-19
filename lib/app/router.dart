@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/model/perfil.dart';
+import '../core/model/projeto.dart';
 import '../core/theme/motion.dart';
 import '../core/theme/tokens.dart';
 import '../features/calc/calc_screen.dart';
@@ -13,6 +14,12 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/painel/painel_screen.dart';
 import '../features/perfis/perfis_screen.dart';
 import '../features/pro/pro_screen.dart';
+import '../features/projetos/projeto_detalhe_screen.dart';
+import '../features/projetos/projeto_form_screen.dart';
+import '../features/projetos/projetos_screen.dart';
+import '../features/proposta/marca_screen.dart';
+import '../features/proposta/proposta_flow.dart';
+import '../features/proposta/proposta_screen.dart';
 import '../features/reserva/reserva_screen.dart';
 import '../features/resultado/resultado_screen.dart';
 import '../features/simulador/simulador_screen.dart';
@@ -133,8 +140,13 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       ),
       GoRoute(
         path: Routes.reserva,
-        pageBuilder: (_, GoRouterState s) =>
-            _toolPage(s, const ReservaScreen()),
+        // `extra` = id do projeto que pagou, quando veio de um card "Recebi".
+        pageBuilder: (_, GoRouterState s) => _toolPage(
+          s,
+          ReservaScreen(
+            projetoId: s.extra is String ? s.extra as String : null,
+          ),
+        ),
       ),
       GoRoute(
         path: Routes.simulador,
@@ -149,10 +161,53 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
         path: Routes.legal,
         pageBuilder: (_, GoRouterState s) => _toolPage(s, const LegalScreen()),
       ),
+      // Presets de preço: saíram da aba (v0.6), viraram destino de ferramenta.
+      GoRoute(
+        path: Routes.perfis,
+        pageBuilder: (_, GoRouterState s) => _toolPage(s, const PerfisScreen()),
+      ),
+      // Gestão de projetos (07 §B). Detalhe/edição empilham acima da aba.
+      GoRoute(
+        path: Routes.projetoDetalhe,
+        pageBuilder: (_, GoRouterState s) => _toolPage(
+          s,
+          ProjetoDetalheScreen(projetoId: s.extra as String? ?? ''),
+        ),
+      ),
+      GoRoute(
+        path: Routes.projetoForm,
+        // Espelha o padrão da Calculadora: `String` = editar o de tal id,
+        // `Projeto` = rascunho pré-preenchido (nasceu de uma proposta).
+        pageBuilder: (_, GoRouterState s) {
+          final Object? extra = s.extra;
+          return _flowPage(
+            s,
+            ProjetoFormScreen(
+              projetoId: extra is String ? extra : null,
+              draft: extra is Projeto ? extra : null,
+            ),
+          );
+        },
+      ),
+      // Proposta (07 §A): é FLUXO, não destino — sobe do rodapé como a
+      // Calculadora, porque é uma mudança de modo ("agora eu falo com o
+      // cliente"), não uma gaveta de consulta.
+      GoRoute(
+        path: Routes.proposta,
+        pageBuilder: (_, GoRouterState s) =>
+            _flowPage(s, PropostaScreen(args: s.extra as PropostaArgs)),
+      ),
+      GoRoute(
+        path: Routes.marca,
+        pageBuilder: (_, GoRouterState s) =>
+            _toolPage(s, MarcaScreen(primeiraVez: s.extra == true)),
+      ),
       // Casca de 3 abas (IndexedStack preserva o estado de cada uma).
+      // A ORDEM aqui é a ordem dos destinos em `nav_shell.dart` — elas são
+      // casadas por índice; mexer numa sem a outra troca as abas de lugar.
       StatefulShellRoute.indexedStack(
-        builder:
-            (_, _, StatefulNavigationShell shell) => NavShell(navigationShell: shell),
+        builder: (_, _, StatefulNavigationShell shell) =>
+            NavShell(navigationShell: shell),
         branches: <StatefulShellBranch>[
           StatefulShellBranch(
             routes: <RouteBase>[
@@ -165,16 +220,16 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: Routes.historico,
-                builder: (_, _) => const HistoricoScreen(),
+                path: Routes.projetos,
+                builder: (_, _) => const ProjetosScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
-                path: Routes.perfis,
-                builder: (_, _) => const PerfisScreen(),
+                path: Routes.historico,
+                builder: (_, _) => const HistoricoScreen(),
               ),
             ],
           ),

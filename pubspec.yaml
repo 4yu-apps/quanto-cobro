@@ -3,7 +3,7 @@ description: "Quanto Cobro? - calculadora do freelancer BR (valor-hora, reserva 
 publish_to: 'none'
 
 # versionName+versionCode. Nome de EXIBIÇÃO fica em lib/core/config/app_config.dart.
-version: 0.5.0+7
+version: 0.6.0+8
 
 environment:
   sdk: ^3.12.2
@@ -37,6 +37,13 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0+eol
   path_provider: ^2.1.6
   path: ^1.9.1
+
+  # Proposta em PDF (07 §A): pure-Dart, gera os bytes NO APARELHO — nenhum
+  # servidor, nenhum link hospedado. É o que mantém o fosso "100% offline, sem
+  # cadastro" de pé mesmo com a feature mais "de nuvem" do app. Sem `printing`
+  # de propósito: ele arrasta plugin nativo e diálogo de impressora que não
+  # queremos — o share nativo do share_plus já entrega o PDF no WhatsApp.
+  pdf: ^3.11.3
 
   # Features (declaradas na fundação 06; ligadas nas próximas etapas)
   share_plus: ^13.2.0

@@ -30,7 +30,10 @@ void main() {
     );
   });
 
-  testWidgets('nav bar de 3 abas troca entre Início, Histórico e Trabalhos', (
+  // v0.6 (07 §B.2): o slot do meio deixou de ser "Trabalhos" (presets de preço)
+  // e virou "Projetos" (os clientes). Continuam TRÊS abas — foi troca, não
+  // adição: este teste é o que impede uma 4ª de aparecer sem decisão.
+  testWidgets('nav bar de 3 abas troca entre Início, Projetos e Guardado', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{
@@ -46,20 +49,25 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // A casca de navegação existe, com as 3 abas.
+    // A casca de navegação existe, com as 3 abas — e nenhuma a mais.
     expect(find.byType(NavigationBar), findsOneWidget);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).destinations,
+      hasLength(3),
+    );
     expect(find.text('Início'), findsOneWidget);
+    expect(find.text('Projetos'), findsOneWidget);
     expect(find.text('Guardado'), findsOneWidget);
-    expect(find.text('Trabalhos'), findsOneWidget);
+    expect(find.text('Trabalhos'), findsNothing);
 
     // Troca pra Guardado → estado vazio da tela renderiza sem crash.
     await tester.tap(find.text('Guardado'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Sem reservas'), findsOneWidget);
 
-    // Troca pra Trabalhos → estado vazio dos perfis renderiza.
-    await tester.tap(find.text('Trabalhos'));
+    // Troca pra Projetos → estado vazio da gestão renderiza.
+    await tester.tap(find.text('Projetos'));
     await tester.pumpAndSettle();
-    expect(find.text('Meus trabalhos'), findsOneWidget);
+    expect(find.text('Seus projetos, num lugar só.'), findsOneWidget);
   });
 }

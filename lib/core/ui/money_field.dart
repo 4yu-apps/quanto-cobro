@@ -76,6 +76,16 @@ class _MoneyFieldState extends State<MoneyField> {
   }
 }
 
+/// Texto inicial de um [MoneyField] preenchido por código (2000 -> "2.000").
+///
+/// Existe porque `controller.text = ...` NÃO passa pelos `inputFormatters`:
+/// preencher na mão deixaria o campo mostrando "2000" enquanto digitar mostra
+/// "2.000" — a mesma tela com duas caras, exatamente no número que a pessoa
+/// veio conferir. Todo pré-preenchimento (Reserva de um projeto, edição de
+/// projeto, valor da proposta) passa por aqui.
+String moneyFieldText(num valor) =>
+    valor <= 0 ? '' : _MilharFormatter._fmt.format(valor.round());
+
 /// Separador de milhar ao vivo (12000 -> 12.000): conferir o valor digitado é
 /// exatamente a ansiedade que o app existe pra tirar. Preserva a POSIÇÃO do
 /// cursor (contando dígitos antes dele) — editar no meio do número funciona.

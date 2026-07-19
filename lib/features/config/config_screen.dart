@@ -11,7 +11,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../app/routes.dart';
 import '../../core/config/app_config.dart';
 import '../../core/data/profile_repository.dart';
+import '../../core/model/marca.dart';
 import '../../core/model/perfil.dart';
+import '../../core/model/projeto.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
@@ -37,6 +39,8 @@ class ConfigScreen extends ConsumerWidget {
     final bool reduzirTransp = ref.watch(reduceTransparencyProvider);
     final bool lembreteMensal = ref.watch(reminderMensalProvider);
     final double textScale = ref.watch(textScaleProvider);
+    final Marca marca = ref.watch(marcaProvider);
+    final ProfilesData trabalhos = ref.watch(profilesProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
@@ -172,16 +176,49 @@ class ConfigScreen extends ConsumerWidget {
           _secao(context, 'GESTÃO'),
           Card(
             color: theme.colorScheme.surfaceContainer,
-            child: SwitchListTile(
-              value: lembreteMensal,
-              onChanged: (bool v) {
-                Haptics.select();
-                ref.read(reminderMensalProvider.notifier).set(v);
-              },
-              title: const Text('Lembrete mensal'),
-              subtitle: const Text(
-                'Um aviso no início do app quando um trabalho mensal ainda não teve renda registrada no mês.',
-              ),
+            child: Column(
+              children: <Widget>[
+                SwitchListTile(
+                  value: lembreteMensal,
+                  onChanged: (bool v) {
+                    Haptics.select();
+                    ref.read(reminderMensalProvider.notifier).set(v);
+                  },
+                  title: const Text('Lembrete mensal'),
+                  subtitle: const Text(
+                    'Um aviso no início do app quando um projeto recorrente ainda não registrou recebimento no ciclo.',
+                  ),
+                ),
+                const Divider(height: 1, indent: Space.x4),
+                // A marca vive aqui, mas quase ninguém chega por aqui: ela é
+                // pedida inline na 1ª proposta. Este é o lugar de VOLTAR nela.
+                ListTile(
+                  leading: const Icon(Icons.badge_outlined),
+                  title: const Text('Minha marca'),
+                  subtitle: Text(
+                    marca.pronta
+                        ? '${marca.nome} — aparece no topo das suas propostas'
+                        : 'Nome, logo e contato que vão nas suas propostas',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.marca),
+                ),
+                const Divider(height: 1, indent: Space.x4),
+                // Os presets de preço saíram do slot de aba (07 §B.2). Aqui é
+                // uma das duas casas novas deles — a outra é o switcher do
+                // chip do herói, no Painel.
+                ListTile(
+                  leading: const Icon(Icons.tune),
+                  title: const Text('Meus preços'),
+                  subtitle: Text(
+                    trabalhos.perfis.length <= 1
+                        ? 'O cálculo que define quanto você cobra'
+                        : '${trabalhos.perfis.length} preços — o ativo é "${trabalhos.active?.nome ?? ''}"',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(Routes.perfis),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: Space.x6),
@@ -317,7 +354,9 @@ class ConfigScreen extends ConsumerWidget {
       messenger
         ..clearSnackBars()
         ..showSnackBar(
-          const SnackBar(content: Text('Ainda não há um cálculo pra exportar.')),
+          const SnackBar(
+            content: Text('Ainda não há um cálculo pra exportar.'),
+          ),
         );
       return;
     }
@@ -338,13 +377,17 @@ class ConfigScreen extends ConsumerWidget {
       messenger
         ..clearSnackBars()
         ..showSnackBar(
-          const SnackBar(content: Text('Backup gerado. Guarde num lugar seguro.')),
+          const SnackBar(
+            content: Text('Backup gerado. Guarde num lugar seguro.'),
+          ),
         );
     } catch (_) {
       messenger
         ..clearSnackBars()
         ..showSnackBar(
-          const SnackBar(content: Text('Não consegui gerar o arquivo de backup.')),
+          const SnackBar(
+            content: Text('Não consegui gerar o arquivo de backup.'),
+          ),
         );
     }
   }
@@ -362,11 +405,19 @@ class ConfigScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(Space.x6, 0, Space.x6, Space.x2),
+              padding: const EdgeInsets.fromLTRB(
+                Space.x6,
+                0,
+                Space.x6,
+                Space.x2,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Restaurar backup', style: Theme.of(sheet).textTheme.titleLarge),
+                  Text(
+                    'Restaurar backup',
+                    style: Theme.of(sheet).textTheme.titleLarge,
+                  ),
                   if (temCalculoAtual) ...<Widget>[
                     const SizedBox(height: Space.x2),
                     Text(
@@ -500,7 +551,8 @@ class ConfigScreen extends ConsumerWidget {
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Apagar meus dados?'),
         content: const Text(
-          'Isso remove seus cálculos e seu histórico de reservas do aparelho.',
+          'Isso remove seus cálculos, seu histórico de reservas, seus projetos '
+          'e a sua marca do aparelho.',
         ),
         actions: <Widget>[
           TextButton(
@@ -522,16 +574,22 @@ class ConfigScreen extends ConsumerWidget {
     // Guarda em memória pro Desfazer (substitui a 2ª confirmação com elegância).
     final ProfilesData antigos = ref.read(profilesProvider);
     final List<ReservaEntry> historicoAntigo = ref.read(reservaHistoryProvider);
+    final List<Projeto> projetosAntigos = ref.read(projetosProvider);
+    final Marca marcaAntiga = ref.read(marcaProvider);
     // Captura os notifiers ANTES do snackbar: o Desfazer pode ser tocado depois
     // da tela morrer, e ref pós-dispose crasha.
     final ProfilesNotifier profilesN = ref.read(profilesProvider.notifier);
     final ReservaHistoryNotifier historyN = ref.read(
       reservaHistoryProvider.notifier,
     );
+    final ProjetosNotifier projetosN = ref.read(projetosProvider.notifier);
+    final MarcaNotifier marcaN = ref.read(marcaProvider.notifier);
 
     Haptics.commit();
-    await ref.read(profilesProvider.notifier).clearAll();
-    await ref.read(reservaHistoryProvider.notifier).clear();
+    await profilesN.clearAll();
+    await historyN.clear();
+    await projetosN.clearAll();
+    await marcaN.save(const Marca());
 
     messenger
       ..clearSnackBars()
@@ -550,6 +608,10 @@ class ConfigScreen extends ConsumerWidget {
               for (final ReservaEntry e in historicoAntigo.reversed) {
                 await historyN.restore(e);
               }
+              for (final Projeto p in projetosAntigos) {
+                await projetosN.save(p);
+              }
+              if (!marcaAntiga.vazia) await marcaN.save(marcaAntiga);
             },
           ),
         ),

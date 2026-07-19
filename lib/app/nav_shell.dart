@@ -11,11 +11,18 @@ import '../core/theme/motion.dart';
 import '../core/theme/tokens.dart';
 
 /// Casca de navegação (v0.5): dá ao app um MAPA visível em 1 olhada — o que um
-/// leigo precisa. Três abas (Início · Histórico · Trabalhos). As duas ações
-/// recorrentes (Recebi um pagamento / Vou orçar) NÃO são abas — são os cards
-/// protagonistas do Painel. Config vive na engrenagem, não gasta slot.
-/// Ferramentas e fluxos (calc, reserva, resultado…) empilham ACIMA da casca
-/// (cobrem a barra — são modos focados).
+/// leigo precisa. Três abas, cada uma um balde mental limpo:
+/// **Início = meu preço + ações · Projetos = meus clientes · Guardado = meu
+/// imposto.** As duas ações recorrentes (Recebi um pagamento / Vou orçar) NÃO
+/// são abas — são os cards protagonistas do Painel. Config vive na engrenagem,
+/// não gasta slot. Ferramentas e fluxos (calc, reserva, proposta…) empilham
+/// ACIMA da casca (cobrem a barra — são modos focados).
+///
+/// v0.6 (07 §B.2): o slot do meio era "Trabalhos" e mostrava PRESETS DE PREÇO —
+/// um conceito interno num lugar nobre, sendo que quem abre uma aba com esse
+/// nome espera ver os clientes dele. Trocamos baixa frequência (você define seu
+/// preço raramente) por alta (o power user olha os projetos toda semana). O
+/// número de abas não cresceu: foi troca, não adição.
 ///
 /// v0.6 (Lúa, "Cofre Aberto"): a nav bar flutua descolada das bordas, em
 /// vidro de verdade (BackdropFilter + fill translúcido + halo esmeralda) —
@@ -62,6 +69,7 @@ class _GlassBottomBar extends ConsumerWidget {
           initialLocation: i == navigationShell.currentIndex,
         );
       },
+      // A ordem casa por índice com `branches` em `router.dart`.
       destinations: const <NavigationDestination>[
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
@@ -69,14 +77,14 @@ class _GlassBottomBar extends ConsumerWidget {
           label: 'Início',
         ),
         NavigationDestination(
+          icon: Icon(Icons.work_outline),
+          selectedIcon: Icon(Icons.work),
+          label: 'Projetos',
+        ),
+        NavigationDestination(
           icon: Icon(Icons.savings_outlined),
           selectedIcon: Icon(Icons.savings),
           label: 'Guardado',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.work_outline),
-          selectedIcon: Icon(Icons.work),
-          label: 'Trabalhos',
         ),
       ],
     );

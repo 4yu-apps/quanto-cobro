@@ -8,6 +8,7 @@ import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
 import '../../core/model/perfil.dart';
+import '../../core/model/proposta.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
@@ -21,6 +22,7 @@ import '../../core/ui/money_count_up.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/stale_banner.dart';
 import '../../core/ui/vitrine_card.dart';
+import '../proposta/proposta_flow.dart';
 
 /// Resultado (Blueprint §5.3): o clímax. Regra da casa: resposta de dinheiro
 /// vive numa SUPERFÍCIE, nunca solta no fundo — resposta-mãe em cima (vitrine),
@@ -321,9 +323,30 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           const SizedBox(height: Space.x4),
           StaggerIn(
             index: 3,
-            child: TextButton(
-              onPressed: () => context.push(Routes.detalhe, extra: p),
-              child: const Text('Ver detalhamento'),
+            child: Wrap(
+              spacing: Space.x2,
+              children: <Widget>[
+                TextButton(
+                  onPressed: () => context.push(Routes.detalhe, extra: p),
+                  child: const Text('Ver detalhamento'),
+                ),
+                // Porta secundária da proposta (07 §A.2). Discreta de
+                // propósito: aqui a ação que importa é SALVAR o cálculo — a
+                // proposta principal nasce do Simulador, onde a pessoa já
+                // validou o preço de um projeto concreto.
+                TextButton(
+                  onPressed: () => abrirProposta(
+                    context,
+                    ref,
+                    inicial: Proposta(
+                      servico: '',
+                      valor: 0,
+                      valorHora: r.valorHora.toDouble(),
+                    ),
+                  ),
+                  child: const Text('Fazer proposta'),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: Space.x2),

@@ -4,11 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'billing/entitlement.dart';
 import 'data/backup_service.dart';
+import 'data/marca_repository.dart';
 import 'data/profile_repository.dart';
+import 'data/projeto_repository.dart';
 import 'data/reserva_history_repository.dart';
 import 'fx/fx_repository.dart';
 import 'fx/fx_service.dart';
+import 'model/marca.dart';
 import 'model/perfil.dart';
+import 'model/projeto.dart';
 import 'model/reserva_entry.dart';
 import 'settings/settings_repository.dart';
 
@@ -147,6 +151,8 @@ final Provider<BackupService> backupServiceProvider = Provider<BackupService>(
   (Ref ref) => BackupService(
     ref.watch(profileRepositoryProvider),
     ref.watch(reservaHistoryRepositoryProvider),
+    ref.watch(projetoRepositoryProvider),
+    ref.watch(marcaRepositoryProvider),
   ),
 );
 
@@ -299,6 +305,118 @@ class LeaoPagoNotifier extends Notifier<bool> {
 
 final NotifierProvider<LeaoPagoNotifier, bool> leaoPagoProvider =
     NotifierProvider<LeaoPagoNotifier, bool>(LeaoPagoNotifier.new);
+
+// ---- Projetos (07 §B — a gestão pendurada no loop de reserva) ----
+final Provider<ProjetoRepository> projetoRepositoryProvider =
+    Provider<ProjetoRepository>(
+      (Ref ref) => ProjetoRepository(ref.watch(sharedPreferencesProvider)),
+    );
+
+class ProjetosNotifier extends Notifier<List<Projeto>> {
+  @override
+  List<Projeto> build() => ordenarPorProximoRecebimento(
+    ref.read(projetoRepositoryProvider).loadAll(),
+  );
+
+  Future<void> _persist(List<Projeto> all) async {
+    final List<Projeto> ordenado = ordenarPorProximoRecebimento(all);
+    await ref.read(projetoRepositoryProvider).replaceAll(ordenado);
+    state = ordenado;
+  }
+
+  /// Cria (id novo) ou atualiza (id existente).
+  Future<void> save(Projeto projeto) async {
+    final List<Projeto> all = List<Projeto>.of(state);
+    final int i = all.indexWhere((Projeto p) => p.id == projeto.id);
+    if (i >= 0) {
+      all[i] = projeto;
+    } else {
+      all.add(projeto);
+    }
+    await _persist(all);
+  }
+
+  Future<void> remove(String id) =>
+      _persist(state.where((Projeto p) => p.id != id).toList());
+
+  Future<void> setStatus(String id, ProjetoStatus status) async {
+    final Projeto? p = byId(id);
+    if (p == null) return;
+    await save(p.copyWith(status: status));
+  }
+
+  /// Fecha o ciclo: registrado o recebimento, a data anda pro próximo (07 §B.4).
+  ///
+  /// O avulso NÃO é concluído automaticamente — o default de pagamento do app
+  /// é "50% de sinal, 50% na entrega", então o primeiro "Recebi" de um avulso
+  /// costuma ser metade do trabalho, não o fim dele. Concluir sozinho aqui
+  /// apagaria o projeto da lista bem no meio do serviço.
+  Future<void> registrarRecebimento(
+    String id, {
+    required DateTime pagoEm,
+  }) async {
+    final Projeto? p = byId(id);
+    if (p == null) return;
+    final DateTime? proximo = avancarCiclo(p, pagoEm: pagoEm);
+    await save(
+      p.copyWith(
+        proximoRecebimento: proximo,
+        limparProximoRecebimento: proximo == null,
+        // Orçamento que recebeu virou trabalho de verdade: o cliente aceitou.
+        status: p.status == ProjetoStatus.orcamento
+            ? ProjetoStatus.ativo
+            : null,
+      ),
+    );
+  }
+
+  Projeto? byId(String? id) {
+    if (id == null) return null;
+    for (final Projeto p in state) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  Future<void> clearAll() async {
+    await ref.read(projetoRepositoryProvider).clear();
+    state = <Projeto>[];
+  }
+}
+
+final NotifierProvider<ProjetosNotifier, List<Projeto>> projetosProvider =
+    NotifierProvider<ProjetosNotifier, List<Projeto>>(ProjetosNotifier.new);
+
+// ---- Marca do freelancer (o topo da proposta — 07 §A.2) ----
+final Provider<MarcaRepository> marcaRepositoryProvider =
+    Provider<MarcaRepository>(
+      (Ref ref) => MarcaRepository(ref.watch(sharedPreferencesProvider)),
+    );
+
+class MarcaNotifier extends Notifier<Marca> {
+  @override
+  Marca build() => ref.read(marcaRepositoryProvider).load();
+
+  Future<void> save(Marca marca) async {
+    await ref.read(marcaRepositoryProvider).save(marca);
+    state = marca;
+  }
+
+  /// Copia a imagem escolhida pra pasta do app e já salva na marca.
+  Future<void> setLogo(String origem) async {
+    final String path = await ref
+        .read(marcaRepositoryProvider)
+        .importarLogo(origem);
+    await save(state.copyWith(logoPath: path));
+  }
+
+  Future<void> removerLogo() async {
+    await save(state.copyWith(limparLogo: true));
+  }
+}
+
+final NotifierProvider<MarcaNotifier, Marca> marcaProvider =
+    NotifierProvider<MarcaNotifier, Marca>(MarcaNotifier.new);
 
 // ---- Câmbio (Fase 3 — cliente estrangeiro, ex.: Marina cobrando em USD) ----
 final Provider<FxRepository> fxRepositoryProvider = Provider<FxRepository>(

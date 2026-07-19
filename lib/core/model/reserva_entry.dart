@@ -7,6 +7,7 @@ class ReservaEntry {
     required this.regimeTag,
     required this.at,
     this.perfilId,
+    this.projetoId,
     this.tipo = 'pct',
   });
 
@@ -17,6 +18,12 @@ class ReservaEntry {
 
   /// Trabalho a que o registro pertence (null em registros antigos).
   final String? perfilId;
+
+  /// Projeto/cliente que pagou (07 §C). É o que faz "já recebeu R$ X" e o selo
+  /// "Leão em dia" saírem do histórico que JÁ existe, sem tabela nova. Null em
+  /// registro avulso (a pessoa recebeu algo que não está na lista de projetos)
+  /// e em tudo que foi salvo antes desta versão.
+  final String? projetoId;
 
   /// 'pct' = reserva percentual por pagamento · 'das' = DAS do mês separado (MEI).
   final String tipo;
@@ -29,6 +36,7 @@ class ReservaEntry {
     'regimeTag': regimeTag,
     'at': at.toIso8601String(),
     if (perfilId != null) 'perfilId': perfilId,
+    if (projetoId != null) 'projetoId': projetoId,
     'tipo': tipo,
   };
 
@@ -38,6 +46,7 @@ class ReservaEntry {
     regimeTag: json['regimeTag'] as String,
     at: DateTime.parse(json['at'] as String),
     perfilId: json['perfilId'] as String?,
+    projetoId: json['projetoId'] as String?,
     tipo: json['tipo'] as String? ?? 'pct',
   );
 }

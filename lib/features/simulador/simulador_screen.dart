@@ -8,6 +8,7 @@ import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
+import '../../core/model/proposta.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
@@ -20,6 +21,7 @@ import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
+import '../proposta/proposta_flow.dart';
 
 /// Simulador de projeto (Blueprint §5.6): diz se um valor dá lucro real e liga
 /// de volta ao valor-hora alvo. O aviso comparativo DEFENDE o usuário.
@@ -336,7 +338,40 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                         custo: res.divisao.custo,
                         emphasis: DivisaoEmphasis.lucro,
                       ),
-                      const SizedBox(height: Space.x4),
+                      const SizedBox(height: Space.x6),
+
+                      // A porta principal da proposta (07 §A.2): ela aparece
+                      // logo depois de a pessoa CONFIRMAR que o preço fecha —
+                      // o momento em que "então manda pro cliente" é a
+                      // pergunta natural, e o medo de parecer amador está mais
+                      // vivo. Aparece mesmo abaixo do alvo (é escolha dela),
+                      // mas só o preço que fecha ganha o empurrãozinho.
+                      FilledButton.icon(
+                        onPressed: () => abrirProposta(
+                          context,
+                          ref,
+                          inicial: Proposta(
+                            servico: '',
+                            valor: valor.toDouble(),
+                            horas: horas,
+                            valorHora: res.effVH.toDouble(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.description_outlined),
+                        label: const Text('Fazer proposta pro cliente'),
+                      ),
+                      if (!res.abaixo || alvoVH == 0) ...<Widget>[
+                        const SizedBox(height: Space.x2),
+                        Text(
+                          'Esse preço fecha. Manda bonito.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: d.lucro,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: Space.x6),
                       if (tabelasDefasadas(DateTime.now())) ...<Widget>[
                         StaleBanner(ano: kTabelasAno),
                         const SizedBox(height: Space.x3),
