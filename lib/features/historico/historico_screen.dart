@@ -59,7 +59,7 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
       body: all.isEmpty
           ? _empty(context)
           : ListView(
-              padding: const EdgeInsets.all(Space.x4),
+              padding: const EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, 120),
               children: <Widget>[
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,

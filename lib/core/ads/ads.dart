@@ -74,11 +74,11 @@ class _AdPlaceholder extends StatelessWidget {
       label: 'Espaço de anúncio',
       child: Container(
         height: 56,
+        margin: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x2),
         decoration: BoxDecoration(
           color: d.adSurface,
-          border: Border(
-            top: BorderSide(color: theme.colorScheme.outlineVariant),
-          ),
+          borderRadius: const BorderRadius.all(Radii.lg),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Stack(
           children: <Widget>[
@@ -90,7 +90,6 @@ class _AdPlaceholder extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: d.adLabel,
                   letterSpacing: 0.5,
-                  fontSize: 9,
                 ),
               ),
             ),

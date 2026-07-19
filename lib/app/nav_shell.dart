@@ -131,7 +131,6 @@ class _GlassBottomBar extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           const AdSlot(),
-          const SizedBox(height: Space.x2),
           Padding(
             padding: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x3),
             child: pilula,
