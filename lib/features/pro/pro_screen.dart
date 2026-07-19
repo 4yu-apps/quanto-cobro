@@ -23,7 +23,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
 
   static const List<(IconData, String)> _beneficios = <(IconData, String)>[
     (Icons.picture_as_pdf_outlined, 'Exportar orçamento em PDF com sua marca'),
-    (Icons.switch_account_outlined, 'Vários perfis (cliente recorrente x avulso)'),
+    (Icons.switch_account_outlined, 'Vários trabalhos (cliente recorrente x avulso)'),
     (Icons.tune, 'Modo avançado por regime (faixas do Simples, INSS, deduções)'),
     (Icons.public, 'Módulo freela pra gringo (USD, carnê-leão mensal)'),
     (Icons.block, 'Remover anúncios'),
@@ -177,8 +177,8 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                                 borderRadius: const BorderRadius.all(Radii.full),
                               ),
                               child: Text('MELHOR VALOR',
-                                  style: theme.textTheme.labelSmall
-                                      ?.copyWith(color: cs.onPrimaryContainer)),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                      color: cs.onPrimaryContainer, letterSpacing: 0.5)),
                             ),
                           ],
                         ],

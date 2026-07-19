@@ -1,10 +1,12 @@
 import 'custo.dart';
 import 'regime.dart';
 
-/// Perfil de cálculo (permanente/estratégico). Alimenta de defaults os tools
-/// recorrentes (reserva, simulador). No MVP: 1 perfil; no Pro: vários.
+/// Perfil de cálculo (permanente/estratégico). Cada CASO do usuário é um
+/// perfil: "Freela design", "Consultoria", "Cliente fixo"... Alimenta de
+/// defaults os tools recorrentes (reserva, simulador).
 class Perfil {
   const Perfil({
+    required this.id,
     required this.nome,
     required this.renda,
     required this.horas,
@@ -14,6 +16,7 @@ class Perfil {
     required this.custos,
   });
 
+  final String id;
   final String nome;
   final double renda; // o que você quer que sobre, no bolso
   final int horas; // horas faturáveis/mês (realista, não 160h)
@@ -24,15 +27,16 @@ class Perfil {
 
   double get custosTotal => custos.fold(0, (double s, Custo c) => s + c.valor);
 
-  /// Perfil canônico do protótipo (resultado coerente: ~R$ 92/hora).
-  factory Perfil.padrao() => const Perfil(
-        nome: 'Padrão',
+  /// Perfil canônico (resultado coerente: ~R$ 92/hora).
+  factory Perfil.padrao({String id = 'p1', String nome = 'Meu trabalho'}) => Perfil(
+        id: id,
+        nome: nome,
         renda: 5000,
         horas: 82,
         provisao: 458,
         provisaoOn: true,
         regime: RegimeId.mei,
-        custos: <Custo>[
+        custos: const <Custo>[
           Custo(id: 'software', label: 'Software/ferramentas', valor: 120),
           Custo(id: 'internet', label: 'Internet/telefone', valor: 100),
           Custo(id: 'equip', label: 'Equipamento (rateio)', valor: 150),
@@ -42,6 +46,7 @@ class Perfil {
       );
 
   Perfil copyWith({
+    String? id,
     String? nome,
     double? renda,
     int? horas,
@@ -51,6 +56,7 @@ class Perfil {
     List<Custo>? custos,
   }) {
     return Perfil(
+      id: id ?? this.id,
       nome: nome ?? this.nome,
       renda: renda ?? this.renda,
       horas: horas ?? this.horas,
@@ -62,6 +68,7 @@ class Perfil {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
         'nome': nome,
         'renda': renda,
         'horas': horas,
@@ -72,7 +79,8 @@ class Perfil {
       };
 
   factory Perfil.fromJson(Map<String, dynamic> json) => Perfil(
-        nome: json['nome'] as String? ?? 'Padrão',
+        id: json['id'] as String? ?? 'p1',
+        nome: json['nome'] as String? ?? 'Meu trabalho',
         renda: (json['renda'] as num).toDouble(),
         horas: (json['horas'] as num).toInt(),
         provisao: (json['provisao'] as num).toDouble(),

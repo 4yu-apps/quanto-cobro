@@ -73,11 +73,15 @@ class _ErrorView extends StatelessWidget {
           children: <Widget>[
             Icon(Icons.error_outline, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: Space.x3),
-            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
+            Text('Não consegui carregar seu cálculo.',
+                textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: Space.x2),
+            Text('Seus dados podem ter se perdido. Vamos refazer, é rápido.',
+                textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: Space.x6),
             FilledButton(
               onPressed: () => context.push(Routes.calc),
-              child: const Text('Começar'),
+              child: const Text('Refazer meu cálculo'),
             ),
           ],
         ),
@@ -113,6 +117,8 @@ class _PainelBody extends ConsumerWidget {
           child: HeroValueCard(
             valorHora: r.valorHora,
             subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
+            perfilNome: perfil.nome,
+            onPerfilTap: () => context.push(Routes.perfis),
             onVerComoCheguei: () => context.push(Routes.detalhe),
             staleAno: stale ? kTabelasAno : null,
           ),
@@ -130,6 +136,7 @@ class _PainelBody extends ConsumerWidget {
                   child: ToolActionCard(
                     icon: Icons.payments_outlined,
                     title: 'Recebi um pagamento',
+                    subtitle: 'separa o do Leão na hora',
                     onTap: () => context.push(Routes.reserva),
                   ),
                 ),
@@ -138,6 +145,7 @@ class _PainelBody extends ConsumerWidget {
                   child: ToolActionCard(
                     icon: Icons.request_quote_outlined,
                     title: 'Vou orçar um projeto',
+                    subtitle: 'esse preço vale a pena?',
                     onTap: () => context.push(Routes.simulador),
                   ),
                 ),

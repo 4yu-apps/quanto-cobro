@@ -53,13 +53,7 @@ class HistoricoScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: Space.x6),
                     FilledButton.tonal(
-                      onPressed: () {
-                        if (context.canPop()) {
-                          context.pop();
-                        } else {
-                          context.push(Routes.reserva);
-                        }
-                      },
+                      onPressed: () => context.push(Routes.reserva),
                       child: const Text('Recebi um pagamento'),
                     ),
                   ],
@@ -143,7 +137,8 @@ class HistoricoScreen extends ConsumerWidget {
       ),
       onDismissed: (_) {
         Haptics.select();
-        ref.read(reservaHistoryProvider.notifier).remove(e);
+        final ReservaHistoryNotifier historyN = ref.read(reservaHistoryProvider.notifier);
+        historyN.remove(e);
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(
@@ -151,7 +146,7 @@ class HistoricoScreen extends ConsumerWidget {
               content: const Text('Registro removido'),
               action: SnackBarAction(
                 label: 'Desfazer',
-                onPressed: () => ref.read(reservaHistoryProvider.notifier).restore(e),
+                onPressed: () => historyN.restore(e),
               ),
             ),
           );

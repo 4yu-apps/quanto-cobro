@@ -153,7 +153,16 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         ),
         const SizedBox(height: Space.x4),
         OutlinedButton.icon(
-          onPressed: () => context.push(Routes.calc),
+          onPressed: () {
+            if (_dirty) {
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(const SnackBar(
+                    content: Text('Salva as alterações daqui antes de editar o resto.')));
+              return;
+            }
+            context.push(Routes.calc);
+          },
           icon: const Icon(Icons.tune),
           label: const Text('Editar custos e regime'),
         ),
@@ -163,7 +172,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
               ? null
               : () async {
                   Haptics.commit();
-                  await ref.read(profileProvider.notifier).save(p);
+                  await ref.read(profilesProvider.notifier).saveAndActivate(p);
                   if (context.mounted) {
                     setState(() => _dirty = false);
                     if (context.canPop()) context.pop();

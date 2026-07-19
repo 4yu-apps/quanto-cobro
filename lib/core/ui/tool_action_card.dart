@@ -10,11 +10,13 @@ class ToolActionCard extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final VoidCallback onTap;
 
   @override
@@ -49,6 +51,16 @@ class ToolActionCard extends StatelessWidget {
                       .titleMedium
                       ?.copyWith(color: cs.onSecondaryContainer),
                 ),
+                if (subtitle != null) ...<Widget>[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: cs.onSecondaryContainer.withValues(alpha: 0.8)),
+                  ),
+                ],
               ],
             ),
           ),

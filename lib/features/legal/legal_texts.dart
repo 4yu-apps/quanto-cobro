@@ -8,7 +8,7 @@ import '../../core/config/app_config.dart';
 /// Aqui (LGPD: responsável, permissões, direitos, exclusão, AdMob) deve ser reusada.
 abstract final class LegalTexts {
   static const String privacidade = '''
-Política de Privacidade — ${AppConfig.appName}
+Política de Privacidade · ${AppConfig.appName}
 
 Este app é local-first: seus dados de renda, custos e cálculos ficam NO SEU
 APARELHO. Não há cadastro, login nem servidor nosso guardando essas informações.
@@ -30,7 +30,7 @@ Contato: ${AppConfig.contactEmail}
 ''';
 
   static const String termos = '''
-Termos de Uso — ${AppConfig.appName}
+Termos de Uso · ${AppConfig.appName}
 
 Os números do app são ESTIMATIVAS DE PLANEJAMENTO para ajudar você a decidir
 preço. Não são consultoria fiscal nem declaração de imposto. As alíquotas

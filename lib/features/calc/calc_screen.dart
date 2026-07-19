@@ -19,7 +19,10 @@ import '../../core/ui/money_field.dart';
 /// momento didático. Cada passo tem sua validação (erro humano). O caminho free
 /// entrega um número credível em 5 passos.
 class CalcScreen extends ConsumerStatefulWidget {
-  const CalcScreen({super.key});
+  const CalcScreen({super.key, this.novoTrabalho});
+
+  /// Quando presente, cria um NOVO perfil com esse nome (em vez de editar o ativo).
+  final String? novoTrabalho;
 
   @override
   ConsumerState<CalcScreen> createState() => _CalcScreenState();
@@ -40,7 +43,15 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   void initState() {
     super.initState();
     final ProfileState st = ref.read(profileProvider);
-    if (st is ProfileReady) {
+    final String? novo = widget.novoTrabalho;
+    if (novo != null) {
+      // Novo trabalho: perfil zerado nos defaults, id próprio, nome dado.
+      final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
+      _draft = Perfil.padrao(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        nome: novo,
+      ).copyWith(regime: intl ? RegimeId.intl : RegimeId.mei);
+    } else if (st is ProfileReady) {
       _draft = st.perfil;
     } else {
       // Primeiro uso: defaults honestos + regime pré-selecionado pelo modo BR/intl.
@@ -290,10 +301,20 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.primary),
             title: Text(c.label),
+            subtitle: Text('Toque pra editar o valor',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelSmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            onTap: () => _editarCusto(c),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(moneyBRL(c.valor)),
+                Text(moneyBRL(c.valor),
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(fontFeatures: AppType.tnum)),
                 IconButton(
                   icon: const Icon(Icons.close),
                   tooltip: 'Remover',
@@ -320,20 +341,19 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           ],
         ),
         const SizedBox(height: Space.x4),
-        if (faltam.isNotEmpty) ...<Widget>[
-          Text('Não esqueça:', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: Space.x2),
-          Wrap(
-            spacing: Space.x2,
-            runSpacing: Space.x2,
-            children: <Widget>[
-              for (final CostChip chip in faltam)
-                ActionChip(
-                  avatar: Icon(_iconFor(chip.icon), size: 18),
-                  label: Text(chip.label),
-                  onPressed: () {
-                    Haptics.select();
-                    setState(() {
+        Text('Não esqueça:', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: Space.x2),
+        Wrap(
+          spacing: Space.x2,
+          runSpacing: Space.x2,
+          children: <Widget>[
+            for (final CostChip chip in faltam)
+              ActionChip(
+                avatar: Icon(_iconFor(chip.icon), size: 18),
+                label: Text(chip.label),
+                onPressed: () {
+                  Haptics.select();
+                  setState(() {
                     _draft = _draft.copyWith(
                       custos: <Custo>[
                         ...custos,
@@ -341,13 +361,109 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                       ],
                     );
                   });
-                  },
-                ),
-            ],
-          ),
-        ],
+                },
+              ),
+            // O SEU custo, com o SEU valor: ninguém disse que só existem os pré-setados.
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 18),
+              label: const Text('Outro custo'),
+              onPressed: () => _editarCusto(null),
+            ),
+          ],
+        ),
       ],
     );
+  }
+
+  /// Sheet de custo: adiciona um custo PRÓPRIO (nome + valor) ou edita um
+  /// existente. Ninguém fica preso aos pré-setados.
+  Future<void> _editarCusto(Custo? existente) async {
+    final TextEditingController nomeC = TextEditingController(text: existente?.label ?? '');
+    final TextEditingController valorC = TextEditingController(
+        text: existente == null ? '' : existente.valor.round().toString());
+    final bool novo = existente == null;
+
+    final Custo? result = await showModalBottomSheet<Custo>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext c) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: Space.x6,
+            right: Space.x6,
+            top: Space.x2,
+            bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(novo ? 'Seu custo' : 'Editar ${existente.label}',
+                  style: Theme.of(c).textTheme.titleLarge),
+              const SizedBox(height: Space.x4),
+              if (novo) ...<Widget>[
+                TextField(
+                  controller: nomeC,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                      labelText: 'Nome', hintText: 'Ex.: Estacionamento, Domínio...'),
+                ),
+                const SizedBox(height: Space.x4),
+              ],
+              MoneyField(
+                controller: valorC,
+                label: 'Valor por mês',
+                prefix: r'R$ ',
+                autofocus: !novo,
+              ),
+              const SizedBox(height: Space.x4),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    final int v = int.tryParse(
+                            valorC.text.replaceAll(RegExp(r'[^0-9]'), '')) ??
+                        0;
+                    final String nome = novo ? nomeC.text.trim() : existente.label;
+                    if (nome.isEmpty || v <= 0) return;
+                    Navigator.pop(
+                      c,
+                      Custo(
+                        id: existente?.id ??
+                            'custom-${DateTime.now().millisecondsSinceEpoch}',
+                        label: nome,
+                        valor: v.toDouble(),
+                      ),
+                    );
+                  },
+                  child: Text(novo ? 'Adicionar' : 'Salvar'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    // Dispose atrasado: o sheet ainda anima a saída (viewInsets rebuilda os
+    // TextFields); descartar agora crasharia.
+    Future<void>.delayed(const Duration(milliseconds: 600), () {
+      nomeC.dispose();
+      valorC.dispose();
+    });
+    if (result == null || !mounted) return;
+    Haptics.select();
+    setState(() {
+      final List<Custo> list = List<Custo>.of(_draft.custos);
+      final int i = list.indexWhere((Custo x) => x.id == result.id);
+      if (i >= 0) {
+        list[i] = result;
+      } else {
+        list.add(result);
+      }
+      _draft = _draft.copyWith(custos: list);
+    });
   }
 
   Widget _stepRegime() {

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
 import '../../core/config/app_config.dart';
+import '../../core/data/profile_repository.dart';
+import '../../core/model/perfil.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
 import '../../core/theme/divisao_colors.dart';
@@ -66,8 +68,8 @@ class ConfigScreen extends ConsumerWidget {
                 const Divider(height: 1, indent: Space.x4),
                 ListTile(
                   leading: const Icon(Icons.switch_account_outlined),
-                  title: const Text('Perfis'),
-                  subtitle: const Text('Cenários de preço por tipo de cliente'),
+                  title: const Text('Meus trabalhos'),
+                  subtitle: const Text('Um preço pra cada tipo de trabalho'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push(Routes.perfis),
                 ),
@@ -155,7 +157,7 @@ class ConfigScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: Space.x1),
-          Text('${AppConfig.appName} · versão 0.1.0 · ${AppConfig.contactEmail}',
+          Text('${AppConfig.appName} · versão 0.3.0 · ${AppConfig.contactEmail}',
               style: theme.textTheme.labelSmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ],
@@ -178,7 +180,16 @@ class ConfigScreen extends ConsumerWidget {
 
   void _exportar(BuildContext context, WidgetRef ref) {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final String? json = ref.read(backupServiceProvider).exportJson();
+    final String? json;
+    try {
+      json = ref.read(backupServiceProvider).exportJson();
+    } catch (_) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(
+            content: Text('Não consegui ler seus dados pra exportar.')));
+      return;
+    }
     if (json == null) {
       messenger
         ..clearSnackBars()
@@ -186,15 +197,16 @@ class ConfigScreen extends ConsumerWidget {
             const SnackBar(content: Text('Ainda não há um cálculo pra exportar.')));
       return;
     }
+    final String data = json;
     showDialog<void>(
       context: context,
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Backup dos seus dados'),
-        content: SingleChildScrollView(child: SelectableText(json)),
+        content: SingleChildScrollView(child: SelectableText(data)),
         actions: <Widget>[
           TextButton(
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: json));
+              Clipboard.setData(ClipboardData(text: data));
               Navigator.pop(c);
               messenger
                 ..clearSnackBars()
@@ -239,11 +251,11 @@ class ConfigScreen extends ConsumerWidget {
       ),
     );
     final String texto = controller.text;
-    controller.dispose();
+    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
     if (ok != true) return;
     try {
       await ref.read(backupServiceProvider).importJson(texto);
-      ref.invalidate(profileProvider);
+      ref.invalidate(profilesProvider);
       ref.invalidate(reservaHistoryProvider);
       messenger
         ..clearSnackBars()
@@ -255,7 +267,9 @@ class ConfigScreen extends ConsumerWidget {
     } catch (_) {
       messenger
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(content: Text('Não consegui ler esse backup.')));
+        ..showSnackBar(const SnackBar(
+            content:
+                Text('Não consegui ler esse backup. Confere se o texto foi colado inteiro.')));
     }
   }
 
@@ -265,8 +279,8 @@ class ConfigScreen extends ConsumerWidget {
       context: context,
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Apagar meus dados?'),
-        content:
-            const Text('Isso remove seu cálculo e seu histórico de reservas do aparelho.'),
+        content: const Text(
+            'Isso remove seus cálculos e seu histórico de reservas do aparelho.'),
         actions: <Widget>[
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
           FilledButton(
@@ -280,11 +294,15 @@ class ConfigScreen extends ConsumerWidget {
     if (ok != true) return;
 
     // Guarda em memória pro Desfazer (substitui a 2ª confirmação com elegância).
-    final ProfileState antigo = ref.read(profileProvider);
+    final ProfilesData antigos = ref.read(profilesProvider);
     final List<ReservaEntry> historicoAntigo = ref.read(reservaHistoryProvider);
+    // Captura os notifiers ANTES do snackbar: o Desfazer pode ser tocado depois
+    // da tela morrer, e ref pós-dispose crasha.
+    final ProfilesNotifier profilesN = ref.read(profilesProvider.notifier);
+    final ReservaHistoryNotifier historyN = ref.read(reservaHistoryProvider.notifier);
 
     Haptics.commit();
-    await ref.read(profileProvider.notifier).clear();
+    await ref.read(profilesProvider.notifier).clearAll();
     await ref.read(reservaHistoryProvider.notifier).clear();
 
     messenger
@@ -295,11 +313,14 @@ class ConfigScreen extends ConsumerWidget {
           action: SnackBarAction(
             label: 'Desfazer',
             onPressed: () async {
-              if (antigo is ProfileReady) {
-                await ref.read(profileProvider.notifier).save(antigo.perfil);
+              for (final Perfil p in antigos.perfis) {
+                await profilesN.saveAndActivate(p);
+              }
+              if (antigos.activeId != null) {
+                await profilesN.select(antigos.activeId!);
               }
               for (final ReservaEntry e in historicoAntigo.reversed) {
-                await ref.read(reservaHistoryProvider.notifier).restore(e);
+                await historyN.restore(e);
               }
             },
           ),

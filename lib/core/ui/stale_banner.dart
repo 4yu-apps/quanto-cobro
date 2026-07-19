@@ -22,7 +22,7 @@ class StaleBanner extends StatelessWidget {
           const SizedBox(width: Space.x2),
           Flexible(
             child: Text(
-              'Valores base de $ano, confirme as alíquotas atuais.',
+              'Valores base de $ano. Confirme as alíquotas atuais.',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(color: d.staleFg),
             ),
           ),

@@ -216,7 +216,9 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                               regimeTag: Regime.of(regime).tag,
                               at: DateTime.now(),
                             );
-                            ref.read(reservaHistoryProvider.notifier).add(entry);
+                            final ReservaHistoryNotifier historyN =
+                                ref.read(reservaHistoryProvider.notifier);
+                            historyN.add(entry);
                             setState(() => _saved = true);
                             ScaffoldMessenger.of(context)
                               ..clearSnackBars()
@@ -227,9 +229,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                   action: SnackBarAction(
                                     label: 'Desfazer',
                                     onPressed: () {
-                                      ref
-                                          .read(reservaHistoryProvider.notifier)
-                                          .remove(entry);
+                                      historyN.remove(entry);
                                       if (mounted) setState(() => _saved = false);
                                     },
                                   ),

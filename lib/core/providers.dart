@@ -22,8 +22,8 @@ final Provider<SettingsRepository> settingsRepositoryProvider = Provider<Setting
   (Ref ref) => SettingsRepository(ref.watch(sharedPreferencesProvider)),
 );
 
-/// Estado do perfil — três ramos explícitos (matriz de estados do Blueprint
-/// §5.9): vazio (nunca calculou) · pronto · erro (dado salvo corrompido).
+/// Estado do perfil ATIVO — três ramos explícitos (Blueprint §5.9):
+/// vazio (nunca calculou) · pronto · erro (dado salvo corrompido).
 sealed class ProfileState {
   const ProfileState();
 }
@@ -42,33 +42,79 @@ class ProfileError extends ProfileState {
   final String message;
 }
 
-class ProfileNotifier extends Notifier<ProfileState> {
+/// Todos os perfis (cada "caso" do usuário: freela X, cliente fixo, outro
+/// emprego) + qual está ativo. É a fonte da verdade; o profileProvider deriva.
+class ProfilesNotifier extends Notifier<ProfilesData> {
   @override
-  ProfileState build() => _read();
-
-  ProfileState _read() {
+  ProfilesData build() {
     try {
-      final Perfil? p = ref.read(profileRepositoryProvider).loadSync();
-      return p == null ? const ProfileEmpty() : ProfileReady(p);
+      return ref.read(profileRepositoryProvider).loadSync();
     } catch (_) {
-      // Dado salvo corrompido: erro distinto de "vazio" — o Painel oferece refazer.
-      return const ProfileError('Não consegui carregar seu cálculo. Vamos refazer?');
+      // Dado corrompido: trata como vazio com flag de erro via provider derivado.
+      _corrupt = true;
+      return const ProfilesData(perfis: <Perfil>[], activeId: null);
     }
   }
 
-  Future<void> save(Perfil perfil) async {
-    await ref.read(profileRepositoryProvider).save(perfil);
-    state = ProfileReady(perfil);
+  bool _corrupt = false;
+  bool get corrupt => _corrupt;
+
+  Future<void> _persist(ProfilesData data) async {
+    await ref.read(profileRepositoryProvider).saveAll(data);
+    _corrupt = false; // dado regravado com sucesso: sai do estado de erro
+    state = data;
   }
 
-  Future<void> clear() async {
+  /// Salva o perfil (novo id = cria; id existente = atualiza) e o torna ativo.
+  Future<void> saveAndActivate(Perfil perfil) async {
+    final List<Perfil> list = List<Perfil>.of(state.perfis);
+    final int i = list.indexWhere((Perfil p) => p.id == perfil.id);
+    if (i >= 0) {
+      list[i] = perfil;
+    } else {
+      list.add(perfil);
+    }
+    await _persist(ProfilesData(perfis: list, activeId: perfil.id));
+  }
+
+  Future<void> select(String id) async {
+    await _persist(ProfilesData(perfis: state.perfis, activeId: id));
+  }
+
+  Future<void> remove(String id) async {
+    final List<Perfil> list =
+        state.perfis.where((Perfil p) => p.id != id).toList();
+    final String? active =
+        state.activeId == id ? (list.isEmpty ? null : list.first.id) : state.activeId;
+    await _persist(ProfilesData(perfis: list, activeId: active));
+  }
+
+  Future<void> rename(String id, String nome) async {
+    final List<Perfil> list = <Perfil>[
+      for (final Perfil p in state.perfis) p.id == id ? p.copyWith(nome: nome) : p,
+    ];
+    await _persist(ProfilesData(perfis: list, activeId: state.activeId));
+  }
+
+  Future<void> clearAll() async {
     await ref.read(profileRepositoryProvider).clear();
-    state = const ProfileEmpty();
+    _corrupt = false;
+    state = const ProfilesData(perfis: <Perfil>[], activeId: null);
   }
 }
 
-final NotifierProvider<ProfileNotifier, ProfileState> profileProvider =
-    NotifierProvider<ProfileNotifier, ProfileState>(ProfileNotifier.new);
+final NotifierProvider<ProfilesNotifier, ProfilesData> profilesProvider =
+    NotifierProvider<ProfilesNotifier, ProfilesData>(ProfilesNotifier.new);
+
+/// Estado do perfil ativo, derivado (mantém a API que as telas consomem).
+final Provider<ProfileState> profileProvider = Provider<ProfileState>((Ref ref) {
+  final ProfilesData data = ref.watch(profilesProvider);
+  if (ref.read(profilesProvider.notifier).corrupt) {
+    return const ProfileError('Não consegui carregar seu cálculo. Vamos refazer?');
+  }
+  final Perfil? active = data.active;
+  return active == null ? const ProfileEmpty() : ProfileReady(active);
+});
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override

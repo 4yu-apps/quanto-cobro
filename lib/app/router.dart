@@ -77,7 +77,8 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       // Fluxos (mudança de modo): sobem do rodapé.
       GoRoute(
           path: Routes.calc,
-          pageBuilder: (_, GoRouterState s) => _flowPage(s, const CalcScreen())),
+          pageBuilder: (_, GoRouterState s) =>
+              _flowPage(s, CalcScreen(novoTrabalho: s.extra as String?))),
       GoRoute(
         path: Routes.resultado,
         pageBuilder: (_, GoRouterState s) =>

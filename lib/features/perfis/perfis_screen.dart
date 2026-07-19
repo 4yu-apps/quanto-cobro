@@ -5,68 +5,208 @@ import 'package:go_router/go_router.dart';
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
+import '../../core/data/profile_repository.dart';
+import '../../core/model/perfil.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/motion.dart';
+import '../../core/theme/tokens.dart';
 
-/// Perfis (Blueprint §5.7): alternar cenários de preço (cliente x avulso). No
-/// MVP há 1 perfil; VÁRIOS perfis é Pro (roadmap v1.1). Aqui mostramos o perfil
-/// atual e a porta pro Pro — sem prometer o que ainda não existe.
+/// Perfis (Blueprint §5.7): um perfil por CASO — "Freela design", "Cliente
+/// fixo", "Outro emprego". Tocar ativa (o Painel inteiro muda). O 2º perfil em
+/// diante é Pro (gatilho de valor, preço antes do trabalho).
 class PerfisScreen extends ConsumerWidget {
   const PerfisScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ProfileState st = ref.watch(profileProvider);
+    final ProfilesData data = ref.watch(profilesProvider);
     final bool isPro = ref.watch(proProvider);
     final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfis')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: <Widget>[
-          if (st is ProfileReady)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.radio_button_checked),
-                title: Text(st.perfil.nome),
-                subtitle: Text('${moneyBRL(computeValorHora(st.perfil).valorHora)}/h'),
-              ),
-            )
-          else
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.add_circle_outline),
-                title: const Text('Você ainda não tem um perfil'),
-                subtitle: const Text('Faça seu primeiro cálculo'),
-                onTap: () => context.go(Routes.calc),
-              ),
-            ),
-          const SizedBox(height: 16),
-          Card(
-            color: theme.colorScheme.secondaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('Vários perfis', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  const Text('Preço muda por tipo de cliente? Tenha um perfil pra cada cenário.'),
-                  const SizedBox(height: 12),
-                  if (isPro)
-                    Text('Recurso Pro liberado. Múltiplos perfis chegam numa próxima versão.',
-                        style: theme.textTheme.bodyMedium)
-                  else
-                    FilledButton(
-                      onPressed: () => context.push(Routes.pro),
-                      child: const Text('Conhecer o Pro'),
-                    ),
-                ],
-              ),
-            ),
+      appBar: AppBar(
+        title: const Text('Meus trabalhos'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Novo trabalho',
+            onPressed: () => _novo(context, ref, data, isPro),
           ),
         ],
       ),
+      body: data.perfis.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(Space.x6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(Icons.switch_account_outlined,
+                        size: 40, color: cs.onSurfaceVariant),
+                    const SizedBox(height: Space.x3),
+                    Text(
+                      'Cada trabalho seu pode ter um preço: freela, cliente fixo, outro serviço. Comece pelo primeiro.',
+                      textAlign: TextAlign.center,
+                      style:
+                          theme.textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: Space.x6),
+                    FilledButton(
+                      onPressed: () => context.push(Routes.calc),
+                      child: const Text('Fazer meu primeiro cálculo'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(Space.x4),
+              children: <Widget>[
+                Text(
+                  'Toque pra ativar. O Painel, a Reserva e o Simulador passam a usar o trabalho ativo.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: Space.x4),
+                Card(
+                  color: cs.surfaceContainer,
+                  child: Column(
+                    children: <Widget>[
+                      for (int i = 0; i < data.perfis.length; i++) ...<Widget>[
+                        if (i > 0) const Divider(height: 1, indent: Space.x4),
+                        _tile(context, ref, data.perfis[i],
+                            ativo: data.perfis[i].id == data.active?.id,
+                            unico: data.perfis.length == 1),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Space.x4),
+                OutlinedButton.icon(
+                  onPressed: () => _novo(context, ref, data, isPro),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Novo trabalho'),
+                ),
+              ],
+            ),
     );
+  }
+
+  Widget _tile(BuildContext context, WidgetRef ref, Perfil p,
+      {required bool ativo, required bool unico}) {
+    final ThemeData theme = Theme.of(context);
+    final int vh = computeValorHora(p).valorHora;
+    return ListTile(
+      leading: Icon(
+        ativo ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+        color: ativo ? theme.colorScheme.primary : theme.colorScheme.outline,
+      ),
+      title: Text(p.nome),
+      subtitle: Text(ativo ? 'Ativo' : 'Toque pra ativar'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text('${moneyBRL(vh)}/h',
+              style: theme.textTheme.labelLarge
+                  ?.copyWith(fontFeatures: AppType.tnum, color: theme.colorScheme.primary)),
+          PopupMenuButton<String>(
+            tooltip: 'Opções',
+            onSelected: (String op) async {
+              if (op == 'renomear') {
+                final String? nome = await _pedirNome(context, inicial: p.nome);
+                if (nome != null && nome.trim().isNotEmpty) {
+                  await ref.read(profilesProvider.notifier).rename(p.id, nome.trim());
+                }
+              } else if (op == 'editar') {
+                await ref.read(profilesProvider.notifier).select(p.id);
+                if (context.mounted) context.push(Routes.calc);
+              } else if (op == 'apagar') {
+                if (unico) {
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(const SnackBar(
+                        content: Text(
+                            'Esse é o seu único trabalho. Pra zerar tudo, use Configurações.')));
+                  return;
+                }
+                Haptics.select();
+                final ProfilesNotifier profilesN = ref.read(profilesProvider.notifier);
+                await profilesN.remove(p.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text('"${p.nome}" apagado'),
+                        action: SnackBarAction(
+                          label: 'Desfazer',
+                          onPressed: () => profilesN.saveAndActivate(p),
+                        ),
+                      ),
+                    );
+                }
+              }
+            },
+            itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(value: 'editar', child: Text('Editar cálculo')),
+              PopupMenuItem<String>(value: 'renomear', child: Text('Renomear')),
+              PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
+            ],
+          ),
+        ],
+      ),
+      onTap: ativo
+          ? null
+          : () {
+              Haptics.select();
+              ref.read(profilesProvider.notifier).select(p.id);
+            },
+    );
+  }
+
+  Future<void> _novo(
+      BuildContext context, WidgetRef ref, ProfilesData data, bool isPro) async {
+    // 2º trabalho em diante é Pro (gatilho de valor; preço antes do trabalho).
+    if (data.perfis.isNotEmpty && !isPro) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+            const SnackBar(content: Text('Vários trabalhos é recurso Pro.')));
+      context.push(Routes.pro);
+      return;
+    }
+    final String? nome = await _pedirNome(context);
+    if (nome == null || nome.trim().isEmpty) return;
+    if (context.mounted) {
+      Haptics.select();
+      context.push(Routes.calc, extra: nome.trim());
+    }
+  }
+
+  Future<String?> _pedirNome(BuildContext context, {String? inicial}) async {
+    final TextEditingController c = TextEditingController(text: inicial ?? '');
+    final String? r = await showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(inicial == null ? 'Nome do trabalho' : 'Renomear'),
+        content: TextField(
+          controller: c,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration:
+              const InputDecoration(hintText: 'Ex.: Freela design, Cliente fixo...'),
+        ),
+        actions: <Widget>[
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, c.text),
+              child: Text(inicial == null ? 'Continuar' : 'Salvar')),
+        ],
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), c.dispose);
+    return r;
   }
 }

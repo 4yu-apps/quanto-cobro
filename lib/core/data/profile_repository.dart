@@ -4,14 +4,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/perfil.dart';
 
-/// Persistência do Perfil — local-first, sem servidor, sem login. JSON via
-/// shared_preferences (o dado é um documento só; backup/export vira trivial).
-/// Atrás de interface: trocável por Drift quando o histórico crescer.
+/// Conjunto persistido: todos os perfis + qual está ativo.
+class ProfilesData {
+  const ProfilesData({required this.perfis, required this.activeId});
+
+  final List<Perfil> perfis;
+  final String? activeId;
+
+  Perfil? get active {
+    if (perfis.isEmpty) return null;
+    return perfis.firstWhere((Perfil p) => p.id == activeId, orElse: () => perfis.first);
+  }
+}
+
+/// Persistência dos perfis — local-first, sem servidor, sem login. JSON via
+/// shared_preferences. v2 = multi-perfil; migra o v1 (perfil único) na leitura.
 abstract interface class ProfileRepository {
-  /// Lê o perfil salvo. `null` = nunca houve. Lança se o dado estiver
-  /// corrompido (para o app distinguir "vazio" de "erro" — ver ProfileState).
-  Perfil? loadSync();
-  Future<void> save(Perfil perfil);
+  ProfilesData loadSync();
+  Future<void> saveAll(ProfilesData data);
   Future<void> clear();
 }
 
@@ -19,19 +29,43 @@ class PrefsProfileRepository implements ProfileRepository {
   PrefsProfileRepository(this._prefs);
 
   final SharedPreferences _prefs;
-  static const String _key = 'profile_v1';
+  static const String _keyV1 = 'profile_v1';
+  static const String _keyV2 = 'profiles_v2';
 
   @override
-  Perfil? loadSync() {
-    final String? raw = _prefs.getString(_key);
-    if (raw == null) return null;
-    final Map<String, dynamic> map = jsonDecode(raw) as Map<String, dynamic>;
-    return Perfil.fromJson(map);
+  ProfilesData loadSync() {
+    final String? rawV2 = _prefs.getString(_keyV2);
+    if (rawV2 != null) {
+      final Map<String, dynamic> map = jsonDecode(rawV2) as Map<String, dynamic>;
+      final List<Perfil> perfis = (map['profiles'] as List<dynamic>)
+          .map((dynamic e) => Perfil.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return ProfilesData(perfis: perfis, activeId: map['activeId'] as String?);
+    }
+    // Migração v1 -> v2 (quem salvou na versão de perfil único não perde nada).
+    final String? rawV1 = _prefs.getString(_keyV1);
+    if (rawV1 != null) {
+      final Perfil p = Perfil.fromJson(jsonDecode(rawV1) as Map<String, dynamic>);
+      return ProfilesData(perfis: <Perfil>[p], activeId: p.id);
+    }
+    return const ProfilesData(perfis: <Perfil>[], activeId: null);
   }
 
   @override
-  Future<void> save(Perfil perfil) => _prefs.setString(_key, jsonEncode(perfil.toJson()));
+  Future<void> saveAll(ProfilesData data) async {
+    await _prefs.setString(
+      _keyV2,
+      jsonEncode(<String, dynamic>{
+        'activeId': data.activeId,
+        'profiles': data.perfis.map((Perfil p) => p.toJson()).toList(),
+      }),
+    );
+    await _prefs.remove(_keyV1); // v1 já migrado
+  }
 
   @override
-  Future<void> clear() => _prefs.remove(_key);
+  Future<void> clear() async {
+    await _prefs.remove(_keyV2);
+    await _prefs.remove(_keyV1);
+  }
 }

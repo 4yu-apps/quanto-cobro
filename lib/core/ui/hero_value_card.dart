@@ -13,12 +13,16 @@ class HeroValueCard extends StatelessWidget {
     super.key,
     required this.valorHora,
     required this.subtitle,
+    this.perfilNome,
+    this.onPerfilTap,
     this.onVerComoCheguei,
     this.staleAno,
   });
 
   final int valorHora;
   final String subtitle;
+  final String? perfilNome;
+  final VoidCallback? onPerfilTap;
   final VoidCallback? onVerComoCheguei;
   final int? staleAno;
 
@@ -47,6 +51,37 @@ class HeroValueCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            if (perfilNome != null) ...<Widget>[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Material(
+                  color: cs.secondaryContainer,
+                  borderRadius: const BorderRadius.all(Radii.full),
+                  child: InkWell(
+                    borderRadius: const BorderRadius.all(Radii.full),
+                    onTap: onPerfilTap,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Space.x3, vertical: Space.x1),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(Icons.work_outline,
+                              size: 14, color: cs.onSecondaryContainer),
+                          const SizedBox(width: Space.x1),
+                          Text(perfilNome!,
+                              style: theme.textTheme.labelMedium
+                                  ?.copyWith(color: cs.onSecondaryContainer)),
+                          Icon(Icons.arrow_drop_down,
+                              size: 16, color: cs.onSecondaryContainer),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Space.x3),
+            ],
             Text(
               'SEU VALOR-HORA',
               style: theme.textTheme.labelLarge?.copyWith(

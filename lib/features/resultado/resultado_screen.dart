@@ -188,12 +188,12 @@ class ResultadoScreen extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               Haptics.commit();
-              await ref.read(profileProvider.notifier).save(p);
+              await ref.read(profilesProvider.notifier).saveAndActivate(p);
               // Sem snackbar: o count-up + stagger do Painel É a confirmação
               // (e o haptic já selou o gesto).
               if (context.mounted) context.go(Routes.painel);
             },
-            child: const Text('Salvar este perfil'),
+            child: const Text('Salvar este trabalho'),
           ),
           TextButton(
             onPressed: () => context.push(Routes.detalhe, extra: p),
