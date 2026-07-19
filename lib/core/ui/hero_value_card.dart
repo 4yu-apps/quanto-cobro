@@ -34,7 +34,16 @@ class HeroValueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    final TextStyle heroStyle = AppType.valueHero.copyWith(color: cs.primary);
+    // "Número iluminado por dentro" (DS §6): glow sutil só no escuro — no
+    // claro smudge sobre branco. Nunca gradiente no dígito, cor sólida.
+    final TextStyle heroStyle = AppType.valueHero.copyWith(
+      color: cs.primary,
+      shadows: theme.brightness == Brightness.dark
+          ? <Shadow>[
+              Shadow(color: cs.primary.withValues(alpha: 0.16), blurRadius: 18),
+            ]
+          : null,
+    );
     return VitrineCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

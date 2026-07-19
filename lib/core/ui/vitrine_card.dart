@@ -1,8 +1,9 @@
 import 'dart:math' as math;
-import 'dart:ui' show PointMode;
+import 'dart:ui' show PointMode, lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import '../theme/motion.dart';
 import '../theme/tokens.dart';
 
 /// Vitrine do "Cofre Aberto" — a superfície onde dinheiro é apresentado
@@ -62,17 +63,26 @@ class VitrineCard extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: const BorderRadius.all(Radii.xl),
-          child: CustomPaint(
-            painter: _CofrePainter(
-              base: cs.surfaceContainerHigh,
-              esmeralda: cs.primary,
-              ouro: cs.tertiary,
-              dark: dark,
-              climax: climax,
-              highlight: highlight,
-              highlightColor: cs.tertiary,
-              borderFallback: cs.outlineVariant,
-            ),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: highlight ? 1 : 0),
+            duration: reduceMotionOf(context)
+                ? Duration.zero
+                : Motion.emphasized,
+            curve: MotionCurves.emphasizedDecel,
+            builder: (BuildContext context, double t, Widget? child) =>
+                CustomPaint(
+                  painter: _CofrePainter(
+                    base: cs.surfaceContainerHigh,
+                    esmeralda: cs.primary,
+                    ouro: cs.tertiary,
+                    dark: dark,
+                    climax: climax,
+                    highlightT: t,
+                    highlightColor: cs.tertiary,
+                    borderFallback: cs.outlineVariant,
+                  ),
+                  child: child,
+                ),
             child: Padding(padding: padding, child: child),
           ),
         ),
@@ -88,7 +98,7 @@ class _CofrePainter extends CustomPainter {
     required this.ouro,
     required this.dark,
     required this.climax,
-    required this.highlight,
+    required this.highlightT,
     required this.highlightColor,
     required this.borderFallback,
   });
@@ -98,7 +108,10 @@ class _CofrePainter extends CustomPainter {
   final Color ouro;
   final bool dark;
   final bool climax;
-  final bool highlight;
+
+  /// Progresso do "acender o cofre" (0 = apagado, 1 = aceso). Animado pelo
+  /// `TweenAnimationBuilder` em [VitrineCard.build] — o painter só interpola.
+  final double highlightT;
   final Color highlightColor;
   final Color borderFallback;
 
@@ -169,21 +182,24 @@ class _CofrePainter extends CustomPainter {
     }
 
     // Contorno: fio-de-ouro no escuro (reflexo do cofre); hairline no claro.
+    // O cofre "acende" — strokeWidth e alpha do ouro interpolam com highlightT.
     final Paint stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = highlight ? 1.5 : 1.0;
+      ..strokeWidth = 1.0 + 0.5 * highlightT;
     if (dark) {
       stroke.shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: <Color>[
-          ouro.withValues(alpha: highlight ? 0.8 : 0.35),
+          ouro.withValues(alpha: lerpDouble(0.35, 0.8, highlightT)!),
           ouro.withValues(alpha: 0.05),
-          esmeralda.withValues(alpha: highlight ? 0.5 : 0.25),
+          esmeralda.withValues(alpha: lerpDouble(0.25, 0.5, highlightT)!),
         ],
       ).createShader(rect);
     } else {
-      stroke.color = highlight ? highlightColor : borderFallback;
+      stroke.color =
+          Color.lerp(borderFallback, highlightColor, highlightT) ??
+          borderFallback;
     }
     canvas.drawRRect(rrect, stroke);
   }
@@ -195,5 +211,5 @@ class _CofrePainter extends CustomPainter {
       old.ouro != ouro ||
       old.dark != dark ||
       old.climax != climax ||
-      old.highlight != highlight;
+      old.highlightT != highlightT;
 }

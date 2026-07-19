@@ -20,7 +20,7 @@ class MoneyCountUp extends StatelessWidget {
     required this.style,
     this.semanticLabel,
     this.duration = Motion.countUp,
-    this.curve = MotionCurves.easeOut,
+    this.curve = MotionCurves.landing,
     this.suffix = '',
     this.endTint,
   });

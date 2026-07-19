@@ -13,6 +13,10 @@ abstract final class MotionCurves {
   static const Curve emphasizedDecel = Cubic(0.05, 0.7, 0.1, 1);
 
   static const Curve easeOut = Curves.easeOut;
+
+  /// "Aterrissagem" do count-up (DS §6): freia forte no fim — o número pousa
+  /// em vez de simplesmente parar. Default de nascimento do [MoneyCountUp].
+  static const Curve landing = Cubic(0.12, 0.66, 0.1, 1);
 }
 
 /// Gate único de reduce-motion: toda animação do app consulta aqui.
