@@ -14,9 +14,12 @@ import '../../core/data/profile_repository.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
+import '../../core/ui/text_scale.dart';
 
 enum _ImportChoice { arquivo, colar }
 
@@ -32,6 +35,7 @@ class ConfigScreen extends ConsumerWidget {
     final bool isPro = ref.watch(proProvider);
     final bool telemetria = ref.watch(telemetryProvider);
     final bool reduzirTransp = ref.watch(reduceTransparencyProvider);
+    final double textScale = ref.watch(textScaleProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
@@ -78,6 +82,69 @@ class ConfigScreen extends ConsumerWidget {
               subtitle: const Text(
                 'Deixa a barra de navegação sólida (melhor em aparelhos mais simples).',
               ),
+            ),
+          ),
+          const SizedBox(height: Space.x3),
+          Card(
+            color: theme.colorScheme.surfaceContainer,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Space.x4,
+                    Space.x4,
+                    Space.x4,
+                    Space.x2,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Tamanho do texto',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: Space.x2),
+                      Text('Prévia: R\$ 1.234/hora', style: AppType.valueMd),
+                    ],
+                  ),
+                ),
+                RadioGroup<double>(
+                  groupValue: textScale,
+                  onChanged: (double? v) {
+                    if (v == null) return;
+                    final TextScaleLevel level = kTextScaleLevels.firstWhere(
+                      (TextScaleLevel l) => l.value == v,
+                    );
+                    Haptics.select();
+                    ref.read(textScaleProvider.notifier).set(v);
+                    announce(context, 'Tamanho da fonte: ${level.label}');
+                  },
+                  child: Column(
+                    children: <Widget>[
+                      for (final TextScaleLevel level in kTextScaleLevels)
+                        RadioListTile<double>(
+                          value: level.value,
+                          title: Text(level.label),
+                        ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Space.x4,
+                    0,
+                    Space.x4,
+                    Space.x4,
+                  ),
+                  child: Text(
+                    'Isto ajusta sobre o tamanho de fonte do seu celular.',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: Space.x6),
