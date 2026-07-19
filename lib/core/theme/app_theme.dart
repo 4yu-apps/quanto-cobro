@@ -103,6 +103,18 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radii.sm)),
         insetPadding: EdgeInsets.all(Space.x4),
       ),
+      // Transparente: a superfície real vem da pílula de vidro que envolve a
+      // NavigationBar em nav_shell.dart. Indicador "abraça" a aba ativa.
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        elevation: 0,
+        height: 64,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        indicatorColor: scheme.primary.withValues(alpha: 0.16),
+        indicatorShape: const StadiumBorder(),
+      ),
     );
   }
 
