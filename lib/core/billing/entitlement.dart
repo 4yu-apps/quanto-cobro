@@ -1,8 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Direito Pro (entitlement) local. Fonte da verdade no aparelho: quando a
-/// compra real (in_app_purchase) for ligada com os IDs de produto da Play, ela
-/// só grava aqui. O resto do app lê este flag pra liberar os recursos Pro.
+/// Direito Pro (entitlement) local. Quando a compra real pela loja for ligada
+/// com os IDs de produto da Play, ela só grava aqui. O resto do app lê este
+/// flag pra liberar os recursos Pro.
 class EntitlementRepository {
   EntitlementRepository(this._prefs);
 

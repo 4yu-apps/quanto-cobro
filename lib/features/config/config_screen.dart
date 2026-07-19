@@ -181,7 +181,7 @@ class ConfigScreen extends ConsumerWidget {
           ),
           const SizedBox(height: Space.x1),
           Text(
-            '${AppConfig.appName} · versão 0.4.1 · ${AppConfig.contactEmail}',
+            '${AppConfig.appName} · versão 0.4.2 · ${AppConfig.contactEmail}',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

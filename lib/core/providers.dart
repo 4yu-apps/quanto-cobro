@@ -158,8 +158,8 @@ class ProNotifier extends Notifier<bool> {
   @override
   bool build() => ref.read(entitlementRepositoryProvider).isPro();
 
-  /// Concede o Pro. Hoje grava o entitlement local; quando a compra real
-  /// (in_app_purchase) for ligada com os IDs da Play, ela chama isto no sucesso.
+  /// Concede o Pro. Hoje grava o entitlement local; quando a compra real pela
+  /// loja for ligada com os IDs da Play, ela chama isto no sucesso.
   Future<void> grant() async {
     await ref.read(entitlementRepositoryProvider).setPro(true);
     state = true;
