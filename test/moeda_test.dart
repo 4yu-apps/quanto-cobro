@@ -3,8 +3,9 @@ import 'package:quantocobro/core/common/money.dart';
 import 'package:quantocobro/core/model/moeda.dart';
 
 void main() {
-  test('money(valor, Moeda.brl) é idêntico a moneyBRL(valor)', () {
-    expect(money(92, Moeda.brl), moneyBRL(92));
+  test('moneyBRL formata com o símbolo e separador do pt_BR (intl)', () {
+    // intl usa espaço NBSP (U+00A0) entre "R\$" e o valor, não espaço comum.
+    expect(moneyBRL(92), 'R\$ 92');
   });
 
   test('money com USD usa símbolo, separador de milhar e 2 casas', () {

@@ -9,7 +9,8 @@ import 'fx_rate.dart';
 ///
 /// Override manual tem prioridade: uma vez que o usuário digita a taxa na
 /// mão ([setManual]), uma busca automática seguinte ([put] com
-/// `manual: false`) não pisa em cima — só outro `setManual` substitui.
+/// `manual: false`, sem `force`) não pisa em cima — só outro `setManual` ou
+/// um `put(force: true)` substitui.
 class FxRepository {
   FxRepository(this._prefs);
 
@@ -24,14 +25,20 @@ class FxRepository {
     return FxRate.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
-  Future<void> put(FxRate rate) async {
-    if (!rate.manual) {
+  /// [force] = pedido explícito do usuário por uma taxa ao vivo (botão
+  /// "Atualizar"): substitui até um override manual cacheado, e a taxa fica
+  /// salva como `manual: false` (é a nova referência automática). Sem
+  /// `force`, o comportamento padrão continua: uma busca automática nunca
+  /// pisa em cima de um override manual — só [setManual] ou `force: true`.
+  Future<void> put(FxRate rate, {bool force = false}) async {
+    if (!force && !rate.manual) {
       final FxRate? atual = get(rate.par);
       if (atual != null && atual.manual) {
         return; // override manual tem prioridade sobre busca automática
       }
     }
-    await _prefs.setString(_key(rate.par), jsonEncode(rate.toJson()));
+    final FxRate toSave = force ? rate.copyWith(manual: false) : rate;
+    await _prefs.setString(_key(rate.par), jsonEncode(toSave.toJson()));
   }
 
   /// Override manual: o usuário digitou a taxa. Fica marcada `manual: true`

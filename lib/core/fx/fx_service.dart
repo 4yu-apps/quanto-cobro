@@ -57,7 +57,9 @@ class FxService {
         throw FxUnavailable('resposta sem taxa pra ${para.codigo}');
       }
       final FxRate rate = FxRate(par: par, taxa: taxaRaw.toDouble(), at: agora);
-      await _repo.put(rate);
+      // force: true — busca automática explícita (o usuário pediu a taxa ao
+      // vivo) substitui até um override manual cacheado (ver FxRepository.put).
+      await _repo.put(rate, force: true);
       return rate;
     } catch (_) {
       final FxRate? cached = _repo.get(par);

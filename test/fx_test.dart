@@ -89,4 +89,37 @@ void main() {
     expect(afterAuto!.manual, isTrue);
     expect(afterAuto.taxa, 5.55);
   });
+
+  test(
+    'Atualizar cotação (busca automática explícita) sobrescreve override '
+    'manual — o refresh gruda',
+    () async {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final FxRepository repo = FxRepository(prefs);
+
+      // Usuário tinha digitado uma taxa na mão.
+      await repo.setManual('USD->BRL', 5.55, agora);
+
+      // Toca em "Atualizar": busca automática bem-sucedida.
+      final MockClient client = MockClient((http.Request request) async {
+        return http.Response('{"result":"success","rates":{"BRL":5.20}}', 200);
+      });
+      final FxService service = FxService(repo, client: client);
+
+      final FxRate rate = await service.cotacao(
+        Moeda.usd,
+        Moeda.brl,
+        agora: agora,
+      );
+      expect(rate.taxa, 5.20);
+      expect(rate.manual, isFalse);
+
+      // A releitura do cache (o que a tela faz ao trocar de moeda) agora
+      // devolve a taxa fresca, não a manual antiga — o override foi limpo.
+      final FxRate? afterRefresh = repo.get('USD->BRL');
+      expect(afterRefresh, isNotNull);
+      expect(afterRefresh!.taxa, 5.20);
+      expect(afterRefresh.manual, isFalse);
+    },
+  );
 }
