@@ -5,9 +5,14 @@ import '../theme/motion.dart';
 import '../theme/tokens.dart';
 
 /// Número de dinheiro que "chega" animado (o momento aha, DS §5.4).
-/// - Nascimento (Resultado/Painel): default `Motion.countUp` (600ms).
-/// - Tools ao vivo (Reserva/Simulador): passe `duration: Motion.quick` — o
-///   número "corre atrás do dedo" (o TweenAnimationBuilder anima do valor
+/// - Nascimento (Resultado/Painel/Histórico): default `Motion.countUp`
+///   (600ms) + passe `curve: MotionCurves.landing` explicitamente — o número
+///   "pousa" (freio forte no fim) só nos 3 sites onde o valor nasce ao
+///   carregar a tela.
+/// - Tools ao vivo (Reserva/Simulador/Calc/Detalhe): passe
+///   `duration: Motion.quick` e NÃO passe `curve` — mantém o default
+///   `MotionCurves.easeOut`, senão o freio de pouso atrapalha o número
+///   "correndo atrás do dedo" (o TweenAnimationBuilder anima do valor
 ///   exibido atual para o novo; o zero só vale no primeiro build).
 /// Respeita "reduzir movimento" do sistema.
 ///
@@ -20,7 +25,7 @@ class MoneyCountUp extends StatelessWidget {
     required this.style,
     this.semanticLabel,
     this.duration = Motion.countUp,
-    this.curve = MotionCurves.landing,
+    this.curve = MotionCurves.easeOut,
     this.suffix = '',
     this.endTint,
   });

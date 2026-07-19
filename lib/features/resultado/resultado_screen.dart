@@ -163,6 +163,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
                             ),
                             MoneyCountUp(
                               r.valorHora,
+                              curve: MotionCurves.landing,
                               style: heroStyle,
                               semanticLabel:
                                   'Cobre ${moneyBRL(r.valorHora)} por hora',

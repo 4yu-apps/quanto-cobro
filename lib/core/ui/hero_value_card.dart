@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../common/money.dart';
 import '../theme/app_typography.dart';
+import '../theme/motion.dart';
 import '../theme/tokens.dart';
 import 'money_count_up.dart';
 import 'stale_banner.dart';
@@ -126,6 +127,7 @@ class HeroValueCard extends StatelessWidget {
                     ),
                     MoneyCountUp(
                       valorHora,
+                      curve: MotionCurves.landing,
                       style: heroStyle,
                       semanticLabel:
                           'Seu valor-hora: ${moneyBRL(valorHora)} por hora',

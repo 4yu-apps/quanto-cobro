@@ -97,6 +97,7 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                       const SizedBox(height: Space.x1),
                       MoneyCountUp(
                         totalMes,
+                        curve: MotionCurves.landing,
                         style: AppType.valueXl.copyWith(color: d.reserva),
                         semanticLabel:
                             '${moneyBRL(totalMes)} guardados este mês',

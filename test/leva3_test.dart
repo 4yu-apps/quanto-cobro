@@ -6,10 +6,20 @@ import 'package:quantocobro/core/ui/money_count_up.dart';
 import 'package:quantocobro/core/ui/vitrine_card.dart';
 
 void main() {
-  test('MoneyCountUp usa MotionCurves.landing como curva default', () {
-    const MoneyCountUp countUp = MoneyCountUp(42, style: TextStyle());
-    expect(countUp.curve, MotionCurves.landing);
-  });
+  test(
+    'MoneyCountUp: default easeOut (ao vivo), landing só explícito (nascimento)',
+    () {
+      const MoneyCountUp countUp = MoneyCountUp(42, style: TextStyle());
+      expect(countUp.curve, MotionCurves.easeOut);
+
+      const MoneyCountUp countUpNascimento = MoneyCountUp(
+        0,
+        style: TextStyle(),
+        curve: MotionCurves.landing,
+      );
+      expect(countUpNascimento.curve, MotionCurves.landing);
+    },
+  );
 
   testWidgets('VitrineCard(highlight: true) acende sem exceção', (
     WidgetTester tester,
