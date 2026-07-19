@@ -31,6 +31,7 @@ class ConfigScreen extends ConsumerWidget {
     final ThemeMode mode = ref.watch(themeModeProvider);
     final bool isPro = ref.watch(proProvider);
     final bool telemetria = ref.watch(telemetryProvider);
+    final bool reduzirTransp = ref.watch(reduceTransparencyProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
@@ -63,6 +64,21 @@ class ConfigScreen extends ConsumerWidget {
               Haptics.select();
               ref.read(themeModeProvider.notifier).set(s.first);
             },
+          ),
+          const SizedBox(height: Space.x3),
+          Card(
+            color: theme.colorScheme.surfaceContainer,
+            child: SwitchListTile(
+              value: reduzirTransp,
+              onChanged: (bool v) {
+                Haptics.select();
+                ref.read(reduceTransparencyProvider.notifier).set(v);
+              },
+              title: const Text('Reduzir transparência'),
+              subtitle: const Text(
+                'Deixa a barra de navegação sólida (melhor em aparelhos mais simples).',
+              ),
+            ),
           ),
           const SizedBox(height: Space.x6),
 

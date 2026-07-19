@@ -189,6 +189,22 @@ class TelemetryNotifier extends Notifier<bool> {
 final NotifierProvider<TelemetryNotifier, bool> telemetryProvider =
     NotifierProvider<TelemetryNotifier, bool>(TelemetryNotifier.new);
 
+// ---- Reduzir transparência (habilita o fallback opaco da navbar) ----
+class ReduceTransparencyNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(settingsRepositoryProvider).reduceTransparency();
+
+  Future<void> set(bool value) async {
+    await ref.read(settingsRepositoryProvider).setReduceTransparency(value);
+    state = value;
+  }
+}
+
+final NotifierProvider<ReduceTransparencyNotifier, bool>
+reduceTransparencyProvider = NotifierProvider<ReduceTransparencyNotifier, bool>(
+  ReduceTransparencyNotifier.new,
+);
+
 // ---- Histórico de reservas (gancho de hábito, IA §2.12) ----
 final Provider<ReservaHistoryRepository> reservaHistoryRepositoryProvider =
     Provider<ReservaHistoryRepository>(

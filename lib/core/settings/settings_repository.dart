@@ -39,6 +39,13 @@ class SettingsRepository {
   bool telemetryEnabled() => _prefs.getBool(_kTelemetry) ?? false;
   Future<void> setTelemetry(bool value) => _prefs.setBool(_kTelemetry, value);
 
+  // Reduzir transparência: habilita o fallback opaco da navbar (aparelhos mais
+  // simples/baixo desempenho). Default DESLIGADO (mantém o visual translúcido).
+  static const String _kReduceTransparency = 'reduce_transparency';
+  bool reduceTransparency() => _prefs.getBool(_kReduceTransparency) ?? false;
+  Future<void> setReduceTransparency(bool v) =>
+      _prefs.setBool(_kReduceTransparency, v);
+
   // Reserva: uma troca pontual de regime fica nesta sessão de trabalho, mas é
   // ignorada automaticamente se o regime-base do trabalho mudar.
   static const String _kReservaRegimes = 'reserva_regimes';
