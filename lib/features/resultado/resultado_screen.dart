@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
+import '../../core/ads/ads.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
@@ -108,6 +109,9 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
             Haptics.commit();
             announce(context, 'Trabalho salvo. Voltando pro painel.');
             await ref.read(profilesProvider.notifier).saveAndActivate(p);
+            // Único corte seguro pra um intersticial (fim de tarefa). No-op até
+            // ter SDK/chave — ver core/ads/ads.dart. Nunca entre calc→Resultado.
+            await AdInterstitial.maybeShowOnSave(ref.read(proProvider));
             // Sem snackbar: o count-up + stagger do Painel É a confirmação
             // (e o haptic já selou o gesto).
             if (context.mounted) context.go(Routes.painel);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/ads/ads.dart';
 import '../core/theme/motion.dart';
 
 /// Casca de navegação (v0.5): dá ao app um MAPA visível em 1 olhada — o que um
@@ -17,7 +18,15 @@ class NavShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      // Banner ancorado do hub: entre o conteúdo e a nav bar, fora do fluxo.
+      // Só aparece nas abas (fluxos/ferramentas cobrem a casca), nunca pra Pro,
+      // nunca antes do 1º cálculo. Ver a estratégia em core/ads/ads.dart.
+      body: Column(
+        children: <Widget>[
+          Expanded(child: navigationShell),
+          const AdSlot(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (int i) {
