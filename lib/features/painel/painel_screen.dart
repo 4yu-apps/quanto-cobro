@@ -299,7 +299,7 @@ class _PainelBodyState extends ConsumerState<_PainelBody> {
                     child: ToolActionCard(
                       icon: Icons.payments_outlined,
                       title: 'Recebi um pagamento',
-                      subtitle: 'separa o do Leão na hora',
+                      subtitle: 'separa o imposto na hora',
                       accent: d.reserva,
                       onTap: () => context.push(Routes.reserva),
                     ),

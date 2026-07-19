@@ -130,7 +130,7 @@ class _Vazio extends StatelessWidget {
             Text(
               'Cliente fixo, freela avulso, aquele a cada 3 meses. Cadastre e '
               'nunca mais perca o fio de quem te paga quando — e de quanto é '
-              'do Leão.',
+              'do imposto.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -149,7 +149,7 @@ class _Vazio extends StatelessWidget {
   }
 }
 
-/// "Nos próximos 30 dias" (07 §B.5/§B.6) — a previsão de caixa com o do-Leão
+/// "Nos próximos 30 dias" (07 §B.5/§B.6) — a previsão de caixa com o imposto
 /// já descontado. É o surface PRO: o power user com 10 projetos é exatamente
 /// quem precisa dela, e quem paga por ela. No grátis mostramos a chamada com
 /// o total real (o valor aparece ANTES do trabalho, regra anti-★1) e o
@@ -178,7 +178,7 @@ class _ProximosRecebimentos extends ConsumerWidget {
       0.0,
       (double s, RecebimentoPrevisto r) => s + r.valor,
     );
-    // O do-Leão sai do MESMO motor da Reserva — a previsão não pode discordar
+    // O imposto sai do MESMO motor da Reserva — a previsão não pode discordar
     // do número que a pessoa vê ao registrar o pagamento.
     final RegimeId regime = st is ProfileReady
         ? st.perfil.regime

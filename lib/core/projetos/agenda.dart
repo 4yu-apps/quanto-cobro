@@ -65,7 +65,7 @@ Map<String, double> recebidoPorProjeto(List<ReservaEntry> historico) {
 }
 
 /// O projeto já teve algum recebimento registrado no mês de [mes]?
-/// É o que decide o selo "Leão em dia" e se o nudge mensal cutuca.
+/// É o que decide o selo "imposto separado" e se o nudge mensal cutuca.
 bool recebeuNoMes(
   List<ReservaEntry> historico,
   String projetoId,
@@ -84,7 +84,7 @@ bool recebeuNoMes(
 /// separar a reserva — os dois acontecem no mesmo toque —, então o selo lê
 /// exatamente isso, sem inventar um estado que o usuário não controla.
 enum SeloReserva {
-  emDia, // recebeu e registrou: o do Leão já foi separado
+  emDia, // recebeu e registrou: o imposto já foi separado
   faltaSeparar, // vencido/vencendo e nada registrado
   nenhum, // nada a dizer ainda — silêncio é melhor que selo cinza
 }

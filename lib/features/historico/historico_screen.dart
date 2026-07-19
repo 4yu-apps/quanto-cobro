@@ -143,7 +143,7 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                           if (!context.mounted) return;
                           final String message = pago
                               ? 'Marque quando a guia for quitada.'
-                              : 'Leão de ${_mesNome(now)}: pago. Guia quitada. Mês limpo.';
+                              : 'Imposto de ${_mesNome(now)}: pago. Guia quitada. Mês limpo.';
                           announce(context, message);
                         },
                         icon: Icon(
@@ -152,13 +152,13 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                         label: Text(
                           pago
                               ? 'Desfazer quitação'
-                              : 'Paguei o Leão deste mês',
+                              : 'Já paguei o imposto deste mês',
                         ),
                       ),
                       if (pago) ...<Widget>[
                         const SizedBox(height: Space.x2),
                         Text(
-                          'Leão de ${_mesNome(now)}: pago. Guia quitada. Mês limpo.',
+                          'Imposto de ${_mesNome(now)}: pago. Guia quitada. Mês limpo.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: d.lucro,
                           ),

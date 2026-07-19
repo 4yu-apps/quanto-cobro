@@ -11,11 +11,15 @@ class Verbete {
 
 abstract final class Glossario {
   static const Map<String, Verbete> _all = <String, Verbete>{
+    // O app fala "imposto", não "Leão" (v0.6): apelido só serve pra quem já
+    // conhece, e quem já conhece não é quem estamos ajudando. O verbete fica
+    // porque a pessoa VAI ouvir o termo do contador e de outros apps — o
+    // glossário é justamente o lugar de traduzir o jargão de fora pra dentro.
     'leao': Verbete(
-      'O que é "o Leão"?',
-      'É o apelido do imposto — a parte do que você recebe que vai pro governo. '
-          '"Guardar pro Leão" é separar essa parte antes de gastar, pra não '
-          'tomar susto na hora de pagar.',
+      'Por que falam "o Leão"?',
+      'É o apelido do imposto, do símbolo da Receita Federal. Aqui a gente '
+          'chama de imposto mesmo: é a parte do que você recebe que vai pro '
+          'governo, e o app separa ela antes de você gastar sem querer.',
     ),
     'regime': Verbete(
       'O que é "regime"?',
@@ -33,7 +37,7 @@ abstract final class Glossario {
       'O que é "reserva"?',
       'É o dinheiro que você separa de cada pagamento pra pagar o imposto '
           'depois. Não é seu pra gastar — fica guardado até a hora de acertar '
-          'com o Leão.',
+          'as contas.',
     ),
     'prolabore': Verbete(
       'O que é "pró-labore"?',

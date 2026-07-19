@@ -150,14 +150,21 @@ void main() {
       await tester.enterText(find.byType(TextField).first, '100');
       await tester.pumpAndSettle();
 
-      // 100 USD * 5,0 = R$ 500 (sem perfil ativo → regime padrão MEI): DAS
-      // fixo de R$ 86,05 é separado, o resto (R$ 414) já é livre — os dois
-      // números só batem se o valor foi convertido pra BRL antes da conta.
+      // 100 USD * 5,0 = R$ 500 (sem perfil ativo → regime padrão MEI): o DAS
+      // fixo de R$ 86,05 é separado, o resto (R$ 414) já é livre.
+      //
+      // O R$ 414 é a PROVA da conversão: ele só existe se o valor virou reais
+      // antes da conta (o R$ 86,05 sozinho não prova nada, porque o DAS é o
+      // mesmo pra qualquer valor acima dele).
       expect(find.textContaining('86,05'), findsWidgets);
 
       final SemanticsHandle handle = tester.ensureSemantics();
+      // v0.6: o MEI separa o imposto igual a todo mundo no 1º pagamento do
+      // mês. O "esse dinheiro é todo seu" agora só aparece depois que o DAS
+      // do mês já foi separado — antes disso era mentira, e era ela que
+      // travava a tela e impedia o 2º registro do mês.
       expect(
-        find.bySemanticsLabel(RegExp(r'Esse dinheiro é seu.*500')),
+        find.bySemanticsLabel(RegExp(r'Separe.*86.*pro imposto')),
         findsOneWidget,
       );
       expect(

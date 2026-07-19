@@ -84,7 +84,7 @@ class SettingsRepository {
   Future<void> setReminderMensal(bool v) =>
       _prefs.setBool(_kReminderMensal, v);
 
-  // "Paguei o Leão deste mês" — quitação mensal do loop da reserva (P1-7).
+  // "Já paguei o imposto deste mês" — quitação mensal do loop da reserva (P1-7).
   // Guardado como lista de meses 'yyyy-MM'.
   static const String _kLeaoPago = 'leao_pago_meses';
   static String _mesKey(DateTime d) =>

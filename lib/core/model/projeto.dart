@@ -46,7 +46,7 @@ extension ProjetoStatusLabel on ProjetoStatus {
 
 /// Um cliente/engajamento (07 §B.3). NÃO é uma tarefa nem um card de board:
 /// cada campo aqui existe porque responde "quanto vem, quando, e quanto disso
-/// é do Leão?". Essa é a régua pra aceitar ou recusar qualquer campo futuro.
+/// é imposto?". Essa é a régua pra aceitar ou recusar qualquer campo futuro.
 class Projeto {
   const Projeto({
     required this.id,

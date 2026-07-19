@@ -419,7 +419,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           d,
           apoio: r.reservaPct < 25
               ? 'Sua alíquota efetiva (INSS + IRPF). A tabela fala em até 27,5%, '
-                    'mas com a sua renda o Leão leva bem menos.'
+                    'mas com a sua renda o imposto leva bem menos.'
               : 'Sua alíquota efetiva: INSS (20%) + IRPF pela sua faixa, com o imposto já embutido.',
         );
       case RegimeId.simples:

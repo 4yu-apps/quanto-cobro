@@ -20,12 +20,18 @@ class ReservaEntry {
   final String? perfilId;
 
   /// Projeto/cliente que pagou (07 §C). É o que faz "já recebeu R$ X" e o selo
-  /// "Leão em dia" saírem do histórico que JÁ existe, sem tabela nova. Null em
+  /// "imposto separado" saírem do histórico que JÁ existe, sem tabela nova. Null em
   /// registro avulso (a pessoa recebeu algo que não está na lista de projetos)
   /// e em tudo que foi salvo antes desta versão.
   final String? projetoId;
 
-  /// 'pct' = reserva percentual por pagamento · 'das' = DAS do mês separado (MEI).
+  /// LEGADO. Sempre `'pct'` no que se grava a partir da v0.6.
+  ///
+  /// O `'das'` existia quando o registro do MEI não era um pagamento e sim uma
+  /// separação de imposto avulsa — o modelo que impedia o MEI de ligar o
+  /// dinheiro ao cliente e de anotar mais de um recebimento por mês. Continua
+  /// sendo LIDO porque o histórico de quem já usava o app tem esses registros,
+  /// e eles de fato não são faturamento de ninguém.
   final String tipo;
 
   bool get isDas => tipo == 'das';

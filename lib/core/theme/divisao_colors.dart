@@ -26,7 +26,7 @@ class DivisaoColors extends ThemeExtension<DivisaoColors> {
   });
 
   final Color lucro; // é seu — esmeralda
-  final Color reserva; // guardado pro Leão — OURO
+  final Color reserva; // guardado pro imposto — OURO
   final Color custo; // mantém você trabalhando — neutro
   final Color track; // trilho vazio da barra
   final Color alerta; // "abaixo do alvo" (terracota = atenção, não erro)

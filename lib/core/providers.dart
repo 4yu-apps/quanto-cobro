@@ -289,7 +289,7 @@ reservaHistoryProvider =
       ReservaHistoryNotifier.new,
     );
 
-/// "Paguei o Leão deste mês" — quitação mensal (fecha o loop da reserva).
+/// "Já paguei o imposto deste mês" — quitação mensal (fecha o loop da reserva).
 /// Estado = o mês corrente está quitado?
 class LeaoPagoNotifier extends Notifier<bool> {
   @override

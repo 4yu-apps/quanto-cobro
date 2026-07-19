@@ -216,7 +216,7 @@ class ProjetoDetalheScreen extends ConsumerWidget {
           if (recebimentos.isEmpty)
             Text(
               'Nada registrado ainda. Quando o dinheiro cair, toque em "Recebi" '
-              '— a reserva do Leão sai junto.',
+              '— o imposto sai separado junto.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
@@ -273,7 +273,7 @@ class ProjetoDetalheScreen extends ConsumerWidget {
               title: Text('Apagar "${projeto.nome}"?'),
               content: const Text(
                 'O projeto sai da lista. Os recebimentos que você já registrou '
-                'continuam no Guardado — sua reserva do Leão não muda.',
+                'continuam no Guardado — o que você separou de imposto não muda.',
               ),
               actions: <Widget>[
                 TextButton(

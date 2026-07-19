@@ -12,7 +12,7 @@ import '../../core/ui/panel_card.dart';
 /// O card de um projeto na lista (07 §B.3): nome · status · valor · próximo
 /// recebimento · quanto já recebeu · selo da reserva. Nada de barra de
 /// progresso, tarefa ou responsável — se um campo não responde "quanto vem,
-/// quando, quanto é do Leão?", ele não entra aqui.
+/// quando, quanto é imposto?", ele não entra aqui.
 class ProjetoCard extends StatelessWidget {
   const ProjetoCard({
     super.key,
@@ -116,7 +116,9 @@ class ProjetoCard extends StatelessWidget {
                     selo == SeloReserva.emDia
                         ? Icons.lock_outline
                         : Icons.savings_outlined,
-                    selo == SeloReserva.emDia ? 'Leão em dia' : 'falta separar',
+                    selo == SeloReserva.emDia
+                        ? 'imposto separado'
+                        : 'falta separar',
                     selo == SeloReserva.emDia ? d.reserva : d.onAlertaContainer,
                   ),
               ],
@@ -203,7 +205,7 @@ class ProjetoCard extends StatelessWidget {
     }
     if (jaRecebeu > 0) sb.write('Já recebeu ${moneyBRL(jaRecebeu)}. ');
     if (selo == SeloReserva.emDia) {
-      sb.write('Reserva do Leão em dia.');
+      sb.write('Imposto deste mês já separado.');
     } else if (selo == SeloReserva.faltaSeparar) {
       sb.write('Falta separar a reserva.');
     }

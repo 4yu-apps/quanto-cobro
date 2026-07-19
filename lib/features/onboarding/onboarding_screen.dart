@@ -161,7 +161,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     icon: Icons.savings_outlined,
     title: 'Pare de trabalhar de graça.',
     body:
-        'Descubra quanto cobrar por hora, quanto guardar pro Leão (o imposto) e quanto realmente sobra.',
+        'Descubra quanto cobrar por hora, quanto guardar pro imposto e quanto realmente sobra.',
   );
 
   String _pageTitle(int page) => switch (page) {
@@ -175,7 +175,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     icon: null,
     title: 'Veja pra onde vai cada real.',
     body:
-        'Toda vez que um pagamento cair, o app mostra o que é seu, o que é do Leão e o que foi custo.',
+        'Toda vez que um pagamento cair, o app mostra o que é seu, o que é imposto e o que foi custo.',
     extra: Card(
       color: theme.colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(

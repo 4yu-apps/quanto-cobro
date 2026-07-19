@@ -138,6 +138,7 @@ class ReservaResult {
     required this.pct,
     required this.isMei,
     required this.dasMensal,
+    this.impostoDoMesQuitado = false,
   });
 
   final double rate;
@@ -146,25 +147,43 @@ class ReservaResult {
   final int pct;
   final bool isMei;
   final double? dasMensal;
+
+  /// MEI: o DAS deste mês já foi separado inteiro em pagamentos anteriores,
+  /// então deste aqui não sai nada. Só o MEI tem esse estado — nos outros
+  /// regimes o imposto é fatia de CADA pagamento e nunca "acaba".
+  final bool impostoDoMesQuitado;
 }
 
 /// [taxaEfetiva] (0..1) vem do perfil ativo quando o regime bate com o dele —
 /// a alíquota da RENDA PLANEJADA do mês, não do pagamento avulso. Sem perfil,
 /// estima pela efetiva do próprio valor (melhor aproximação disponível).
+///
+/// [dasJaSeparado] (só MEI) é quanto do DAS deste mês já saiu em pagamentos
+/// anteriores. Existe porque o DAS é um boleto ÚNICO do mês, não uma fatia de
+/// cada pagamento: sem esse desconto, quem recebe de três clientes no mesmo mês
+/// separaria três DAS — e era pra fugir disso que a tela travava depois do
+/// primeiro registro, impedindo a pessoa de anotar o segundo pagamento.
+///
+/// Reservar o DAS INTEIRO no primeiro pagamento (em vez de ratear por
+/// percentual) é deliberado: o boleto vence mesmo que o mês seja fraco, e o
+/// erro que dói é chegar no vencimento sem o dinheiro separado.
 ReservaResult computeReserva(
   double amount,
   RegimeId regime, {
   double? taxaEfetiva,
+  double dasJaSeparado = 0,
 }) {
   if (regime == RegimeId.mei) {
-    final int reserva = math.min(amount, kDasMensalMei).round();
+    final double falta = math.max(0, kDasMensalMei - dasJaSeparado);
+    final int reserva = math.min(amount, falta).round();
     return ReservaResult(
-      rate: amount > 0 ? kDasMensalMei / amount : 0,
+      rate: amount > 0 ? reserva / amount : 0,
       reserva: reserva,
       sobra: amount - reserva,
       pct: 0,
       isMei: true,
       dasMensal: kDasMensalMei,
+      impostoDoMesQuitado: falta <= 0,
     );
   }
   final double rate = (taxaEfetiva ?? aliquotaEfetiva(regime, amount)).clamp(

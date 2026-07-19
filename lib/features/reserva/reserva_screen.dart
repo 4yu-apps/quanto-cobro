@@ -120,7 +120,30 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
   ) {
     final double? taxa = _taxaConversao;
     if (amountInput <= 0 || taxa == null) return null;
-    return computeReserva(amountInput * taxa, regime, taxaEfetiva: taxaEfetiva);
+    return computeReserva(
+      amountInput * taxa,
+      regime,
+      taxaEfetiva: taxaEfetiva,
+      dasJaSeparado: _impostoJaSeparadoNoMes(),
+    );
+  }
+
+  /// Soma do que já foi separado de imposto no mês corrente, neste trabalho.
+  /// É o que permite ao MEI registrar o 2º, 3º e 4º pagamento do mês sem
+  /// separar o DAS de novo — e sem a tela travar.
+  double _impostoJaSeparadoNoMes() {
+    final ProfileState st = ref.read(profileProvider);
+    final String? perfilId = st is ProfileReady ? st.perfil.id : null;
+    final DateTime now = DateTime.now();
+    return ref
+        .read(reservaHistoryProvider)
+        .where(
+          (ReservaEntry e) =>
+              e.perfilId == perfilId &&
+              e.at.year == now.year &&
+              e.at.month == now.month,
+        )
+        .fold<double>(0, (double s, ReservaEntry e) => s + e.reserva);
   }
 
   void _onMoedaChanged(Moeda m) {
@@ -308,24 +331,34 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
         ? computeValorHora(st.perfil).rate
         : null;
 
+    final String? perfilId = st is ProfileReady ? st.perfil.id : null;
+    final DateTime now = DateTime.now();
+
+    // Quanto do imposto deste mês já foi separado. Só o MEI usa (o DAS é um
+    // boleto único), mas a soma é a mesma pra todo mundo — inclusive os
+    // registros antigos com `tipo: 'das'`, que eram exatamente isso.
+    final double impostoJaSeparadoNoMes = ref
+        .watch(reservaHistoryProvider)
+        .where(
+          (ReservaEntry e) =>
+              e.perfilId == perfilId &&
+              e.at.year == now.year &&
+              e.at.month == now.month,
+        )
+        .fold<double>(0, (double s, ReservaEntry e) => s + e.reserva);
+
     final int amountInput = _digits(_valor.text);
     final double? taxaConversao = _taxaConversao;
     final bool temValor = amountInput > 0 && taxaConversao != null;
     final double amountBRL = temValor ? amountInput * taxaConversao : 0;
     final ReservaResult? res = temValor
-        ? computeReserva(amountBRL, regime, taxaEfetiva: taxaEfetiva)
+        ? computeReserva(
+            amountBRL,
+            regime,
+            taxaEfetiva: taxaEfetiva,
+            dasJaSeparado: impostoJaSeparadoNoMes,
+          )
         : null;
-    final String? perfilId = st is ProfileReady ? st.perfil.id : null;
-    final DateTime now = DateTime.now();
-    final bool dasSeparado = ref
-        .watch(reservaHistoryProvider)
-        .any(
-          (ReservaEntry e) =>
-              e.isDas &&
-              e.perfilId == perfilId &&
-              e.at.year == now.year &&
-              e.at.month == now.month,
-        );
 
     return Scaffold(
       appBar: AppBar(
@@ -458,16 +491,20 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       VitrineCard(
-                        // O cofre "tranca" (borda fio-de-ouro) em QUALQUER save,
-                        // não só no MEI — a batida emocional de "guardei do Leão".
-                        highlight: _saved || (res.isMei && dasSeparado),
+                        // O cofre "tranca" (borda fio-de-ouro) em QUALQUER save
+                        // — a batida emocional de "guardei o imposto".
+                        highlight: _saved,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              res.isMei
-                                  ? 'ESSE DINHEIRO É SEU'
-                                  : 'RESERVE PRO LEÃO',
+                              // O MEI só ouve "esse dinheiro é seu" quando o
+                              // imposto do mês JÁ está separado. Antes disso
+                              // ele separa igual a todo mundo — era essa a
+                              // mentira que travava a tela no 1º pagamento.
+                              res.impostoDoMesQuitado
+                                  ? 'ESSE DINHEIRO É TODO SEU'
+                                  : 'SEPARE PRO IMPOSTO',
                               style: theme.textTheme.labelLarge?.copyWith(
                                 color: cs.onSurfaceVariant,
                                 letterSpacing: 0.5,
@@ -478,23 +515,29 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,
                               child: MoneyCountUp(
-                                res.isMei ? amountBRL : res.reserva,
+                                res.impostoDoMesQuitado
+                                    ? amountBRL
+                                    : res.reserva,
                                 duration: Motion.quick,
-                                endTint: res.isMei ? d.lucro : d.reserva,
+                                endTint: res.impostoDoMesQuitado
+                                    ? d.lucro
+                                    : d.reserva,
                                 style: AppType.valueHero.copyWith(
-                                  color: res.isMei ? d.lucro : d.reserva,
+                                  color: res.impostoDoMesQuitado
+                                      ? d.lucro
+                                      : d.reserva,
                                 ),
-                                semanticLabel: res.isMei
-                                    ? 'Esse dinheiro é seu: ${moneyBRL(amountBRL)}'
-                                    : 'Reserve ${moneyBRL(res.reserva)} deste pagamento',
+                                semanticLabel: res.impostoDoMesQuitado
+                                    ? 'Esse dinheiro é todo seu: ${moneyBRL(amountBRL)}'
+                                    : 'Separe ${moneyBRL(res.reserva)} deste pagamento pro imposto',
                               ),
                             ),
                             const SizedBox(height: Space.x1),
                             Text(
                               res.isMei
-                                  ? dasSeparado
-                                        ? 'DAS de ${_mesNome(now)} separado. O resto do mês é seu.'
-                                        : 'Do Leão, este mês, só o DAS: ${moneyBRLCents(res.dasMensal!)}.'
+                                  ? res.impostoDoMesQuitado
+                                        ? 'Seu imposto de ${_mesNome(now)} já está separado. O que entrar agora é todo seu.'
+                                        : 'Como MEI, seu imposto do mês é um boleto só: ${moneyBRLCents(res.dasMensal!)}. Separando ele já de uma vez.'
                                   : '~${res.pct}% — já é a sua faixa real de imposto, não a cheia.',
                               style: theme.textTheme.bodyLarge,
                             ),
@@ -527,20 +570,23 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                         ),
                       ),
                       const SizedBox(height: Space.x4),
-                      if (_saved || (res.isMei && dasSeparado))
+                      // Só o registro DESTA sessão trava o botão. Antes o MEI
+                      // caía aqui por ter separado o DAS em QUALQUER dia do
+                      // mês — e como isso vinha do histórico salvo, "Registrar
+                      // outro" não conseguia sair do estado. Era o caminho sem
+                      // saída que impedia anotar o 2º pagamento do mês.
+                      if (_saved)
                         Row(
                           children: <Widget>[
                             Expanded(
                               child: FilledButton.tonal(
                                 onPressed: null,
-                                child: Row(
+                                child: const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: <Widget>[
-                                    const Icon(Icons.check, size: 20),
-                                    const SizedBox(width: Space.x2),
-                                    Text(
-                                      res.isMei ? 'DAS separado' : 'Guardado',
-                                    ),
+                                    Icon(Icons.check, size: 20),
+                                    SizedBox(width: Space.x2),
+                                    Text('Guardado'),
                                   ],
                                 ),
                               ),
@@ -561,20 +607,21 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                         FilledButton.tonal(
                           onPressed: () {
                             Haptics.commit();
-                            final bool mei = res.isMei;
                             final DateTime pagoEm = DateTime.now();
+                            // Cada registro é um PAGAMENTO — inclusive no MEI.
+                            // Antes, o registro do MEI virava um lançamento de
+                            // "DAS" solto, sem dono: o dinheiro do cliente não
+                            // aparecia no freela dele, "já recebeu" ficava
+                            // zerado pra sempre e o ciclo nunca andava. O que
+                            // muda entre regimes é QUANTO se separa, nunca de
+                            // quem o dinheiro veio.
                             final ReservaEntry entry = ReservaEntry(
                               valor: amountBRL,
                               reserva: res.reserva,
                               regimeTag: Regime.of(regime).tag,
                               at: pagoEm,
                               perfilId: perfilId,
-                              // O DAS é imposto do mês, não faturamento de um
-                              // cliente: carimbar um projeto nele inflaria o
-                              // "já recebeu" daquele projeto com dinheiro que
-                              // nunca entrou por ele.
-                              projetoId: mei ? null : _projeto?.id,
-                              tipo: mei ? 'das' : 'pct',
+                              projetoId: _projeto?.id,
                             );
                             final ReservaHistoryNotifier historyN = ref.read(
                               reservaHistoryProvider.notifier,
@@ -582,7 +629,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                             historyN.add(entry);
 
                             final Projeto? projeto = _projeto;
-                            if (projeto != null && !mei) {
+                            if (projeto != null) {
                               ref
                                   .read(projetosProvider.notifier)
                                   .registrarRecebimento(
@@ -591,15 +638,23 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                   );
                             }
 
+                            // O momento mais importante do app vibrava sem
+                            // falar: a SnackBar não é anunciada de forma
+                            // confiável pelo TalkBack, e a regra da casa é que
+                            // todo gesto que VIBRA também FALA.
+                            announce(
+                              context,
+                              projeto == null
+                                  ? 'Guardado. ${moneyBRL(res.reserva)} separados pro imposto.'
+                                  : 'Guardado. ${moneyBRL(res.reserva)} separados pro imposto de ${projeto.nome}.',
+                            );
                             setState(() => _saved = true);
                             ScaffoldMessenger.of(context)
                               ..clearSnackBars()
                               ..showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    mei
-                                        ? '${moneyBRLCents(res.dasMensal!)} guardados pro DAS de ${_mesNome(now)}'
-                                        : projeto != null
+                                    projeto != null
                                         ? '${moneyBRL(res.reserva)} guardado — "${projeto.nome}" em dia'
                                         : '${moneyBRL(res.reserva)} guardado no histórico',
                                   ),
@@ -611,7 +666,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                       // isto o projeto ficaria com o ciclo
                                       // adiantado por um pagamento que a
                                       // pessoa acabou de dizer que não houve.
-                                      if (projeto != null && !mei) {
+                                      if (projeto != null) {
                                         ref
                                             .read(projetosProvider.notifier)
                                             .save(projeto);
@@ -624,11 +679,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                 ),
                               );
                           },
-                          child: Text(
-                            res.isMei
-                                ? 'Separar o DAS do mês'
-                                : 'Salvar no histórico',
-                          ),
+                          child: const Text('Salvar no histórico'),
                         ),
                       const SizedBox(height: Space.x4),
                       if (tabelasDefasadas(DateTime.now())) ...<Widget>[
