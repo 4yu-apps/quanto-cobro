@@ -18,6 +18,7 @@ import '../../core/ui/a11y.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
+import '../../core/ui/panel_card.dart';
 import '../../core/ui/stale_banner.dart';
 import '../../core/ui/vitrine_card.dart';
 
@@ -199,37 +200,34 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           // Ato 2 e 3 — anatomia: o imposto de verdade + o lucro, e a Divisão.
           StaggerIn(
             index: 1,
-            child: Card(
-              color: cs.surfaceContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x5),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _blocoImposto(context, r, d),
-                    const Divider(),
-                    MergeSemantics(
-                      child: _bloco(
-                        context,
-                        'LUCRO REAL ESTIMADO',
-                        '${moneyBRL(r.lucro)}/mês',
-                        d.lucro,
-                        semantica:
-                            'Lucro real estimado: ${moneyBRL(r.lucro)} por mês',
-                      ),
+            child: PanelCard(
+              padding: const EdgeInsets.all(Space.x5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _blocoImposto(context, r, d),
+                  const Divider(),
+                  MergeSemantics(
+                    child: _bloco(
+                      context,
+                      'LUCRO REAL ESTIMADO',
+                      '${moneyBRL(r.lucro)}/mês',
+                      d.lucro,
+                      semantica:
+                          'Lucro real estimado: ${moneyBRL(r.lucro)} por mês',
                     ),
-                    const Divider(),
-                    DivisaoBar(
-                      lucro: div.lucro,
-                      reserva: div.reserva,
-                      custo: div.custo,
-                      emphasis: DivisaoEmphasis.lucro,
-                      // Nasce DEPOIS do véu do stagger: o usuário VÊ o dinheiro
-                      // se repartir (K1) — e o número continua parando por último.
-                      bornDelay: Motion.quick,
-                    ),
-                  ],
-                ),
+                  ),
+                  const Divider(),
+                  DivisaoBar(
+                    lucro: div.lucro,
+                    reserva: div.reserva,
+                    custo: div.custo,
+                    emphasis: DivisaoEmphasis.lucro,
+                    // Nasce DEPOIS do véu do stagger: o usuário VÊ o dinheiro
+                    // se repartir (K1) — e o número continua parando por último.
+                    bornDelay: Motion.quick,
+                  ),
+                ],
               ),
             ),
           ),

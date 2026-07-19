@@ -20,6 +20,7 @@ import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/empty_state_hero.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/hero_value_card.dart';
+import '../../core/ui/panel_card.dart';
 import '../../core/ui/tool_action_card.dart';
 import '../perfis/trabalho_switcher.dart';
 
@@ -157,43 +158,41 @@ class _PainelBody extends ConsumerWidget {
         if (lembrarDas) ...<Widget>[
           Semantics(
             liveRegion: true,
-            child: Card(
-              color: theme.colorScheme.secondaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'O DAS de ${_mesNome(now)} vence dia $kDasVencimentoDia',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.onSecondaryContainer,
+            child: PanelCard(
+              accent: theme.colorScheme.secondary,
+              padding: const EdgeInsets.all(Space.x4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'O DAS de ${_mesNome(now)} vence dia $kDasVencimentoDia',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: Space.x1),
+                  Text(
+                    '${moneyBRLCents(r.dasMensal!)} — ${guardadoMes >= r.dasMensal! ? 'você já separou o DAS.' : 'ainda não separou nada.'}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: Space.x2),
+                  Wrap(
+                    spacing: Space.x2,
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: () =>
+                            ref.read(leaoPagoProvider.notifier).set(true),
+                        child: const Text('Já paguei'),
                       ),
-                    ),
-                    const SizedBox(height: Space.x1),
-                    Text(
-                      '${moneyBRLCents(r.dasMensal!)} — ${guardadoMes >= r.dasMensal! ? 'você já separou o DAS.' : 'ainda não separou nada.'}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSecondaryContainer,
+                      TextButton(
+                        onPressed: () => context.push(Routes.reserva),
+                        child: const Text('Separar agora'),
                       ),
-                    ),
-                    const SizedBox(height: Space.x2),
-                    Wrap(
-                      spacing: Space.x2,
-                      children: <Widget>[
-                        TextButton(
-                          onPressed: () =>
-                              ref.read(leaoPagoProvider.notifier).set(true),
-                          child: const Text('Já paguei'),
-                        ),
-                        TextButton(
-                          onPressed: () => context.push(Routes.reserva),
-                          child: const Text('Separar agora'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -234,102 +233,99 @@ class _PainelBody extends ConsumerWidget {
 
         StaggerIn(
           index: 2,
-          child: Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(Space.x5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'DE CADA MÊS',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.5,
-                    ),
+          child: PanelCard(
+            padding: const EdgeInsets.all(Space.x5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'DE CADA MÊS',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.5,
                   ),
-                  const SizedBox(height: Space.x3),
-                  DivisaoBar(
-                    lucro: div.lucro,
-                    reserva: div.reserva,
-                    custo: div.custo,
-                  ),
-                  const SizedBox(height: Space.x2),
-                  Row(
-                    children: <Widget>[
-                      Icon(Icons.lock_outline, size: 16, color: d.reserva),
-                      const SizedBox(width: Space.x2),
-                      Expanded(
-                        child: Text.rich(
-                          TextSpan(
-                            children: <InlineSpan>[
-                              const TextSpan(text: ''),
-                              TextSpan(
-                                text: impostoTexto,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: d.reserva,
-                                  fontFeatures: AppType.tnum,
-                                ),
-                              ),
-                            ],
-                          ),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (guardadoMes > 0) ...<Widget>[
-                    const SizedBox(height: Space.x3),
-                    Semantics(
-                      button: true,
-                      label:
-                          'Você já guardou ${moneyBRL(guardadoMes)} este mês. Ver histórico.',
-                      child: InkWell(
-                        // Troca de aba (não empilha 2ª cópia do Histórico).
-                        onTap: () => context.go(Routes.historico),
-                        borderRadius: const BorderRadius.all(Radii.sm),
-                        child: Container(
-                          constraints: const BoxConstraints(minHeight: 48),
-                          child: Row(
-                            children: <Widget>[
-                              Icon(
-                                Icons.savings_outlined,
-                                size: 16,
+                ),
+                const SizedBox(height: Space.x3),
+                DivisaoBar(
+                  lucro: div.lucro,
+                  reserva: div.reserva,
+                  custo: div.custo,
+                ),
+                const SizedBox(height: Space.x2),
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.lock_outline, size: 16, color: d.reserva),
+                    const SizedBox(width: Space.x2),
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            const TextSpan(text: ''),
+                            TextSpan(
+                              text: impostoTexto,
+                              style: theme.textTheme.labelLarge?.copyWith(
                                 color: d.reserva,
+                                fontFeatures: AppType.tnum,
                               ),
-                              const SizedBox(width: Space.x2),
-                              Expanded(
-                                child: Text(
-                                  'Você já guardou ${moneyBRL(guardadoMes)} este mês',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: Space.x2),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => context.push(Routes.detalhe),
-                      icon: const Icon(Icons.receipt_long_outlined),
-                      label: const Text('Ver detalhamento'),
+                ),
+                if (guardadoMes > 0) ...<Widget>[
+                  const SizedBox(height: Space.x3),
+                  Semantics(
+                    button: true,
+                    label:
+                        'Você já guardou ${moneyBRL(guardadoMes)} este mês. Ver histórico.',
+                    child: InkWell(
+                      // Troca de aba (não empilha 2ª cópia do Histórico).
+                      onTap: () => context.go(Routes.historico),
+                      borderRadius: const BorderRadius.all(Radii.sm),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        child: Row(
+                          children: <Widget>[
+                            Icon(
+                              Icons.savings_outlined,
+                              size: 16,
+                              color: d.reserva,
+                            ),
+                            const SizedBox(width: Space.x2),
+                            Expanded(
+                              child: Text(
+                                'Você já guardou ${moneyBRL(guardadoMes)} este mês',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 18,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
+                const SizedBox(height: Space.x2),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => context.push(Routes.detalhe),
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('Ver detalhamento'),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
