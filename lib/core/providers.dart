@@ -6,6 +6,8 @@ import 'billing/entitlement.dart';
 import 'data/backup_service.dart';
 import 'data/profile_repository.dart';
 import 'data/reserva_history_repository.dart';
+import 'fx/fx_repository.dart';
+import 'fx/fx_service.dart';
 import 'model/perfil.dart';
 import 'model/reserva_entry.dart';
 import 'settings/settings_repository.dart';
@@ -283,3 +285,12 @@ class LeaoPagoNotifier extends Notifier<bool> {
 
 final NotifierProvider<LeaoPagoNotifier, bool> leaoPagoProvider =
     NotifierProvider<LeaoPagoNotifier, bool>(LeaoPagoNotifier.new);
+
+// ---- Câmbio (Fase 3 — cliente estrangeiro, ex.: Marina cobrando em USD) ----
+final Provider<FxRepository> fxRepositoryProvider = Provider<FxRepository>(
+  (Ref ref) => FxRepository(ref.watch(sharedPreferencesProvider)),
+);
+
+final Provider<FxService> fxServiceProvider = Provider<FxService>(
+  (Ref ref) => FxService(ref.watch(fxRepositoryProvider)),
+);

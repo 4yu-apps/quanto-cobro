@@ -3,11 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
+import '../../core/fx/fx_rate.dart';
+import '../../core/fx/fx_service.dart';
+import '../../core/model/moeda.dart';
 import '../../core/model/regime.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
@@ -38,6 +42,19 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
   RegimeId? _regime;
   bool _saved = false;
   Timer? _announceTimer;
+
+  // ---- Câmbio (Fase 3 — cliente estrangeiro) ----
+  // Offline-first: nunca busca sozinho ao abrir a tela, só lê o cache local
+  // (síncrono) e só sai pra rede quando a pessoa toca em "Atualizar".
+  Moeda _moeda = Moeda.brl;
+  FxRate? _rate;
+
+  /// 'USD->BRL' etc. — o par que o repo/serviço de câmbio usam como chave.
+  String get _par => '${_moeda.codigo}->${Moeda.brl.codigo}';
+
+  /// Quanto vale 1 unidade de [_moeda] em BRL agora — `1.0` quando já é BRL
+  /// (sem câmbio nenhum), `null` quando é moeda estrangeira sem cotação.
+  double? get _taxaConversao => _moeda == Moeda.brl ? 1.0 : _rate?.taxa;
 
   @override
   void initState() {
@@ -73,6 +90,160 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
     });
   }
 
+  /// Converte [amountInput] (digitado em [_moeda]) pra BRL e calcula a
+  /// reserva em cima do valor já convertido — o imposto é sempre pago em
+  /// BRL. Sem cotação disponível pra moeda estrangeira, não dá pra calcular
+  /// nada (devolve null: a tela cai no estado "digite o valor").
+  ReservaResult? _reservaPara(
+    int amountInput,
+    RegimeId regime,
+    double? taxaEfetiva,
+  ) {
+    final double? taxa = _taxaConversao;
+    if (amountInput <= 0 || taxa == null) return null;
+    return computeReserva(amountInput * taxa, regime, taxaEfetiva: taxaEfetiva);
+  }
+
+  void _onMoedaChanged(Moeda m) {
+    if (m == _moeda) return;
+    Haptics.select();
+    setState(() {
+      _moeda = m;
+      _saved = false;
+      // Só lê o cache local (síncrono) — nenhuma chamada de rede automática.
+      _rate = m == Moeda.brl ? null : ref.read(fxRepositoryProvider).get(_par);
+    });
+  }
+
+  Future<void> _atualizarCotacao() async {
+    try {
+      final FxRate rate = await ref
+          .read(fxServiceProvider)
+          .cotacao(_moeda, Moeda.brl, agora: DateTime.now());
+      if (!mounted) return;
+      setState(() {
+        _rate = rate;
+        _saved = false;
+      });
+      announce(
+        context,
+        'Cotação de hoje: ${money(1, _moeda)} = ${moneyBRLCents(rate.taxa)}.',
+      );
+    } on FxUnavailable {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não consegui buscar agora. Tenta de novo com internet, ou digite a sua.',
+            ),
+          ),
+        );
+    }
+  }
+
+  Future<void> _abrirDialogTaxaManual() async {
+    final TextEditingController controller = TextEditingController(
+      text: _rate == null ? '' : _rate!.taxa.toString().replaceAll('.', ','),
+    );
+    final String? digitado = await showDialog<String>(
+      context: context,
+      builder: (BuildContext c) => AlertDialog(
+        title: Text('Quanto vale 1 ${_moeda.codigo} em reais?'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(hintText: 'Ex.: 5,35'),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, controller.text),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
+    if (digitado == null) return;
+    final double? taxa = double.tryParse(digitado.trim().replaceAll(',', '.'));
+    if (taxa == null || taxa <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(content: Text('Não entendi esse número.')));
+      return;
+    }
+    await ref.read(fxRepositoryProvider).setManual(_par, taxa, DateTime.now());
+    if (!mounted) return;
+    setState(() {
+      _rate = ref.read(fxRepositoryProvider).get(_par);
+      _saved = false;
+    });
+    announce(
+      context,
+      'Cotação salva: ${money(1, _moeda)} = ${moneyBRLCents(taxa)}.',
+    );
+  }
+
+  Widget _linhaCambio(BuildContext context, ThemeData theme, ColorScheme cs) {
+    final TextStyle? style = theme.textTheme.bodySmall?.copyWith(
+      color: cs.onSurfaceVariant,
+    );
+    final FxRate? rate = _rate;
+    if (rate == null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: Space.x1),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Ligue a internet uma vez pra puxar a cotação, ou digite a sua.',
+              style: style,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _abrirDialogTaxaManual,
+                child: const Text('Digitar a minha'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final String data = DateFormat('dd/MM').format(rate.at);
+    final String texto =
+        'Cotação de $data: ${money(1, _moeda)} = ${moneyBRLCents(rate.taxa)}'
+        '${rate.stale ? ' (desatualizada)' : ''}';
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.x1),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(texto, style: style),
+          Wrap(
+            children: <Widget>[
+              TextButton(
+                onPressed: _atualizarCotacao,
+                child: const Text('Atualizar'),
+              ),
+              TextButton(
+                onPressed: _abrirDialogTaxaManual,
+                child: const Text('Digitar a minha'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -88,10 +259,12 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
         ? computeValorHora(st.perfil).rate
         : null;
 
-    final int amount = _digits(_valor.text);
-    final bool temValor = amount > 0;
+    final int amountInput = _digits(_valor.text);
+    final double? taxaConversao = _taxaConversao;
+    final bool temValor = amountInput > 0 && taxaConversao != null;
+    final double amountBRL = temValor ? amountInput * taxaConversao : 0;
     final ReservaResult? res = temValor
-        ? computeReserva(amount.toDouble(), regime, taxaEfetiva: taxaEfetiva)
+        ? computeReserva(amountBRL, regime, taxaEfetiva: taxaEfetiva)
         : null;
     final String? perfilId = st is ProfileReady ? st.perfil.id : null;
     final DateTime now = DateTime.now();
@@ -122,22 +295,38 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
           MoneyField(
             controller: _valor,
             label: 'Quanto você recebeu?',
-            prefix: r'R$ ',
+            prefix: '${_moeda.simbolo} ',
             autofocus: true,
             onChanged: (_) {
               setState(() => _saved = false);
               final int value = _digits(_valor.text);
-              _announceResult(
-                value > 0
-                    ? computeReserva(
-                        value.toDouble(),
-                        regime,
-                        taxaEfetiva: taxaEfetiva,
-                      )
-                    : null,
-              );
+              _announceResult(_reservaPara(value, regime, taxaEfetiva));
             },
           ),
+          const SizedBox(height: Space.x2),
+          // Moeda: compacta, do lado do valor — Fase 3 (cliente estrangeiro).
+          Row(
+            children: <Widget>[
+              Text(
+                'Moeda',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: Space.x3),
+              SegmentedButton<Moeda>(
+                segments: <ButtonSegment<Moeda>>[
+                  for (final Moeda m in Moeda.curadas)
+                    ButtonSegment<Moeda>(value: m, label: Text(m.codigo)),
+                ],
+                selected: <Moeda>{_moeda},
+                showSelectedIcon: false,
+                onSelectionChanged: (Set<Moeda> s) =>
+                    _onMoedaChanged(s.first),
+              ),
+            ],
+          ),
+          if (_moeda != Moeda.brl) _linhaCambio(context, theme, cs),
           const SizedBox(height: Space.x3),
           // Regime: chips na linguagem do app (alvo generoso, sem dropdown 2014).
           Wrap(
@@ -170,15 +359,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                         st is ProfileReady && r.id == st.perfil.regime
                         ? computeValorHora(st.perfil).rate
                         : null;
-                    _announceResult(
-                      amount > 0
-                          ? computeReserva(
-                              amount.toDouble(),
-                              r.id,
-                              taxaEfetiva: taxaNova,
-                            )
-                          : null,
-                    );
+                    _announceResult(_reservaPara(amountInput, r.id, taxaNova));
                     if (st is ProfileReady) {
                       await ref
                           .read(settingsRepositoryProvider)
@@ -242,14 +423,14 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,
                               child: MoneyCountUp(
-                                res.isMei ? amount : res.reserva,
+                                res.isMei ? amountBRL : res.reserva,
                                 duration: Motion.quick,
                                 endTint: res.isMei ? d.lucro : d.reserva,
                                 style: AppType.valueHero.copyWith(
                                   color: res.isMei ? d.lucro : d.reserva,
                                 ),
                                 semanticLabel: res.isMei
-                                    ? 'Esse dinheiro é seu: ${moneyBRL(amount)}'
+                                    ? 'Esse dinheiro é seu: ${moneyBRL(amountBRL)}'
                                     : 'Reserve ${moneyBRL(res.reserva)} deste pagamento',
                               ),
                             ),
@@ -264,7 +445,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                             ),
                             const SizedBox(height: Space.x4),
                             ReservaBar(
-                              amount: amount,
+                              amount: amountBRL,
                               reserva: res.reserva,
                               sobra: res.sobra,
                             ),
@@ -327,7 +508,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                             Haptics.commit();
                             final bool mei = res.isMei;
                             final ReservaEntry entry = ReservaEntry(
-                              valor: amount.toDouble(),
+                              valor: amountBRL,
                               reserva: res.reserva,
                               regimeTag: Regime.of(regime).tag,
                               at: DateTime.now(),
