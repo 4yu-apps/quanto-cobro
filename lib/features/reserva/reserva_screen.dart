@@ -21,6 +21,7 @@ import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
 import '../../core/ui/vitrine_card.dart';
+import 'reserva_bar.dart';
 
 /// Reserva por pagamento (Blueprint §5.5) — o CAMINHO DE OURO (uso recorrente).
 /// Resultado ao vivo dentro de um "cofre" visual; salvar fecha o loop
@@ -162,6 +163,22 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                       _regime = r.id;
                       _saved = false;
                     });
+                    // Trocar o regime recalcula o valor debaixo dos dedos — o
+                    // leitor de tela precisa ouvir o novo número (auditoria
+                    // Joana), igual a Calculadora já faz ao mudar de regime.
+                    final double? taxaNova =
+                        st is ProfileReady && r.id == st.perfil.regime
+                        ? computeValorHora(st.perfil).rate
+                        : null;
+                    _announceResult(
+                      amount > 0
+                          ? computeReserva(
+                              amount.toDouble(),
+                              r.id,
+                              taxaEfetiva: taxaNova,
+                            )
+                          : null,
+                    );
                     if (st is ProfileReady) {
                       await ref
                           .read(settingsRepositoryProvider)
@@ -246,7 +263,11 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                               style: theme.textTheme.bodyLarge,
                             ),
                             const SizedBox(height: Space.x4),
-                            _barraColapsada(context, d, res, amount),
+                            ReservaBar(
+                              amount: amount,
+                              reserva: res.reserva,
+                              sobra: res.sobra,
+                            ),
                             const SizedBox(height: Space.x2),
                             Row(
                               children: <Widget>[
@@ -354,44 +375,6 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                   ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _barraColapsada(
-    BuildContext context,
-    DivisaoColors d,
-    ReservaResult res,
-    int amount,
-  ) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radii.sm),
-      child: SizedBox(
-        height: 20,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints c) {
-            final bool reduce = reduceMotionOf(context);
-            final double w = c.maxWidth - 2;
-            final double fR = amount <= 0 ? 0 : res.reserva / amount;
-            return Row(
-              children: <Widget>[
-                AnimatedContainer(
-                  duration: reduce ? Duration.zero : Motion.quick,
-                  curve: MotionCurves.standard,
-                  width: w * (1 - fR),
-                  color: d.custo,
-                ),
-                const SizedBox(width: 2),
-                AnimatedContainer(
-                  duration: reduce ? Duration.zero : Motion.quick,
-                  curve: MotionCurves.standard,
-                  width: w * fR,
-                  color: d.reserva,
-                ),
-              ],
-            );
-          },
-        ),
       ),
     );
   }
