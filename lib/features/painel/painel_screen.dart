@@ -140,7 +140,7 @@ class _PainelBody extends ConsumerWidget {
         : 'Separe ~${r.reservaPct}% de cada pagamento (sua faixa real, regime: $regimeTag).';
 
     return _ambientWash(context, ListView(
-      padding: const EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, 120),
+      padding: EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, kFloatingNavReserve + MediaQuery.viewPaddingOf(context).bottom),
       children: <Widget>[
         StaggerIn(
           index: 0,

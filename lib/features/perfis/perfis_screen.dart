@@ -66,7 +66,7 @@ class PerfisScreen extends ConsumerWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, 120),
+              padding: EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, kFloatingNavReserve + MediaQuery.viewPaddingOf(context).bottom),
               children: <Widget>[
                 Text(
                   'Toque pra ativar. O Painel, a Reserva e o Simulador passam a usar o trabalho ativo.',

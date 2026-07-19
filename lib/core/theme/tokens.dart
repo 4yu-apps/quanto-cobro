@@ -33,3 +33,8 @@ abstract final class Motion {
   static const Duration countUp = Duration(milliseconds: 600);
   static const Duration fill = Duration(milliseconds: 450);
 }
+
+/// Altura reservada no rodapé das ABAS pro conteúdo não sumir sob a navbar
+/// flutuante (`extendBody`). Pior caso = banner (56+8) + pílula (64) + pad (12).
+/// Some-se `MediaQuery.viewPaddingOf(context).bottom` pro inset do sistema.
+const double kFloatingNavReserve = 140;
