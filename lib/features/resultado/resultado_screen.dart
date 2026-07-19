@@ -415,6 +415,14 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           apoio:
               'Regra de bolso pra quem recebe de fora: 25–30% de segurança. Ajuste com seu contador.',
         );
+      case RegimeId.carneLeao:
+        return _reservePct(
+          context,
+          r,
+          d,
+          apoio:
+              'Sua alíquota efetiva: só o IRPF pela sua faixa (carnê-leão), sem INSS — você não contribui como autônomo.',
+        );
     }
   }
 

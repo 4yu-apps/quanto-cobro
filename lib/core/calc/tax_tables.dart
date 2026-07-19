@@ -105,6 +105,17 @@ double impostoMensalCpf(double rendimentoMensal) {
   return inss + irpf;
 }
 
+/// Imposto mensal do "carnê-leão puro": CPF que recebe de cliente no
+/// exterior e paga só o IRPF progressivo (mesma tabela + redutor do CPF),
+/// SEM INSS — não contribui como autônomo. Diferença do [impostoMensalCpf]:
+/// a base é o rendimento CHEIO (não rendimento − INSS) e não há parcela de
+/// INSS somada no fim.
+double impostoCarneLeao(double rendimentoMensal) {
+  if (rendimentoMensal <= 0) return 0;
+  final double apurado = irpfTabela(rendimentoMensal);
+  return apurado - redutorIrpf(rendimentoMensal, apurado);
+}
+
 // ---------------------------------------------------------------------------
 // Simples Nacional — Anexo III (serviços), 3 primeiras faixas
 // ---------------------------------------------------------------------------

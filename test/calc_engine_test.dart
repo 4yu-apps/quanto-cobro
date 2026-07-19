@@ -42,6 +42,31 @@ void main() {
       // RBT12 270k (mensal 22.5k) → (270k×11,2% − 9.360)/270k ≈ 7,73%
       expect(aliquotaEfetivaSimples(22500), closeTo(0.0773, 0.001));
     });
+
+    test('carnê-leão puro: IRPF progressivo com redutor, SEM INSS', () {
+      const double r = 8000;
+      final double apurado = irpfTabela(r);
+      final double esperado = apurado - redutorIrpf(r, apurado);
+
+      // Mesma tabela/redutor, aplicada direto sobre o rendimento cheio
+      // (base = r, não r − INSS):
+      expect(impostoCarneLeao(r), closeTo(esperado, 0.01));
+
+      // Sem INSS ⇒ sempre menor que o CPF autônomo no mesmo rendimento:
+      expect(impostoCarneLeao(r), lessThan(impostoMensalCpf(r)));
+
+      // A diferença NÃO é só "tirar o INSS de cima" do total do CPF — o CPF
+      // apura o IRPF numa base MENOR (r − INSS), então o IRPF do CPF sozinho
+      // é diferente do IRPF do carnê-leão puro (base cheia). Isso prova que a
+      // base usada é a certa, não um atalho aritmético.
+      final double irpfDoCpfSozinho = impostoMensalCpf(r) - inssIndividual(r);
+      expect(impostoCarneLeao(r), isNot(closeTo(irpfDoCpfSozinho, 0.01)));
+    });
+
+    test('carnê-leão puro: renda 0 não gera imposto negativo', () {
+      expect(impostoCarneLeao(0), 0);
+      expect(impostoCarneLeao(-100), 0);
+    });
   });
 
   group('computeValorHora', () {
@@ -103,6 +128,39 @@ void main() {
       );
       expect(r.valorHora, greaterThan(0));
     });
+
+    test(
+      'Carnê-leão puro: gross-up progressivo converge, sem INSS, e cobra '
+      'menos imposto total que o CPF autônomo no mesmo perfil',
+      () {
+        final Perfil base = Perfil.padrao();
+        final ValorHoraResult carneLeao = computeValorHora(
+          base.copyWith(regime: RegimeId.carneLeao),
+        );
+        final ValorHoraResult cpf = computeValorHora(
+          base.copyWith(regime: RegimeId.cpf),
+        );
+
+        // f = base + imposto(f) precisa fechar (ponto-fixo estável):
+        expect(
+          carneLeao.faturamento,
+          closeTo(
+            carneLeao.base + impostoCarneLeao(carneLeao.faturamento),
+            1.0,
+          ),
+        );
+        // Progressivo, mas sem o INSS: alíquota efetiva positiva e sensata.
+        expect(carneLeao.rate, greaterThan(0));
+        expect(carneLeao.rate, lessThan(0.30));
+        expect(carneLeao.dasMensal, isNull);
+        expect(carneLeao.acimaTetoMei, isFalse);
+
+        // Mesmo perfil, mesmo faturamento-alvo de base: carnê-leão puro sai
+        // mais barato que CPF autônomo (que soma INSS por cima do IRPF).
+        expect(carneLeao.imposto, lessThan(cpf.imposto));
+        expect(carneLeao.rate, lessThan(cpf.rate));
+      },
+    );
   });
 
   group('computeReserva', () {
@@ -177,6 +235,16 @@ void main() {
 
     test('nunca retorna zero (evita divisão por zero adiante)', () {
       expect(horasFaturaveisPorRotina(diasSemana: 1, horasDia: 1), greaterThan(0));
+    });
+  });
+
+  group('regime carnê-leão puro', () {
+    test('Perfil com RegimeId.carneLeao sobrevive a um round-trip por JSON', () {
+      final Perfil p = Perfil.padrao().copyWith(regime: RegimeId.carneLeao);
+      final Perfil back = Perfil.fromJson(p.toJson());
+      expect(back.regime, RegimeId.carneLeao);
+      expect(back.renda, p.renda);
+      expect(back.horas, p.horas);
     });
   });
 }

@@ -6,11 +6,14 @@
 /// - CPF: carnê-leão progressivo (IRPF 2026 com redutor) + INSS individual.
 /// - Simples: alíquota efetiva por faixa do Anexo III.
 /// - Internacional: regra de bolso flat (reserva de segurança).
+/// - Carnê-leão puro: mesmo IRPF progressivo (tabela + redutor) do CPF, mas
+///   SEM INSS — CPF que recebe de cliente no exterior e não contribui como
+///   autônomo (Fase 3).
 /// As tabelas vivem em `tax_tables.dart` (ano-base lá; revisar ~1x/ano, regra R5).
-enum RegimeId { mei, cpf, simples, intl }
+enum RegimeId { mei, cpf, simples, intl, carneLeao }
 
 /// Como o imposto do regime é calculado.
-enum TaxKind { fixoMensal, progressivo, faixasSimples, flat }
+enum TaxKind { fixoMensal, progressivo, faixasSimples, flat, progressivoSemInss }
 
 class Regime {
   const Regime({
@@ -55,6 +58,13 @@ class Regime {
       sub: 'Não faz ideia, ou recebe de fora? Guarda uma reserva de segurança de 25% a 30%.',
       kind: TaxKind.flat,
       tag: 'Internacional',
+    ),
+    RegimeId.carneLeao: Regime(
+      id: RegimeId.carneLeao,
+      label: 'Recebo de fora, sei que sou CPF',
+      sub: 'Freelancer com cliente no exterior, como pessoa física. Paga só o IRPF pela sua faixa (carnê-leão) — sem INSS, porque não contribui como autônomo.',
+      kind: TaxKind.progressivoSemInss,
+      tag: 'CPF exterior',
     ),
   };
 

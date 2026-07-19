@@ -16,6 +16,8 @@ double impostoMensal(RegimeId regime, double faturamentoMensal) {
       return kDasMensalMei;
     case TaxKind.progressivo:
       return impostoMensalCpf(faturamentoMensal);
+    case TaxKind.progressivoSemInss:
+      return impostoCarneLeao(faturamentoMensal);
     case TaxKind.faixasSimples:
       return faturamentoMensal * aliquotaEfetivaSimples(faturamentoMensal);
     case TaxKind.flat:

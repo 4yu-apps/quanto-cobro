@@ -72,6 +72,12 @@ abstract final class Glossario {
       'É trabalhar por conta, sem abrir empresa — só com o seu CPF. O imposto '
           'vem pelo carnê-leão, pela sua faixa de renda, mais o INSS.',
     ),
+    'exterior': Verbete(
+      'O que é "Recebo de fora, sei que sou CPF"?',
+      'É pra quem já sabe que trabalha como pessoa física (CPF) pra cliente '
+          'no exterior. Você paga o IRPF pela sua faixa, igual ao carnê-leão '
+          'do Autônomo — mas sem o INSS, porque não contribui como autônomo.',
+    ),
     'grossup': Verbete(
       'Imposto embutido',
       'Quer dizer que a conta já considera o imposto por dentro do valor, pra o '
