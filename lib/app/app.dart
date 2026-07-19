@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/config/app_config.dart';
 import '../core/providers.dart';
 import '../core/theme/app_theme.dart';
+import '../core/ui/text_scale.dart';
 import '../features/splash/splash_overlay.dart';
 import 'router.dart';
 import 'routes.dart';
@@ -39,6 +40,7 @@ class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
   @override
   Widget build(BuildContext context) {
     final ThemeMode mode = ref.watch(themeModeProvider);
+    final double appMult = ref.watch(textScaleProvider);
     // Reduce-motion também vale pro cross-fade de troca de tema (a fresta que
     // faltava pro gate cobrir 100%). Lido direto do sistema: aqui ainda não
     // existe MediaQuery (ele nasce dentro do MaterialApp).
@@ -59,13 +61,24 @@ class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: _router,
       // Brand reveal por cima do app já pronto (não é loading). Sai sozinho.
-      builder: (BuildContext context, Widget? child) => Stack(
-        children: <Widget>[
-          child ?? const SizedBox.shrink(),
-          if (!_splashDone)
-            SplashOverlay(onDone: () => setState(() => _splashDone = true)),
-        ],
-      ),
+      // A escala de texto (multiplicador do app sobre o fator do sistema)
+      // envolve SÓ o child — o splash fica fora pra não distorcer a marca.
+      builder: (BuildContext context, Widget? child) {
+        final MediaQueryData mq = MediaQuery.of(context);
+        final double sysFactor = mq.textScaler.scale(14) / 14;
+        final double eff = effectiveTextScale(sysFactor, appMult);
+        final Widget scaled = MediaQuery(
+          data: mq.copyWith(textScaler: TextScaler.linear(eff)),
+          child: child ?? const SizedBox.shrink(),
+        );
+        return Stack(
+          children: <Widget>[
+            scaled,
+            if (!_splashDone)
+              SplashOverlay(onDone: () => setState(() => _splashDone = true)),
+          ],
+        );
+      },
     );
   }
 }
