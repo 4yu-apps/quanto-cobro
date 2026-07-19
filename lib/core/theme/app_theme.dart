@@ -9,7 +9,8 @@ import 'tokens.dart';
 /// pill 56dp, campos e superfícies — o que dá alma a todas as telas de uma vez.
 abstract final class AppTheme {
   static ThemeData get dark => _build(AppColorSchemes.dark, DivisaoColors.dark);
-  static ThemeData get light => _build(AppColorSchemes.light, DivisaoColors.light);
+  static ThemeData get light =>
+      _build(AppColorSchemes.light, DivisaoColors.light);
 
   static ThemeData _build(ColorScheme scheme, DivisaoColors divisao) {
     final TextTheme textTheme = _textTheme(scheme);
@@ -51,7 +52,9 @@ abstract final class AppTheme {
       ),
 
       inputDecorationTheme: InputDecorationTheme(
-        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radii.md)),
+        border: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radii.md),
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radii.md),
           borderSide: BorderSide(color: scheme.outlineVariant),
@@ -62,20 +65,28 @@ abstract final class AppTheme {
         ),
       ),
 
-      dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: Space.x6),
-      // Chips de custo: ambar-lembranca (DS 6.8) — o "custo invisivel" puxa o olho.
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant,
+        space: Space.x6,
+      ),
+      // Chips de custo NEUTROS ("Cofre Aberto"): o ouro agora significa Reserva
+      // — custo dourado seria colisao semantica. Custo e a hachura, nao a joia.
       chipTheme: ChipThemeData(
         shape: const StadiumBorder(),
-        backgroundColor: scheme.tertiaryContainer,
-        side: BorderSide.none,
-        labelStyle: textTheme.labelMedium?.copyWith(color: scheme.onTertiaryContainer),
-        iconTheme: IconThemeData(color: scheme.onTertiaryContainer, size: 18),
+        backgroundColor: scheme.surfaceContainerHighest,
+        side: BorderSide(color: scheme.outlineVariant),
+        labelStyle: textTheme.labelMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+        iconTheme: IconThemeData(color: scheme.onSurfaceVariant, size: 18),
       ),
       listTileTheme: const ListTileThemeData(minVerticalPadding: 12),
-      // No claro os tons de superficie quase nao separam: borda sutil resolve
-      // (COLOR-GUIDE 3.2). No escuro a hierarquia e tonal, sem borda.
+      // Claro "Recibo Premium": cartao flutua com sombra TINTADA de verde-tinta
+      // (papelaria premium) + borda hairline. Escuro: hierarquia tonal, sem sombra.
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: scheme.brightness == Brightness.light ? 1 : 0,
+        shadowColor: scheme.shadow.withValues(alpha: 0.35),
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: const BorderRadius.all(Radii.lg),
           side: scheme.brightness == Brightness.light
@@ -93,11 +104,11 @@ abstract final class AppTheme {
 
   static TextTheme _textTheme(ColorScheme scheme) {
     TextStyle s(double size, double line, FontWeight w) => TextStyle(
-          fontFamily: 'Inter',
-          fontSize: size,
-          height: line / size,
-          fontWeight: w,
-        );
+      fontFamily: 'Inter',
+      fontSize: size,
+      height: line / size,
+      fontWeight: w,
+    );
     return TextTheme(
       displaySmall: s(36, 44, FontWeight.w600),
       headlineMedium: s(28, 36, FontWeight.w600),

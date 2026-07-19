@@ -10,6 +10,9 @@ import '../theme/tokens.dart';
 ///   número "corre atrás do dedo" (o TweenAnimationBuilder anima do valor
 ///   exibido atual para o novo; o zero só vale no primeiro build).
 /// Respeita "reduzir movimento" do sistema.
+///
+/// Acessibilidade: o label semântico é SEMPRE o valor final (nunca um frame
+/// intermediário da animação) — fallback interno, impossível de esquecer.
 class MoneyCountUp extends StatelessWidget {
   const MoneyCountUp(
     this.value, {
@@ -19,6 +22,7 @@ class MoneyCountUp extends StatelessWidget {
     this.duration = Motion.countUp,
     this.curve = MotionCurves.easeOut,
     this.suffix = '',
+    this.endTint,
   });
 
   final num value;
@@ -30,19 +34,36 @@ class MoneyCountUp extends StatelessWidget {
   /// Sufixo não-monetário (ex.: ' h/mês') — quando presente, formata sem R$.
   final String suffix;
 
+  /// "Acende" na chegada (Lúa §5.6): interpola a cor do estilo até [endTint]
+  /// nos ~20% finais da animação — o número termina de contar e vira ouro.
+  /// Em reduce-motion, usa a cor final direto.
+  final Color? endTint;
+
   String _fmt(num v) => suffix.isEmpty ? moneyBRL(v) : '${v.round()}$suffix';
 
   @override
   Widget build(BuildContext context) {
+    final String label = semanticLabel ?? _fmt(value);
     if (reduceMotionOf(context)) {
-      return Text(_fmt(value), style: style, semanticsLabel: semanticLabel);
+      final TextStyle s = endTint == null
+          ? style
+          : style.copyWith(color: endTint);
+      return Text(_fmt(value), style: s, semanticsLabel: label);
     }
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: value.toDouble()),
       duration: duration,
       curve: curve,
-      builder: (BuildContext context, double v, Widget? child) =>
-          Text(_fmt(v), style: style, semanticsLabel: semanticLabel),
+      builder: (BuildContext context, double v, Widget? child) {
+        TextStyle s = style;
+        final Color? tint = endTint;
+        if (tint != null && value != 0) {
+          final double p = (v / value).clamp(0.0, 1.0);
+          final double t = ((p - 0.8) / 0.2).clamp(0.0, 1.0);
+          s = style.copyWith(color: Color.lerp(style.color, tint, t));
+        }
+        return Text(_fmt(v), style: s, semanticsLabel: label);
+      },
     );
   }
 }

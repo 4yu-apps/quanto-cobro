@@ -31,23 +31,35 @@ class EmptyStateHero extends StatelessWidget {
               ),
             ),
             const SizedBox(height: Space.x6),
-            Text('Você provavelmente cobra menos do que deveria.',
-                style: theme.textTheme.headlineMedium),
+            Text(
+              'Você provavelmente cobra menos do que deveria.',
+              style: theme.textTheme.headlineMedium,
+            ),
             const SizedBox(height: Space.x3),
-            Text('Descubra seu valor-hora justo em 5 perguntas.',
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              'Descubra seu valor-hora justo em 5 perguntas.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: Space.x6),
             FilledButton(onPressed: onComecar, child: const Text('Começar')),
             const SizedBox(height: Space.x3),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Icon(Icons.lock_outline, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                Icon(
+                  Icons.lock_outline,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: Space.x2),
-                Text('Leva 2 minutos · 100% offline',
-                    style: theme.textTheme.labelMedium
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(
+                  'Leva 2 minutos · 100% offline',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ],

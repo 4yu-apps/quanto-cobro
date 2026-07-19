@@ -14,7 +14,10 @@ class EstimativaSeal extends StatelessWidget {
   Widget build(BuildContext context) {
     final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Space.x3, vertical: Space.x2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.x3,
+        vertical: Space.x2,
+      ),
       decoration: BoxDecoration(
         color: d.sealBg,
         borderRadius: const BorderRadius.all(Radii.sm),
@@ -29,7 +32,9 @@ class EstimativaSeal extends StatelessWidget {
               short
                   ? 'Estimativa pra te ajudar a decidir.'
                   : 'Estimativa de planejamento, não é consultoria fiscal.',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: d.sealFg),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: d.sealFg),
             ),
           ),
         ],

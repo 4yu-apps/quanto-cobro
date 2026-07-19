@@ -5,9 +5,13 @@ import 'package:quantocobro/core/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('sem perfil: Painel mostra o estado vazio com "Começar"', (WidgetTester tester) async {
+  testWidgets('sem perfil: Painel mostra o estado vazio com "Começar"', (
+    WidgetTester tester,
+  ) async {
     // onboarding já visto → cai direto no Painel (que está vazio, sem perfil).
-    SharedPreferences.setMockInitialValues(<String, Object>{'onboarding_done': true});
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'onboarding_done': true,
+    });
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(
@@ -19,6 +23,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Começar'), findsOneWidget);
-    expect(find.text('Você provavelmente cobra menos do que deveria.'), findsOneWidget);
+    expect(
+      find.text('Você provavelmente cobra menos do que deveria.'),
+      findsOneWidget,
+    );
   });
 }

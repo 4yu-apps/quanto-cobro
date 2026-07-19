@@ -23,7 +23,10 @@ class BackupService {
       'version': 2,
       'activeId': data.activeId,
       'profiles': data.perfis.map((Perfil p) => p.toJson()).toList(),
-      'history': _history.loadAll().map((ReservaEntry e) => e.toJson()).toList(),
+      'history': _history
+          .loadAll()
+          .map((ReservaEntry e) => e.toJson())
+          .toList(),
     });
   }
 
@@ -40,19 +43,27 @@ class BackupService {
           .map((dynamic e) => Perfil.fromJson(e as Map<String, dynamic>))
           .toList();
       await _repo.saveAll(
-          ProfilesData(perfis: perfis, activeId: decoded['activeId'] as String?));
+        ProfilesData(perfis: perfis, activeId: decoded['activeId'] as String?),
+      );
     } else if (decoded['profile'] is Map<String, dynamic>) {
-      final Perfil p = Perfil.fromJson(decoded['profile'] as Map<String, dynamic>);
+      final Perfil p = Perfil.fromJson(
+        decoded['profile'] as Map<String, dynamic>,
+      );
       await _repo.saveAll(ProfilesData(perfis: <Perfil>[p], activeId: p.id));
     } else {
       throw const FormatException(
-          'Não achei nenhum cálculo nesse backup. Confere se o texto foi colado inteiro.');
+        'Não achei nenhum cálculo nesse backup. Confere se o texto foi colado inteiro.',
+      );
     }
     final Object? hist = decoded['history'];
     if (hist is List<dynamic>) {
-      await _history.replaceAll(hist
-          .map((dynamic e) => ReservaEntry.fromJson(e as Map<String, dynamic>))
-          .toList());
+      await _history.replaceAll(
+        hist
+            .map(
+              (dynamic e) => ReservaEntry.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+      );
     }
   }
 }

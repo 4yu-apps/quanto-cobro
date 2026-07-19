@@ -36,13 +36,20 @@ class ConfigScreen extends ConsumerWidget {
           SegmentedButton<ThemeMode>(
             segments: const <ButtonSegment<ThemeMode>>[
               ButtonSegment<ThemeMode>(
-                  value: ThemeMode.dark, label: Text('Escuro'), icon: Icon(Icons.dark_mode)),
+                value: ThemeMode.dark,
+                label: Text('Escuro'),
+                icon: Icon(Icons.dark_mode),
+              ),
               ButtonSegment<ThemeMode>(
-                  value: ThemeMode.light, label: Text('Claro'), icon: Icon(Icons.light_mode)),
+                value: ThemeMode.light,
+                label: Text('Claro'),
+                icon: Icon(Icons.light_mode),
+              ),
               ButtonSegment<ThemeMode>(
-                  value: ThemeMode.system,
-                  label: Text('Sistema'),
-                  icon: Icon(Icons.brightness_auto)),
+                value: ThemeMode.system,
+                label: Text('Sistema'),
+                icon: Icon(Icons.brightness_auto),
+              ),
             ],
             selected: <ThemeMode>{mode},
             onSelectionChanged: (Set<ThemeMode> s) {
@@ -59,10 +66,14 @@ class ConfigScreen extends ConsumerWidget {
               children: <Widget>[
                 ListTile(
                   leading: Icon(
-                      isPro ? Icons.workspace_premium : Icons.workspace_premium_outlined),
+                    isPro
+                        ? Icons.workspace_premium
+                        : Icons.workspace_premium_outlined,
+                  ),
                   title: Text(isPro ? 'Pro ativo' : 'Conhecer o Pro'),
-                  trailing:
-                      isPro ? const Icon(Icons.check) : const Icon(Icons.chevron_right),
+                  trailing: isPro
+                      ? const Icon(Icons.check)
+                      : const Icon(Icons.chevron_right),
                   onTap: () => context.push(Routes.pro),
                 ),
                 const Divider(height: 1, indent: Space.x4),
@@ -94,7 +105,9 @@ class ConfigScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.ios_share),
                   title: const Text('Exportar dados (backup)'),
-                  subtitle: const Text('Seu cálculo e seu histórico, sem nuvem, sem conta.'),
+                  subtitle: const Text(
+                    'Seu cálculo e seu histórico, sem nuvem, sem conta.',
+                  ),
                   onTap: () => _exportar(context, ref),
                 ),
                 const Divider(height: 1, indent: Space.x4),
@@ -105,10 +118,14 @@ class ConfigScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1, indent: Space.x4),
                 ListTile(
-                  leading:
-                      Icon(Icons.delete_outline, color: theme.colorScheme.error),
-                  title: Text('Apagar meus dados',
-                      style: TextStyle(color: theme.colorScheme.error)),
+                  leading: Icon(
+                    Icons.delete_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                  title: Text(
+                    'Apagar meus dados',
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
                   onTap: () => _apagar(context, ref),
                 ),
               ],
@@ -129,7 +146,8 @@ class ConfigScreen extends ConsumerWidget {
                   },
                   title: const Text('Ajudar a melhorar o app'),
                   subtitle: const Text(
-                      'Envia só métricas anônimas de uso e estabilidade. Nunca sua renda.'),
+                    'Envia só métricas anônimas de uso e estabilidade. Nunca sua renda.',
+                  ),
                 ),
                 const Divider(height: 1, indent: Space.x4),
                 ListTile(
@@ -149,17 +167,25 @@ class ConfigScreen extends ConsumerWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(color: d.brand4yu, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: d.brand4yu,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: Space.x2),
-              Text('by ${AppConfig.parentBrand}',
-                  style: theme.textTheme.labelMedium?.copyWith(color: d.brand4yu)),
+              Text(
+                'by ${AppConfig.parentBrand}',
+                style: theme.textTheme.labelMedium?.copyWith(color: d.brand4yu),
+              ),
             ],
           ),
           const SizedBox(height: Space.x1),
-          Text('${AppConfig.appName} · versão 0.3.0 · ${AppConfig.contactEmail}',
-              style: theme.textTheme.labelSmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            '${AppConfig.appName} · versão 0.4.0 · ${AppConfig.contactEmail}',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -171,9 +197,9 @@ class ConfigScreen extends ConsumerWidget {
       child: Text(
         titulo,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -186,15 +212,21 @@ class ConfigScreen extends ConsumerWidget {
     } catch (_) {
       messenger
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-            content: Text('Não consegui ler seus dados pra exportar.')));
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Não consegui ler seus dados pra exportar.'),
+          ),
+        );
       return;
     }
     if (json == null) {
       messenger
         ..clearSnackBars()
         ..showSnackBar(
-            const SnackBar(content: Text('Ainda não há um cálculo pra exportar.')));
+          const SnackBar(
+            content: Text('Ainda não há um cálculo pra exportar.'),
+          ),
+        );
       return;
     }
     final String data = json;
@@ -202,7 +234,13 @@ class ConfigScreen extends ConsumerWidget {
       context: context,
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Backup dos seus dados'),
-        content: SingleChildScrollView(child: SelectableText(data)),
+        content: Semantics(
+          label:
+              'Backup gerado com seus cálculos e histórico. Use o botão Copiar e guarde o texto num lugar seguro.',
+          child: ExcludeSemantics(
+            child: SingleChildScrollView(child: SelectableText(data)),
+          ),
+        ),
         actions: <Widget>[
           TextButton(
             onPressed: () {
@@ -214,7 +252,10 @@ class ConfigScreen extends ConsumerWidget {
             },
             child: const Text('Copiar'),
           ),
-          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Fechar')),
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: const Text('Fechar'),
+          ),
         ],
       ),
     );
@@ -239,14 +280,21 @@ class ConfigScreen extends ConsumerWidget {
             TextField(
               controller: controller,
               maxLines: 6,
-              decoration:
-                  const InputDecoration(hintText: 'Cole aqui o texto do seu backup'),
+              decoration: const InputDecoration(
+                hintText: 'Cole aqui o texto do seu backup',
+              ),
             ),
           ],
         ),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Restaurar')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Restaurar'),
+          ),
         ],
       ),
     );
@@ -267,9 +315,13 @@ class ConfigScreen extends ConsumerWidget {
     } catch (_) {
       messenger
         ..clearSnackBars()
-        ..showSnackBar(const SnackBar(
-            content:
-                Text('Não consegui ler esse backup. Confere se o texto foi colado inteiro.')));
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não consegui ler esse backup. Confere se o texto foi colado inteiro.',
+            ),
+          ),
+        );
     }
   }
 
@@ -280,11 +332,17 @@ class ConfigScreen extends ConsumerWidget {
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Apagar meus dados?'),
         content: const Text(
-            'Isso remove seus cálculos e seu histórico de reservas do aparelho.'),
+          'Isso remove seus cálculos e seu histórico de reservas do aparelho.',
+        ),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(c).colorScheme.error),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(c).colorScheme.error,
+            ),
             onPressed: () => Navigator.pop(c, true),
             child: const Text('Apagar'),
           ),
@@ -299,7 +357,9 @@ class ConfigScreen extends ConsumerWidget {
     // Captura os notifiers ANTES do snackbar: o Desfazer pode ser tocado depois
     // da tela morrer, e ref pós-dispose crasha.
     final ProfilesNotifier profilesN = ref.read(profilesProvider.notifier);
-    final ReservaHistoryNotifier historyN = ref.read(reservaHistoryProvider.notifier);
+    final ReservaHistoryNotifier historyN = ref.read(
+      reservaHistoryProvider.notifier,
+    );
 
     Haptics.commit();
     await ref.read(profilesProvider.notifier).clearAll();

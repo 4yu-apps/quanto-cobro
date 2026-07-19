@@ -19,7 +19,8 @@ class SettingsRepository {
     }
   }
 
-  Future<void> setThemeMode(ThemeMode mode) => _prefs.setString(_kTheme, mode.name);
+  Future<void> setThemeMode(ThemeMode mode) =>
+      _prefs.setString(_kTheme, mode.name);
 
   // Onboarding: mostrado uma vez no primeiro uso.
   static const String _kOnboarding = 'onboarding_done';
@@ -37,4 +38,49 @@ class SettingsRepository {
   static const String _kTelemetry = 'telemetry_enabled';
   bool telemetryEnabled() => _prefs.getBool(_kTelemetry) ?? false;
   Future<void> setTelemetry(bool value) => _prefs.setBool(_kTelemetry, value);
+
+  // Reserva: uma troca pontual de regime fica nesta sessão de trabalho, mas é
+  // ignorada automaticamente se o regime-base do trabalho mudar.
+  static const String _kReservaRegimes = 'reserva_regimes';
+
+  String? reservaRegime(String trabalhoId, String regimeBase) {
+    return (_prefs.getStringList(_kReservaRegimes) ?? <String>[])
+        .cast<String>()
+        .where((String item) => item.startsWith('$trabalhoId|$regimeBase|'))
+        .map((String item) => item.split('|').last)
+        .firstOrNull;
+  }
+
+  Future<void> setReservaRegime(
+    String trabalhoId,
+    String regimeBase,
+    String regime,
+  ) {
+    final List<String> items =
+        (_prefs.getStringList(_kReservaRegimes) ?? <String>[])
+            .where((String item) => !item.startsWith('$trabalhoId|'))
+            .toList();
+    items.add('$trabalhoId|$regimeBase|$regime');
+    return _prefs.setStringList(_kReservaRegimes, items);
+  }
+
+  // "Paguei o Leão deste mês" — quitação mensal do loop da reserva (P1-7).
+  // Guardado como lista de meses 'yyyy-MM'.
+  static const String _kLeaoPago = 'leao_pago_meses';
+  static String _mesKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}';
+
+  bool leaoPago(DateTime mes) =>
+      (_prefs.getStringList(_kLeaoPago) ?? <String>[]).contains(_mesKey(mes));
+
+  Future<void> setLeaoPago(DateTime mes, bool pago) {
+    final Set<String> meses = (_prefs.getStringList(_kLeaoPago) ?? <String>[])
+        .toSet();
+    if (pago) {
+      meses.add(_mesKey(mes));
+    } else {
+      meses.remove(_mesKey(mes));
+    }
+    return _prefs.setStringList(_kLeaoPago, meses.toList()..sort());
+  }
 }

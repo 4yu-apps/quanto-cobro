@@ -12,15 +12,19 @@ import 'settings/settings_repository.dart';
 
 /// Injetado em main() via override (prefs já carregado no boot).
 final Provider<SharedPreferences> sharedPreferencesProvider =
-    Provider<SharedPreferences>((Ref ref) => throw UnimplementedError('override em main()'));
+    Provider<SharedPreferences>(
+      (Ref ref) => throw UnimplementedError('override em main()'),
+    );
 
-final Provider<ProfileRepository> profileRepositoryProvider = Provider<ProfileRepository>(
-  (Ref ref) => PrefsProfileRepository(ref.watch(sharedPreferencesProvider)),
-);
+final Provider<ProfileRepository> profileRepositoryProvider =
+    Provider<ProfileRepository>(
+      (Ref ref) => PrefsProfileRepository(ref.watch(sharedPreferencesProvider)),
+    );
 
-final Provider<SettingsRepository> settingsRepositoryProvider = Provider<SettingsRepository>(
-  (Ref ref) => SettingsRepository(ref.watch(sharedPreferencesProvider)),
-);
+final Provider<SettingsRepository> settingsRepositoryProvider =
+    Provider<SettingsRepository>(
+      (Ref ref) => SettingsRepository(ref.watch(sharedPreferencesProvider)),
+    );
 
 /// Estado do perfil ATIVO — três ramos explícitos (Blueprint §5.9):
 /// vazio (nunca calculou) · pronto · erro (dado salvo corrompido).
@@ -82,16 +86,19 @@ class ProfilesNotifier extends Notifier<ProfilesData> {
   }
 
   Future<void> remove(String id) async {
-    final List<Perfil> list =
-        state.perfis.where((Perfil p) => p.id != id).toList();
-    final String? active =
-        state.activeId == id ? (list.isEmpty ? null : list.first.id) : state.activeId;
+    final List<Perfil> list = state.perfis
+        .where((Perfil p) => p.id != id)
+        .toList();
+    final String? active = state.activeId == id
+        ? (list.isEmpty ? null : list.first.id)
+        : state.activeId;
     await _persist(ProfilesData(perfis: list, activeId: active));
   }
 
   Future<void> rename(String id, String nome) async {
     final List<Perfil> list = <Perfil>[
-      for (final Perfil p in state.perfis) p.id == id ? p.copyWith(nome: nome) : p,
+      for (final Perfil p in state.perfis)
+        p.id == id ? p.copyWith(nome: nome) : p,
     ];
     await _persist(ProfilesData(perfis: list, activeId: state.activeId));
   }
@@ -107,10 +114,14 @@ final NotifierProvider<ProfilesNotifier, ProfilesData> profilesProvider =
     NotifierProvider<ProfilesNotifier, ProfilesData>(ProfilesNotifier.new);
 
 /// Estado do perfil ativo, derivado (mantém a API que as telas consomem).
-final Provider<ProfileState> profileProvider = Provider<ProfileState>((Ref ref) {
+final Provider<ProfileState> profileProvider = Provider<ProfileState>((
+  Ref ref,
+) {
   final ProfilesData data = ref.watch(profilesProvider);
   if (ref.read(profilesProvider.notifier).corrupt) {
-    return const ProfileError('Não consegui carregar seu cálculo. Vamos refazer?');
+    return const ProfileError(
+      'Não consegui carregar seu cálculo. Vamos refazer?',
+    );
   }
   final Perfil? active = data.active;
   return active == null ? const ProfileEmpty() : ProfileReady(active);
@@ -140,8 +151,8 @@ final Provider<BackupService> backupServiceProvider = Provider<BackupService>(
 // ---- Entitlement Pro ----
 final Provider<EntitlementRepository> entitlementRepositoryProvider =
     Provider<EntitlementRepository>(
-  (Ref ref) => EntitlementRepository(ref.watch(sharedPreferencesProvider)),
-);
+      (Ref ref) => EntitlementRepository(ref.watch(sharedPreferencesProvider)),
+    );
 
 class ProNotifier extends Notifier<bool> {
   @override
@@ -181,12 +192,14 @@ final NotifierProvider<TelemetryNotifier, bool> telemetryProvider =
 // ---- Histórico de reservas (gancho de hábito, IA §2.12) ----
 final Provider<ReservaHistoryRepository> reservaHistoryRepositoryProvider =
     Provider<ReservaHistoryRepository>(
-  (Ref ref) => ReservaHistoryRepository(ref.watch(sharedPreferencesProvider)),
-);
+      (Ref ref) =>
+          ReservaHistoryRepository(ref.watch(sharedPreferencesProvider)),
+    );
 
 class ReservaHistoryNotifier extends Notifier<List<ReservaEntry>> {
   @override
-  List<ReservaEntry> build() => ref.read(reservaHistoryRepositoryProvider).loadAll();
+  List<ReservaEntry> build() =>
+      ref.read(reservaHistoryRepositoryProvider).loadAll();
 
   Future<void> add(ReservaEntry entry) async {
     await ref.read(reservaHistoryRepositoryProvider).add(entry);
@@ -201,7 +214,9 @@ class ReservaHistoryNotifier extends Notifier<List<ReservaEntry>> {
   /// Remove uma entrada (Desfazer / swipe). Reescreve a lista persistida.
   Future<void> remove(ReservaEntry entry) async {
     final List<ReservaEntry> all = List<ReservaEntry>.of(state)
-      ..removeWhere((ReservaEntry e) => e.at == entry.at && e.valor == entry.valor);
+      ..removeWhere(
+        (ReservaEntry e) => e.at == entry.at && e.valor == entry.valor,
+      );
     await ref.read(reservaHistoryRepositoryProvider).replaceAll(all);
     state = all;
   }
@@ -216,5 +231,25 @@ class ReservaHistoryNotifier extends Notifier<List<ReservaEntry>> {
   }
 }
 
-final NotifierProvider<ReservaHistoryNotifier, List<ReservaEntry>> reservaHistoryProvider =
-    NotifierProvider<ReservaHistoryNotifier, List<ReservaEntry>>(ReservaHistoryNotifier.new);
+final NotifierProvider<ReservaHistoryNotifier, List<ReservaEntry>>
+reservaHistoryProvider =
+    NotifierProvider<ReservaHistoryNotifier, List<ReservaEntry>>(
+      ReservaHistoryNotifier.new,
+    );
+
+/// "Paguei o Leão deste mês" — quitação mensal (fecha o loop da reserva).
+/// Estado = o mês corrente está quitado?
+class LeaoPagoNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(settingsRepositoryProvider).leaoPago(DateTime.now());
+
+  Future<void> set(bool pago) async {
+    await ref
+        .read(settingsRepositoryProvider)
+        .setLeaoPago(DateTime.now(), pago);
+    state = pago;
+  }
+}
+
+final NotifierProvider<LeaoPagoNotifier, bool> leaoPagoProvider =
+    NotifierProvider<LeaoPagoNotifier, bool>(LeaoPagoNotifier.new);

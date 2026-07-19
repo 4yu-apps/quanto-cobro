@@ -12,6 +12,7 @@ import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 
@@ -19,10 +20,11 @@ import '../../core/ui/money_field.dart';
 /// momento didático. Cada passo tem sua validação (erro humano). O caminho free
 /// entrega um número credível em 5 passos.
 class CalcScreen extends ConsumerStatefulWidget {
-  const CalcScreen({super.key, this.novoTrabalho});
+  const CalcScreen({super.key, this.novoTrabalho, this.initialDraft});
 
   /// Quando presente, cria um NOVO perfil com esse nome (em vez de editar o ativo).
   final String? novoTrabalho;
+  final Perfil? initialDraft;
 
   @override
   ConsumerState<CalcScreen> createState() => _CalcScreenState();
@@ -34,6 +36,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   late Perfil _draft;
   int _step = 0;
   int _prevStep = 0;
+  bool _triedContinue = false;
   final TextEditingController _renda = TextEditingController();
   final TextEditingController _horas = TextEditingController();
   final FocusNode _rendaFocus = FocusNode();
@@ -44,19 +47,27 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     super.initState();
     final ProfileState st = ref.read(profileProvider);
     final String? novo = widget.novoTrabalho;
-    if (novo != null) {
-      // Novo trabalho: perfil zerado nos defaults, id próprio, nome dado.
-      final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
-      _draft = Perfil.padrao(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        nome: novo,
-      ).copyWith(regime: intl ? RegimeId.intl : RegimeId.mei);
+    if (widget.initialDraft != null) {
+      _draft = widget.initialDraft!;
+    } else if (novo != null) {
+      final String id = DateTime.now().millisecondsSinceEpoch.toString();
+      if (st is ProfileReady) {
+        _draft = st.perfil.copyWith(id: id, nome: novo);
+      } else {
+        final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
+        _draft = Perfil.padrao(
+          id: id,
+          nome: novo,
+        ).copyWith(regime: intl ? RegimeId.intl : RegimeId.mei);
+      }
     } else if (st is ProfileReady) {
       _draft = st.perfil;
     } else {
       // Primeiro uso: defaults honestos + regime pré-selecionado pelo modo BR/intl.
       final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
-      _draft = Perfil.padrao().copyWith(regime: intl ? RegimeId.intl : RegimeId.mei);
+      _draft = Perfil.padrao().copyWith(
+        regime: intl ? RegimeId.intl : RegimeId.mei,
+      );
     }
     _renda.text = _draft.renda.round().toString();
     _horas.text = _draft.horas.toString();
@@ -83,7 +94,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     });
   }
 
-  int _digits(String s) => int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+  int _digits(String s) =>
+      int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
 
   bool get _stepValid {
     switch (_step) {
@@ -97,17 +109,36 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   }
 
   void _next() {
-    if (!_stepValid) return;
+    if (!_stepValid) {
+      setState(() => _triedContinue = true);
+      final bool renda = _step == 0;
+      announce(
+        context,
+        renda
+            ? 'Coloque quanto você quer ganhar pra eu calcular.'
+            : 'Preciso de pelo menos 1 hora faturável pra fazer a conta.',
+      );
+      (renda ? _rendaFocus : _horasFocus).requestFocus();
+      return;
+    }
     FocusScope.of(context).unfocus();
     if (_step < _lastStep) {
       Haptics.select();
       setState(() {
         _prevStep = _step;
         _step++;
+        _triedContinue = false;
       });
       _focusStep();
+      Future<void>.delayed(Motion.base, () {
+        if (mounted) {
+          announce(
+            context,
+            'Passo ${_step + 1} de ${_lastStep + 1}. ${_stepTitle(_step)}',
+          );
+        }
+      });
     } else {
-      Haptics.resultBorn();
       context.push(Routes.resultado, extra: _draft);
     }
   }
@@ -118,8 +149,17 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       setState(() {
         _prevStep = _step;
         _step--;
+        _triedContinue = false;
       });
       _focusStep();
+      Future<void>.delayed(Motion.base, () {
+        if (mounted) {
+          announce(
+            context,
+            'Passo ${_step + 1} de ${_lastStep + 1}. ${_stepTitle(_step)}',
+          );
+        }
+      });
     } else {
       context.pop();
     }
@@ -130,19 +170,27 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: _back),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _back,
+        ),
         title: Text('Passo ${_step + 1} de ${_lastStep + 1}'),
       ),
       body: SafeArea(
         child: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Space.x4, vertical: Space.x2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.x4,
+                vertical: Space.x2,
+              ),
               child: Row(
                 children: <Widget>[
                   for (int i = 0; i <= _lastStep; i++)
                     AnimatedContainer(
-                      duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+                      duration: reduceMotionOf(context)
+                          ? Duration.zero
+                          : Motion.base,
                       curve: MotionCurves.standard,
                       margin: const EdgeInsets.only(right: 6),
                       width: i == _step ? 20 : 8,
@@ -173,10 +221,11 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                     ),
                   );
                 },
-                layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
-                  alignment: Alignment.topLeft,
-                  children: <Widget>[...previous, ?current],
-                ),
+                layoutBuilder: (Widget? current, List<Widget> previous) =>
+                    Stack(
+                      alignment: Alignment.topLeft,
+                      children: <Widget>[...previous, ?current],
+                    ),
                 child: SingleChildScrollView(
                   key: ValueKey<int>(_step),
                   padding: const EdgeInsets.all(Space.x6),
@@ -189,8 +238,16 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _stepValid ? _next : null,
-                  child: Text(_step == _lastStep ? 'Ver resultado' : 'Continuar'),
+                  onPressed: _next,
+                  child: AnimatedSwitcher(
+                    duration: reduceMotionOf(context)
+                        ? Duration.zero
+                        : Motion.base,
+                    child: Text(
+                      _step == _lastStep ? 'Ver resultado' : 'Continuar',
+                      key: ValueKey<int>(_step == _lastStep ? 1 : 0),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -215,13 +272,36 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     }
   }
 
-  Widget _title(String q) => Text(q, style: Theme.of(context).textTheme.headlineSmall);
+  Widget _title(String q) =>
+      Text(q, style: Theme.of(context).textTheme.headlineSmall);
+
+  String _stepTitle(int step) => switch (step) {
+    0 => 'Quanto você quer ganhar por mês?',
+    1 => 'Quantas horas você realmente fatura por mês?',
+    2 => 'Seus custos pra trabalhar?',
+    3 => 'Como você recebe hoje?',
+    _ => 'Quer provisionar férias e décimo terceiro?',
+  };
 
   Widget _stepRenda() {
-    final bool erro = _renda.text.isNotEmpty && _draft.renda <= 0;
+    final bool erro = _triedContinue && _draft.renda <= 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        if (widget.novoTrabalho != null) ...<Widget>[
+          Container(
+            padding: const EdgeInsets.all(Space.x3),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: const BorderRadius.all(Radii.md),
+            ),
+            child: Text(
+              "Comecei com os números do seu trabalho ativo. Ajuste o que for diferente.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          const SizedBox(height: Space.x4),
+        ],
         _title('Quanto você quer GANHAR por mês?'),
         const SizedBox(height: Space.x4),
         MoneyField(
@@ -231,8 +311,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           label: 'Renda no bolso',
           prefix: r'R$ ',
           helper: 'É o que você quer que sobre pra você, não o faturamento.',
-          errorText: erro ? 'Coloque quanto você quer ganhar pra eu calcular.' : null,
-          onChanged: (String v) => setState(() => _draft = _draft.copyWith(renda: _digits(v).toDouble())),
+          errorText: erro
+              ? 'Coloque quanto você quer ganhar pra eu calcular.'
+              : null,
+          onChanged: (String v) => setState(
+            () => _draft = _draft.copyWith(renda: _digits(v).toDouble()),
+          ),
         ),
       ],
     );
@@ -240,7 +324,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
 
   Widget _stepHoras() {
     final ThemeData theme = Theme.of(context);
-    final bool erro = _horas.text.isNotEmpty && _draft.horas <= 0;
+    final bool erro = _triedContinue && _draft.horas <= 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -251,25 +335,34 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           focusNode: _horasFocus,
           label: 'Horas faturáveis',
           suffix: 'h/mês',
-          errorText: erro ? 'Preciso de pelo menos 1 hora faturável pra fazer a conta.' : null,
-          onChanged: (String v) => setState(() => _draft = _draft.copyWith(horas: _digits(v))),
+          errorText: erro
+              ? 'Preciso de pelo menos 1 hora faturável pra fazer a conta.'
+              : null,
+          onChanged: (String v) =>
+              setState(() => _draft = _draft.copyWith(horas: _digits(v))),
         ),
         const SizedBox(height: Space.x4),
         Container(
           padding: const EdgeInsets.all(Space.x3),
           decoration: BoxDecoration(
-            color: theme.colorScheme.tertiaryContainer,
+            color: theme.colorScheme.secondaryContainer,
             borderRadius: const BorderRadius.all(Radii.md),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(Icons.schedule, size: 20, color: theme.colorScheme.onTertiaryContainer),
+              Icon(
+                Icons.schedule,
+                size: 20,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
               const SizedBox(width: Space.x2),
               Expanded(
                 child: Text(
                   'Não são 160h. Tire férias, feriados e o tempo sem cliente (vendas, e-mail, estudo). Quase ninguém fatura mais que ~70%.',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onTertiaryContainer),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
                 ),
               ),
             ],
@@ -288,88 +381,122 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   Widget _stepCustos() {
     final List<Custo> custos = _draft.custos;
     final Set<String> jaTem = custos.map((Custo c) => c.id).toSet();
-    final List<CostChip> faltam =
-        CostChip.chips.where((CostChip c) => !jaTem.contains(c.id)).toList();
+    final List<CostChip> faltam = CostChip.chips
+        .where((CostChip c) => !jaTem.contains(c.id))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Seus custos pra trabalhar?'),
         const SizedBox(height: Space.x4),
-        for (final Custo c in custos)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.primary),
-            title: Text(c.label),
-            subtitle: Text('Toque pra editar o valor',
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            onTap: () => _editarCusto(c),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(moneyBRL(c.valor),
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelLarge
-                        ?.copyWith(fontFeatures: AppType.tnum)),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Remover',
-                  onPressed: () {
-                    Haptics.select();
-                    setState(() {
-                      _draft = _draft.copyWith(
-                        custos: custos.where((Custo x) => x.id != c.id).toList(),
-                      );
-                    });
-                  },
+        AnimatedSize(
+          duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+          curve: MotionCurves.standard,
+          alignment: Alignment.topCenter,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (final Custo c in custos)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.check_circle_outline,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(c.label),
+                  subtitle: Text(
+                    'Toque pra editar o valor',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  onTap: () => _editarCusto(c),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        moneyBRL(c.valor),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontFeatures: AppType.tnum,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: 'Remover',
+                        onPressed: () {
+                          Haptics.select();
+                          setState(() {
+                            _draft = _draft.copyWith(
+                              custos: custos
+                                  .where((Custo x) => x.id != c.id)
+                                  .toList(),
+                            );
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-        const SizedBox(height: Space.x2),
-        Row(
-          children: <Widget>[
-            Text('Total: ', style: Theme.of(context).textTheme.titleMedium),
-            MoneyCountUp(_draft.custosTotal,
-                duration: Motion.quick,
-                style: Theme.of(context).textTheme.titleMedium ?? const TextStyle()),
-            Text('/mês', style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
-        const SizedBox(height: Space.x4),
-        Text('Não esqueça:', style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: Space.x2),
-        Wrap(
-          spacing: Space.x2,
-          runSpacing: Space.x2,
-          children: <Widget>[
-            for (final CostChip chip in faltam)
-              ActionChip(
-                avatar: Icon(_iconFor(chip.icon), size: 18),
-                label: Text(chip.label),
-                onPressed: () {
-                  Haptics.select();
-                  setState(() {
-                    _draft = _draft.copyWith(
-                      custos: <Custo>[
-                        ...custos,
-                        Custo(id: chip.id, label: chip.label, valor: chip.sugg),
-                      ],
-                    );
-                  });
-                },
+              const SizedBox(height: Space.x2),
+              Row(
+                children: <Widget>[
+                  Text(
+                    'Total: ',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  MoneyCountUp(
+                    _draft.custosTotal,
+                    duration: Motion.quick,
+                    style:
+                        Theme.of(context).textTheme.titleMedium ??
+                        const TextStyle(),
+                    semanticLabel:
+                        'Total de custos: ${moneyBRL(_draft.custosTotal)} por mês',
+                  ),
+                  Text('/mês', style: Theme.of(context).textTheme.titleMedium),
+                ],
               ),
-            // O SEU custo, com o SEU valor: ninguém disse que só existem os pré-setados.
-            ActionChip(
-              avatar: const Icon(Icons.add, size: 18),
-              label: const Text('Outro custo'),
-              onPressed: () => _editarCusto(null),
-            ),
-          ],
+              const SizedBox(height: Space.x4),
+              Text(
+                'Não esqueça:',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: Space.x2),
+              Wrap(
+                spacing: Space.x2,
+                runSpacing: Space.x2,
+                children: <Widget>[
+                  for (final CostChip chip in faltam)
+                    ActionChip(
+                      avatar: Icon(_iconFor(chip.icon), size: 18),
+                      label: Text(chip.label),
+                      onPressed: () {
+                        Haptics.select();
+                        setState(() {
+                          _draft = _draft.copyWith(
+                            custos: <Custo>[
+                              ...custos,
+                              Custo(
+                                id: chip.id,
+                                label: chip.label,
+                                valor: chip.sugg,
+                              ),
+                            ],
+                          );
+                        });
+                      },
+                    ),
+                  // O SEU custo, com o SEU valor: ninguém disse que só existem os pré-setados.
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 18),
+                    label: const Text('Outro custo'),
+                    onPressed: () => _editarCusto(null),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -378,9 +505,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   /// Sheet de custo: adiciona um custo PRÓPRIO (nome + valor) ou edita um
   /// existente. Ninguém fica preso aos pré-setados.
   Future<void> _editarCusto(Custo? existente) async {
-    final TextEditingController nomeC = TextEditingController(text: existente?.label ?? '');
+    final TextEditingController nomeC = TextEditingController(
+      text: existente?.label ?? '',
+    );
     final TextEditingController valorC = TextEditingController(
-        text: existente == null ? '' : existente.valor.round().toString());
+      text: existente == null ? '' : existente.valor.round().toString(),
+    );
     final bool novo = existente == null;
 
     final Custo? result = await showModalBottomSheet<Custo>(
@@ -388,61 +518,88 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (BuildContext c) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: Space.x6,
-            right: Space.x6,
-            top: Space.x2,
-            bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(novo ? 'Seu custo' : 'Editar ${existente.label}',
-                  style: Theme.of(c).textTheme.titleLarge),
-              const SizedBox(height: Space.x4),
-              if (novo) ...<Widget>[
-                TextField(
-                  controller: nomeC,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                      labelText: 'Nome', hintText: 'Ex.: Estacionamento, Domínio...'),
+        String? erro;
+        return StatefulBuilder(
+          builder: (BuildContext c, void Function(void Function()) setSheet) =>
+              Padding(
+                padding: EdgeInsets.only(
+                  left: Space.x6,
+                  right: Space.x6,
+                  top: Space.x2,
+                  bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
                 ),
-                const SizedBox(height: Space.x4),
-              ],
-              MoneyField(
-                controller: valorC,
-                label: 'Valor por mês',
-                prefix: r'R$ ',
-                autofocus: !novo,
-              ),
-              const SizedBox(height: Space.x4),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    final int v = int.tryParse(
-                            valorC.text.replaceAll(RegExp(r'[^0-9]'), '')) ??
-                        0;
-                    final String nome = novo ? nomeC.text.trim() : existente.label;
-                    if (nome.isEmpty || v <= 0) return;
-                    Navigator.pop(
-                      c,
-                      Custo(
-                        id: existente?.id ??
-                            'custom-${DateTime.now().millisecondsSinceEpoch}',
-                        label: nome,
-                        valor: v.toDouble(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      novo ? 'Seu custo' : 'Editar ${existente.label}',
+                      style: Theme.of(c).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: Space.x4),
+                    if (novo) ...<Widget>[
+                      TextField(
+                        controller: nomeC,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: const InputDecoration(
+                          labelText: 'Nome',
+                          hintText: 'Ex.: Estacionamento, Domínio...',
+                        ),
                       ),
-                    );
-                  },
-                  child: Text(novo ? 'Adicionar' : 'Salvar'),
+                      const SizedBox(height: Space.x4),
+                    ],
+                    MoneyField(
+                      controller: valorC,
+                      label: 'Valor por mês',
+                      prefix: r'R$ ',
+                      autofocus: !novo,
+                    ),
+                    const SizedBox(height: Space.x4),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () {
+                          final int v =
+                              int.tryParse(
+                                valorC.text.replaceAll(RegExp(r'[^0-9]'), ''),
+                              ) ??
+                              0;
+                          final String nome = novo
+                              ? nomeC.text.trim()
+                              : existente.label;
+                          if (nome.isEmpty || v <= 0) {
+                            final String mensagem = nome.isEmpty
+                                ? 'Dá um nome pro custo pra eu guardar.'
+                                : 'Coloca o valor por mês.';
+                            setSheet(() => erro = mensagem);
+                            announce(c, mensagem);
+                            return;
+                          }
+                          Navigator.pop(
+                            c,
+                            Custo(
+                              id:
+                                  existente?.id ??
+                                  'custom-${DateTime.now().millisecondsSinceEpoch}',
+                              label: nome,
+                              valor: v.toDouble(),
+                            ),
+                          );
+                        },
+                        child: Text(novo ? 'Adicionar' : 'Salvar'),
+                      ),
+                    ),
+                    if (erro != null) ...<Widget>[
+                      const SizedBox(height: Space.x2),
+                      Text(
+                        erro!,
+                        style: TextStyle(color: Theme.of(c).colorScheme.error),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ),
         );
       },
     );
@@ -482,45 +639,66 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     final ThemeData theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x2),
-      child: PressableScale(
-        child: Material(
-        color: selected ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceContainerLow,
-        borderRadius: const BorderRadius.all(Radii.md),
-        shape: selected
-            ? RoundedRectangleBorder(
+      child: MergeSemantics(
+        child: Semantics(
+          inMutuallyExclusiveGroup: true,
+          checked: selected,
+          child: PressableScale(
+            child: Material(
+              color: selected
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.surfaceContainerLow,
+              borderRadius: const BorderRadius.all(Radii.md),
+              shape: selected
+                  ? RoundedRectangleBorder(
+                      borderRadius: const BorderRadius.all(Radii.md),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
+                      ),
+                    )
+                  : null,
+              child: InkWell(
                 borderRadius: const BorderRadius.all(Radii.md),
-                side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-              )
-            : null,
-        child: InkWell(
-          borderRadius: const BorderRadius.all(Radii.md),
-          onTap: () {
-            Haptics.select();
-            setState(() => _draft = _draft.copyWith(regime: r.id));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(Space.x3),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Icon(
-                  selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                  color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
-                ),
-                const SizedBox(width: Space.x3),
-                Expanded(
-                  child: Column(
+                onTap: () {
+                  Haptics.select();
+                  setState(() => _draft = _draft.copyWith(regime: r.id));
+                  announce(context, '${r.label} selecionado.');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.x3),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(r.label, style: theme.textTheme.titleMedium),
-                      Text(r.sub, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: selected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline,
+                      ),
+                      const SizedBox(width: Space.x3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(r.label, style: theme.textTheme.titleMedium),
+                            Text(
+                              r.sub,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
         ),
       ),
     );
@@ -532,7 +710,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       children: <Widget>[
         _title('Quer provisionar férias e 13º?'),
         const SizedBox(height: Space.x2),
-        Text('Autônomo não ganha de graça.', style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          'Autônomo não ganha de graça.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
         const SizedBox(height: Space.x4),
         Card(
           color: Theme.of(context).colorScheme.surfaceContainer,
@@ -552,19 +733,83 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               MoneyCountUp(
-                _draft.provisao,
+                _draft.provisaoEfetiva,
                 duration: Motion.quick,
-                style: AppType.valueMd.copyWith(color: Theme.of(context).colorScheme.primary),
+                style: AppType.valueMd.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                semanticLabel:
+                    '${moneyBRL(_draft.provisaoEfetiva)} por mês entram na conta',
               ),
-              Text('/mês entram na conta',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              Text(
+                '/mês entram na conta',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: Space.x2),
+          TextButton.icon(
+            onPressed: _editarProvisao,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Ajustar valor'),
           ),
         ],
       ],
+    );
+  }
+
+  Future<void> _editarProvisao() async {
+    final TextEditingController controller = TextEditingController(
+      text: _draft.provisaoEfetiva.round().toString(),
+    );
+    final double? valor = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.x6,
+          Space.x2,
+          Space.x6,
+          Space.x6 + MediaQuery.of(sheet).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'Sua provisão mensal',
+              style: Theme.of(sheet).textTheme.titleLarge,
+            ),
+            const SizedBox(height: Space.x2),
+            const Text(
+              '1 mês da sua renda por ano, pra férias e 13º. Ajuste se quiser.',
+            ),
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: controller,
+              label: 'Valor por mês',
+              prefix: r'R$ ',
+              autofocus: true,
+            ),
+            const SizedBox(height: Space.x4),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () =>
+                    Navigator.pop(sheet, _digits(controller.text).toDouble()),
+                child: const Text('Usar este valor'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
+    if (valor == null || !mounted) return;
+    setState(
+      () => _draft = _draft.copyWith(provisao: valor, provisaoCustom: true),
     );
   }
 
@@ -609,7 +854,11 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       builder: (BuildContext c) {
         return StatefulBuilder(
           builder: (BuildContext c, void Function(void Function()) setSheet) {
-            final int estimado = estimarHorasFaturaveis(ferias: ferias, pct: pct, feriados: feriados);
+            final int estimado = estimarHorasFaturaveis(
+              ferias: ferias,
+              pct: pct,
+              feriados: feriados,
+            );
             final TextTheme t = Theme.of(c).textTheme;
             return Padding(
               padding: EdgeInsets.only(
@@ -624,21 +873,31 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                 children: <Widget>[
                   Text('Vamos achar suas horas reais', style: t.titleLarge),
                   const SizedBox(height: Space.x4),
-                  Text('Semanas de férias por ano: $ferias', style: t.bodyMedium),
+                  Text(
+                    'Semanas de férias por ano: $ferias',
+                    style: t.bodyMedium,
+                  ),
                   Slider(
                     value: ferias.toDouble(),
                     max: 8,
                     divisions: 8,
                     label: '$ferias',
+                    semanticFormatterCallback: (double v) =>
+                        '${v.round()} semanas de férias por ano',
                     onChanged: (double v) => setSheet(() => ferias = v.round()),
                   ),
-                  Text('Do seu tempo, quanto é trabalho pago: $pct%', style: t.bodyMedium),
+                  Text(
+                    'Do seu tempo, quanto é trabalho pago: $pct%',
+                    style: t.bodyMedium,
+                  ),
                   Slider(
                     value: pct.toDouble(),
                     min: 30,
                     max: 90,
                     divisions: 12,
                     label: '$pct%',
+                    semanticFormatterCallback: (double v) =>
+                        '${v.round()} por cento de trabalho pago',
                     onChanged: (double v) => setSheet(() => pct = v.round()),
                   ),
                   Text('Feriados por ano: $feriados', style: t.bodyMedium),
@@ -647,10 +906,19 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                     max: 20,
                     divisions: 20,
                     label: '$feriados',
-                    onChanged: (double v) => setSheet(() => feriados = v.round()),
+                    semanticFormatterCallback: (double v) =>
+                        '${v.round()} feriados por ano',
+                    onChanged: (double v) =>
+                        setSheet(() => feriados = v.round()),
                   ),
                   const SizedBox(height: Space.x2),
-                  Text('≈ $estimado h/mês', style: t.headlineSmall),
+                  MoneyCountUp(
+                    estimado,
+                    suffix: ' h/mês',
+                    duration: Motion.quick,
+                    style: t.headlineSmall ?? const TextStyle(),
+                    semanticLabel: 'Aproximadamente $estimado horas por mês',
+                  ),
                   const SizedBox(height: Space.x4),
                   SizedBox(
                     width: double.infinity,

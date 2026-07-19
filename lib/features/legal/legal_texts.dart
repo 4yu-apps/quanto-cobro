@@ -7,7 +7,8 @@ import '../../core/config/app_config.dart';
 /// RASCUNHO: revisar/validar juridicamente antes de publicar. A base do Deixei
 /// Aqui (LGPD: responsável, permissões, direitos, exclusão, AdMob) deve ser reusada.
 abstract final class LegalTexts {
-  static const String privacidade = '''
+  static const String privacidade =
+      '''
 Política de Privacidade · ${AppConfig.appName}
 
 Este app é local-first: seus dados de renda, custos e cálculos ficam NO SEU
@@ -29,7 +30,8 @@ Seus direitos (LGPD): apagar seus dados a qualquer momento em Configurações
 Contato: ${AppConfig.contactEmail}
 ''';
 
-  static const String termos = '''
+  static const String termos =
+      '''
 Termos de Uso · ${AppConfig.appName}
 
 Os números do app são ESTIMATIVAS DE PLANEJAMENTO para ajudar você a decidir

@@ -7,6 +7,7 @@ import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
 import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
+import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
@@ -59,12 +60,13 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     super.dispose();
   }
 
-  int _digits(String s) => int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+  int _digits(String s) =>
+      int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
 
   void _edit(Perfil novo) => setState(() {
-        _perfil = novo;
-        _dirty = true;
-      });
+    _perfil = novo;
+    _dirty = true;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +107,8 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                 controller: _renda,
                 label: 'Renda desejada',
                 prefix: r'R$ ',
-                onChanged: (String v) => _edit(p.copyWith(renda: _digits(v).toDouble())),
+                onChanged: (String v) =>
+                    _edit(p.copyWith(renda: _digits(v).toDouble())),
               ),
             ),
             const SizedBox(width: Space.x3),
@@ -120,6 +123,27 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           ],
         ),
         const SizedBox(height: Space.x6),
+        Text(
+          'COMO VOCÊ RECEBE',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: Space.x2),
+        Wrap(
+          spacing: Space.x2,
+          runSpacing: Space.x2,
+          children: <Widget>[
+            for (final Regime regime in Regime.all.values)
+              ChoiceChip(
+                label: Text(regime.tag),
+                selected: p.regime == regime.id,
+                onSelected: (_) => _edit(p.copyWith(regime: regime.id)),
+              ),
+          ],
+        ),
+        const SizedBox(height: Space.x4),
         Card(
           color: theme.colorScheme.surfaceContainerLow,
           child: Padding(
@@ -129,11 +153,48 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                 _linha(context, 'Renda desejada', moneyBRL(p.renda)),
                 _linha(context, '+ Custos fixos', moneyBRL(r.custos)),
                 // A transparência mora aqui: cada custo, linha a linha.
-                for (final Custo c in p.custos) _sublinha(context, c.label, moneyBRL(c.valor)),
-                if (p.provisaoOn) _linha(context, '+ Provisão férias/13º', moneyBRL(r.provisao)),
-                _linha(context, '+ Imposto estimado (${r.reservaPct}%)', moneyBRL(r.imposto)),
+                for (final Custo c in p.custos)
+                  _sublinha(
+                    context,
+                    c.label,
+                    moneyBRL(c.valor),
+                    onTap: () => _editarCusto(p, c),
+                  ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('+ Provisão férias/13º'),
+                  subtitle: Text(
+                    p.provisaoCustom
+                        ? 'Valor ajustado por você'
+                        : '1 mês da sua renda por ano — toque pra ajustar',
+                  ),
+                  trailing: Text(moneyBRL(r.provisao)),
+                  onTap: () => _editarProvisao(p),
+                ),
+                _linha(
+                  context,
+                  p.regime == RegimeId.mei
+                      ? '+ DAS (fixo do MEI)'
+                      : '+ Imposto estimado (~${r.reservaPct}% efetivo)',
+                  moneyBRL(r.imposto),
+                ),
+                if (p.regime == RegimeId.simples)
+                  Padding(
+                    padding: const EdgeInsets.only(top: Space.x2),
+                    child: Text(
+                      'Estimativa pelo Anexo III (serviços). Se seu contador fala em Fator R ou Anexo V, confirme o número com ele.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
                 const Divider(),
-                _linha(context, '= Preciso faturar', moneyBRL(r.faturamento), forte: true),
+                _linha(
+                  context,
+                  '= Preciso faturar',
+                  moneyBRL(r.faturamento),
+                  forte: true,
+                ),
                 _linha(context, '÷ Horas faturáveis', '${p.horas} h'),
                 const Divider(),
                 Row(
@@ -142,7 +203,10 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                     Text('= Valor-hora', style: theme.textTheme.titleMedium),
                     MoneyCountUp(
                       r.valorHora,
-                      style: AppType.valueLg.copyWith(color: theme.colorScheme.primary),
+                      duration: Motion.quick,
+                      style: AppType.valueLg.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
                       semanticLabel: 'Valor-hora: ${moneyBRL(r.valorHora)}',
                     ),
                   ],
@@ -153,18 +217,9 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         ),
         const SizedBox(height: Space.x4),
         OutlinedButton.icon(
-          onPressed: () {
-            if (_dirty) {
-              ScaffoldMessenger.of(context)
-                ..clearSnackBars()
-                ..showSnackBar(const SnackBar(
-                    content: Text('Salva as alterações daqui antes de editar o resto.')));
-              return;
-            }
-            context.push(Routes.calc);
-          },
+          onPressed: () => context.push(Routes.calc, extra: p),
           icon: const Icon(Icons.tune),
-          label: const Text('Editar custos e regime'),
+          label: const Text('Refazer com o passo a passo'),
         ),
         const SizedBox(height: Space.x2),
         FilledButton(
@@ -186,10 +241,16 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     );
   }
 
-  Widget _linha(BuildContext context, String label, String valor, {bool forte = false}) {
+  Widget _linha(
+    BuildContext context,
+    String label,
+    String valor, {
+    bool forte = false,
+  }) {
     final TextTheme t = Theme.of(context).textTheme;
-    final TextStyle? style = (forte ? t.titleMedium : t.bodyLarge)
-        ?.copyWith(fontFeatures: AppType.tnum);
+    final TextStyle? style = (forte ? t.titleMedium : t.bodyLarge)?.copyWith(
+      fontFeatures: AppType.tnum,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Space.x1),
       child: Row(
@@ -202,20 +263,134 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     );
   }
 
-  Widget _sublinha(BuildContext context, String label, String valor) {
-    final TextStyle? style = Theme.of(context)
-        .textTheme
-        .labelMedium
-        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFeatures: AppType.tnum);
-    return Padding(
-      padding: const EdgeInsets.only(left: Space.x4, top: 2, bottom: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Flexible(child: Text(label, style: style)),
-          Text(valor, style: style),
+  Widget _sublinha(
+    BuildContext context,
+    String label,
+    String valor, {
+    VoidCallback? onTap,
+  }) {
+    final TextStyle? style = Theme.of(context).textTheme.labelMedium?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      fontFeatures: AppType.tnum,
+    );
+    return InkWell(
+      onTap: onTap,
+      borderRadius: const BorderRadius.all(Radii.sm),
+      child: Padding(
+        padding: const EdgeInsets.only(left: Space.x4, top: 6, bottom: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Flexible(child: Text(label, style: style)),
+            Text(valor, style: style),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editarCusto(Perfil perfil, Custo custo) async {
+    final TextEditingController controller = TextEditingController(
+      text: custo.valor.round().toString(),
+    );
+    final double? valor = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.x6,
+          Space.x2,
+          Space.x6,
+          Space.x6 + MediaQuery.of(sheet).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'Editar ${custo.label}',
+              style: Theme.of(sheet).textTheme.titleLarge,
+            ),
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: controller,
+              label: 'Valor por mês',
+              prefix: r'R$ ',
+              autofocus: true,
+            ),
+            const SizedBox(height: Space.x4),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () =>
+                    Navigator.pop(sheet, _digits(controller.text).toDouble()),
+                child: const Text('Salvar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
+    if (valor == null || !mounted) return;
+    _edit(
+      perfil.copyWith(
+        custos: <Custo>[
+          for (final Custo item in perfil.custos)
+            item.id == custo.id
+                ? Custo(id: item.id, label: item.label, valor: valor)
+                : item,
         ],
       ),
     );
+  }
+
+  Future<void> _editarProvisao(Perfil perfil) async {
+    final TextEditingController controller = TextEditingController(
+      text: perfil.provisaoEfetiva.round().toString(),
+    );
+    final double? valor = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.x6,
+          Space.x2,
+          Space.x6,
+          Space.x6 + MediaQuery.of(sheet).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'Sua provisão mensal',
+              style: Theme.of(sheet).textTheme.titleLarge,
+            ),
+            const SizedBox(height: Space.x2),
+            const Text('1 mês da sua renda por ano, pra férias e 13º.'),
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: controller,
+              label: 'Valor por mês',
+              prefix: r'R$ ',
+              autofocus: true,
+            ),
+            const SizedBox(height: Space.x4),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () =>
+                    Navigator.pop(sheet, _digits(controller.text).toDouble()),
+                child: const Text('Usar este valor'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
+    if (valor == null || !mounted) return;
+    _edit(perfil.copyWith(provisao: valor, provisaoCustom: true));
   }
 }

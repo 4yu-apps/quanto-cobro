@@ -13,7 +13,10 @@ class ProfilesData {
 
   Perfil? get active {
     if (perfis.isEmpty) return null;
-    return perfis.firstWhere((Perfil p) => p.id == activeId, orElse: () => perfis.first);
+    return perfis.firstWhere(
+      (Perfil p) => p.id == activeId,
+      orElse: () => perfis.first,
+    );
   }
 }
 
@@ -36,7 +39,8 @@ class PrefsProfileRepository implements ProfileRepository {
   ProfilesData loadSync() {
     final String? rawV2 = _prefs.getString(_keyV2);
     if (rawV2 != null) {
-      final Map<String, dynamic> map = jsonDecode(rawV2) as Map<String, dynamic>;
+      final Map<String, dynamic> map =
+          jsonDecode(rawV2) as Map<String, dynamic>;
       final List<Perfil> perfis = (map['profiles'] as List<dynamic>)
           .map((dynamic e) => Perfil.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -45,7 +49,9 @@ class PrefsProfileRepository implements ProfileRepository {
     // Migração v1 -> v2 (quem salvou na versão de perfil único não perde nada).
     final String? rawV1 = _prefs.getString(_keyV1);
     if (rawV1 != null) {
-      final Perfil p = Perfil.fromJson(jsonDecode(rawV1) as Map<String, dynamic>);
+      final Perfil p = Perfil.fromJson(
+        jsonDecode(rawV1) as Map<String, dynamic>,
+      );
       return ProfilesData(perfis: <Perfil>[p], activeId: p.id);
     }
     return const ProfilesData(perfis: <Perfil>[], activeId: null);

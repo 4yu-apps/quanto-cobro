@@ -35,7 +35,7 @@ class ReservaHistoryRepository {
   Future<void> replaceAll(List<ReservaEntry> all) => _save(all);
 
   Future<void> _save(List<ReservaEntry> all) => _prefs.setString(
-        _key,
-        jsonEncode(all.map((ReservaEntry e) => e.toJson()).toList()),
-      );
+    _key,
+    jsonEncode(all.map((ReservaEntry e) => e.toJson()).toList()),
+  );
 }

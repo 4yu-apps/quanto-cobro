@@ -29,18 +29,28 @@ CustomTransitionPage<void> _toolPage(GoRouterState state, Widget child) {
     transitionDuration: Motion.base,
     reverseTransitionDuration: Motion.base,
     transitionsBuilder:
-        (BuildContext context, Animation<double> a, Animation<double> _, Widget child) {
-      if (reduceMotionOf(context)) return child;
-      final CurvedAnimation curved = CurvedAnimation(parent: a, curve: MotionCurves.standard);
-      return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position:
-              Tween<Offset>(begin: const Offset(0.06, 0), end: Offset.zero).animate(curved),
-          child: child,
-        ),
-      );
-    },
+        (
+          BuildContext context,
+          Animation<double> a,
+          Animation<double> _,
+          Widget child,
+        ) {
+          if (reduceMotionOf(context)) return child;
+          final CurvedAnimation curved = CurvedAnimation(
+            parent: a,
+            curve: MotionCurves.standard,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.06, 0),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
+            ),
+          );
+        },
   );
 }
 
@@ -51,17 +61,30 @@ CustomTransitionPage<void> _flowPage(GoRouterState state, Widget child) {
     transitionDuration: Motion.emphasized,
     reverseTransitionDuration: Motion.base,
     transitionsBuilder:
-        (BuildContext context, Animation<double> a, Animation<double> _, Widget child) {
-      if (reduceMotionOf(context)) return child;
-      return FadeTransition(
-        opacity: CurvedAnimation(parent: a, curve: MotionCurves.standard),
-        child: SlideTransition(
-          position: Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
-              .animate(CurvedAnimation(parent: a, curve: MotionCurves.emphasizedDecel)),
-          child: child,
-        ),
-      );
-    },
+        (
+          BuildContext context,
+          Animation<double> a,
+          Animation<double> _,
+          Widget child,
+        ) {
+          if (reduceMotionOf(context)) return child;
+          return FadeTransition(
+            opacity: CurvedAnimation(parent: a, curve: MotionCurves.standard),
+            child: SlideTransition(
+              position:
+                  Tween<Offset>(
+                    begin: const Offset(0, 0.08),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(
+                      parent: a,
+                      curve: MotionCurves.emphasizedDecel,
+                    ),
+                  ),
+              child: child,
+            ),
+          );
+        },
   );
 }
 
@@ -73,43 +96,66 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
     routes: <RouteBase>[
       // Raízes: default (a chegada do Painel já tem o stagger próprio).
       GoRoute(path: Routes.painel, builder: (_, _) => const PainelScreen()),
-      GoRoute(path: Routes.onboarding, builder: (_, _) => const OnboardingScreen()),
+      GoRoute(
+        path: Routes.onboarding,
+        builder: (_, _) => const OnboardingScreen(),
+      ),
       // Fluxos (mudança de modo): sobem do rodapé.
       GoRoute(
-          path: Routes.calc,
-          pageBuilder: (_, GoRouterState s) =>
-              _flowPage(s, CalcScreen(novoTrabalho: s.extra as String?))),
+        path: Routes.calc,
+        pageBuilder: (_, GoRouterState s) {
+          final Object? extra = s.extra;
+          return _flowPage(
+            s,
+            CalcScreen(
+              novoTrabalho: extra is String ? extra : null,
+              initialDraft: extra is Perfil ? extra : null,
+            ),
+          );
+        },
+      ),
       GoRoute(
         path: Routes.resultado,
         pageBuilder: (_, GoRouterState s) =>
             _flowPage(s, ResultadoScreen(perfil: s.extra as Perfil?)),
       ),
       GoRoute(
-          path: Routes.pro,
-          pageBuilder: (_, GoRouterState s) => _flowPage(s, const ProScreen())),
+        path: Routes.pro,
+        pageBuilder: (_, GoRouterState s) => _flowPage(s, const ProScreen()),
+      ),
       // Tools/consulta: gaveta lateral rápida.
       GoRoute(
-          path: Routes.detalhe,
-          pageBuilder: (_, GoRouterState s) =>
-              _toolPage(s, const DetalheScreen())),
+        path: Routes.detalhe,
+        pageBuilder: (_, GoRouterState s) =>
+            _toolPage(s, const DetalheScreen()),
+      ),
       GoRoute(
-          path: Routes.reserva,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const ReservaScreen())),
+        path: Routes.reserva,
+        pageBuilder: (_, GoRouterState s) =>
+            _toolPage(s, const ReservaScreen()),
+      ),
       GoRoute(
-          path: Routes.simulador,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const SimuladorScreen())),
+        path: Routes.simulador,
+        pageBuilder: (_, GoRouterState s) =>
+            _toolPage(s, const SimuladorScreen()),
+      ),
       GoRoute(
-          path: Routes.perfis,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const PerfisScreen())),
+        path: Routes.perfis,
+        pageBuilder: (_, GoRouterState s) => _toolPage(s, const PerfisScreen()),
+      ),
       GoRoute(
-          path: Routes.config,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const ConfigScreen())),
+        path: Routes.config,
+        pageBuilder: (_, GoRouterState s) => _toolPage(s, const ConfigScreen()),
+      ),
       GoRoute(
-          path: Routes.legal,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const LegalScreen())),
+        path: Routes.legal,
+        pageBuilder: (_, GoRouterState s) => _toolPage(s, const LegalScreen()),
+      ),
       GoRoute(
-          path: Routes.historico,
-          pageBuilder: (_, GoRouterState s) => _toolPage(s, const HistoricoScreen())),
+        path: Routes.historico,
+        pageBuilder: (_, GoRouterState s) =>
+            _toolPage(s, const HistoricoScreen()),
+      ),
     ],
   );
 }

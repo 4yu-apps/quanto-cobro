@@ -65,6 +65,9 @@ class _PressableScaleState extends State<PressableScale> {
 
 /// Entrada em cascata (stagger) para listas de blocos: fade + leve subida.
 /// Uso: envolver cada bloco com index crescente. Em reduce-motion, estático.
+/// RepaintBoundary isola o saveLayer do fade (higiene de raster em GPU fraca);
+/// alwaysIncludeSemantics mantém o conteúdo na árvore de acessibilidade
+/// durante a entrada (TalkBack pode varrer antes do fade terminar).
 class StaggerIn extends StatelessWidget {
   const StaggerIn({super.key, required this.index, required this.child});
 
@@ -86,9 +89,10 @@ class StaggerIn extends StatelessWidget {
       ),
       builder: (BuildContext context, double t, Widget? c) => Opacity(
         opacity: t,
+        alwaysIncludeSemantics: true,
         child: Transform.translate(offset: Offset(0, 12 * (1 - t)), child: c),
       ),
-      child: child,
+      child: RepaintBoundary(child: child),
     );
   }
 }

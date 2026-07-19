@@ -11,6 +11,7 @@ import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import 'trabalho_switcher.dart';
 
 /// Perfis (Blueprint §5.7): um perfil por CASO — "Freela design", "Cliente
 /// fixo", "Outro emprego". Tocar ativa (o Painel inteiro muda). O 2º perfil em
@@ -21,7 +22,6 @@ class PerfisScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ProfilesData data = ref.watch(profilesProvider);
-    final bool isPro = ref.watch(proProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
 
@@ -32,7 +32,7 @@ class PerfisScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Novo trabalho',
-            onPressed: () => _novo(context, ref, data, isPro),
+            onPressed: () => _novo(context, ref),
           ),
         ],
       ),
@@ -43,14 +43,18 @@ class PerfisScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Icon(Icons.switch_account_outlined,
-                        size: 40, color: cs.onSurfaceVariant),
+                    Icon(
+                      Icons.switch_account_outlined,
+                      size: 40,
+                      color: cs.onSurfaceVariant,
+                    ),
                     const SizedBox(height: Space.x3),
                     Text(
                       'Cada trabalho seu pode ter um preço: freela, cliente fixo, outro serviço. Comece pelo primeiro.',
                       textAlign: TextAlign.center,
-                      style:
-                          theme.textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: Space.x6),
                     FilledButton(
@@ -66,7 +70,9 @@ class PerfisScreen extends ConsumerWidget {
               children: <Widget>[
                 Text(
                   'Toque pra ativar. O Painel, a Reserva e o Simulador passam a usar o trabalho ativo.',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: Space.x4),
                 Card(
@@ -75,16 +81,20 @@ class PerfisScreen extends ConsumerWidget {
                     children: <Widget>[
                       for (int i = 0; i < data.perfis.length; i++) ...<Widget>[
                         if (i > 0) const Divider(height: 1, indent: Space.x4),
-                        _tile(context, ref, data.perfis[i],
-                            ativo: data.perfis[i].id == data.active?.id,
-                            unico: data.perfis.length == 1),
+                        _tile(
+                          context,
+                          ref,
+                          data.perfis[i],
+                          ativo: data.perfis[i].id == data.active?.id,
+                          unico: data.perfis.length == 1,
+                        ),
                       ],
                     ],
                   ),
                 ),
                 const SizedBox(height: Space.x4),
                 OutlinedButton.icon(
-                  onPressed: () => _novo(context, ref, data, isPro),
+                  onPressed: () => _novo(context, ref),
                   icon: const Icon(Icons.add),
                   label: const Text('Novo trabalho'),
                 ),
@@ -93,120 +103,125 @@ class PerfisScreen extends ConsumerWidget {
     );
   }
 
-  Widget _tile(BuildContext context, WidgetRef ref, Perfil p,
-      {required bool ativo, required bool unico}) {
+  Widget _tile(
+    BuildContext context,
+    WidgetRef ref,
+    Perfil p, {
+    required bool ativo,
+    required bool unico,
+  }) {
     final ThemeData theme = Theme.of(context);
     final int vh = computeValorHora(p).valorHora;
-    return ListTile(
-      leading: Icon(
-        ativo ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-        color: ativo ? theme.colorScheme.primary : theme.colorScheme.outline,
-      ),
-      title: Text(p.nome),
-      subtitle: Text(ativo ? 'Ativo' : 'Toque pra ativar'),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text('${moneyBRL(vh)}/h',
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(fontFeatures: AppType.tnum, color: theme.colorScheme.primary)),
-          PopupMenuButton<String>(
-            tooltip: 'Opções',
-            onSelected: (String op) async {
-              if (op == 'renomear') {
-                final String? nome = await _pedirNome(context, inicial: p.nome);
-                if (nome != null && nome.trim().isNotEmpty) {
-                  await ref.read(profilesProvider.notifier).rename(p.id, nome.trim());
-                }
-              } else if (op == 'editar') {
-                await ref.read(profilesProvider.notifier).select(p.id);
-                if (context.mounted) context.push(Routes.calc);
-              } else if (op == 'apagar') {
-                if (unico) {
-                  ScaffoldMessenger.of(context)
-                    ..clearSnackBars()
-                    ..showSnackBar(const SnackBar(
-                        content: Text(
-                            'Esse é o seu único trabalho. Pra zerar tudo, use Configurações.')));
-                  return;
-                }
-                Haptics.select();
-                final ProfilesNotifier profilesN = ref.read(profilesProvider.notifier);
-                await profilesN.remove(p.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context)
-                    ..clearSnackBars()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: Text('"${p.nome}" apagado'),
-                        action: SnackBarAction(
-                          label: 'Desfazer',
-                          onPressed: () => profilesN.saveAndActivate(p),
-                        ),
-                      ),
+    return MergeSemantics(
+      child: Semantics(
+        button: !ativo,
+        selected: ativo,
+        child: ListTile(
+          leading: AnimatedSwitcher(
+            duration: reduceMotionOf(context) ? Duration.zero : Motion.quick,
+            transitionBuilder: (Widget child, Animation<double> animation) =>
+                ScaleTransition(
+                  scale: Tween<double>(begin: 0.8, end: 1).animate(animation),
+                  child: child,
+                ),
+            child: Icon(
+              ativo ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              key: ValueKey<bool>(ativo),
+              color: ativo
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline,
+            ),
+          ),
+          title: Text(p.nome),
+          subtitle: Text(ativo ? 'Ativo' : 'Toque pra ativar'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '${moneyBRL(vh)}/h',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontFeatures: AppType.tnum,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              PopupMenuButton<String>(
+                tooltip: 'Opções',
+                onSelected: (String op) async {
+                  if (op == 'renomear') {
+                    final String? nome = await _pedirNome(
+                      context,
+                      inicial: p.nome,
                     );
-                }
-              }
-            },
-            itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(value: 'editar', child: Text('Editar cálculo')),
-              PopupMenuItem<String>(value: 'renomear', child: Text('Renomear')),
-              PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
+                    if (nome != null && nome.trim().isNotEmpty) {
+                      await ref
+                          .read(profilesProvider.notifier)
+                          .rename(p.id, nome.trim());
+                    }
+                  } else if (op == 'editar') {
+                    await ref.read(profilesProvider.notifier).select(p.id);
+                    if (context.mounted) context.push(Routes.calc);
+                  } else if (op == 'apagar') {
+                    if (unico) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Esse é o seu único trabalho. Pra zerar tudo, use Configurações.',
+                            ),
+                          ),
+                        );
+                      return;
+                    }
+                    Haptics.select();
+                    final ProfilesNotifier profilesN = ref.read(
+                      profilesProvider.notifier,
+                    );
+                    await profilesN.remove(p.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                          SnackBar(
+                            content: Text('"${p.nome}" apagado'),
+                            action: SnackBarAction(
+                              label: 'Desfazer',
+                              onPressed: () => profilesN.saveAndActivate(p),
+                            ),
+                          ),
+                        );
+                    }
+                  }
+                },
+                itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'editar',
+                    child: Text('Editar cálculo'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'renomear',
+                    child: Text('Renomear'),
+                  ),
+                  PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
+                ],
+              ),
             ],
           ),
-        ],
+          onTap: ativo
+              ? null
+              : () {
+                  Haptics.select();
+                  ref.read(profilesProvider.notifier).select(p.id);
+                },
+        ),
       ),
-      onTap: ativo
-          ? null
-          : () {
-              Haptics.select();
-              ref.read(profilesProvider.notifier).select(p.id);
-            },
     );
   }
 
-  Future<void> _novo(
-      BuildContext context, WidgetRef ref, ProfilesData data, bool isPro) async {
-    // 2º trabalho em diante é Pro (gatilho de valor; preço antes do trabalho).
-    if (data.perfis.isNotEmpty && !isPro) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-            const SnackBar(content: Text('Vários trabalhos é recurso Pro.')));
-      context.push(Routes.pro);
-      return;
-    }
-    final String? nome = await _pedirNome(context);
-    if (nome == null || nome.trim().isEmpty) return;
-    if (context.mounted) {
-      Haptics.select();
-      context.push(Routes.calc, extra: nome.trim());
-    }
-  }
+  Future<void> _novo(BuildContext context, WidgetRef ref) =>
+      novoTrabalho(context, ref);
 
   Future<String?> _pedirNome(BuildContext context, {String? inicial}) async {
-    final TextEditingController c = TextEditingController(text: inicial ?? '');
-    final String? r = await showDialog<String>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(inicial == null ? 'Nome do trabalho' : 'Renomear'),
-        content: TextField(
-          controller: c,
-          autofocus: true,
-          textCapitalization: TextCapitalization.sentences,
-          decoration:
-              const InputDecoration(hintText: 'Ex.: Freela design, Cliente fixo...'),
-        ),
-        actions: <Widget>[
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, c.text),
-              child: Text(inicial == null ? 'Continuar' : 'Salvar')),
-        ],
-      ),
-    );
-    Future<void>.delayed(const Duration(milliseconds: 600), c.dispose);
-    return r;
+    return pedirNomeTrabalho(context, inicial: inicial);
   }
 }

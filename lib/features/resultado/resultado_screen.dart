@@ -7,27 +7,63 @@ import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
 import '../../core/model/perfil.dart';
+import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/stale_banner.dart';
+import '../../core/ui/vitrine_card.dart';
 
-/// Resultado (Blueprint §5.3): as 3 respostas com hierarquia clara. Regra da
-/// casa: resposta de dinheiro vive numa SUPERFÍCIE, nunca solta no fundo —
-/// resposta-mãe em cima (card vitrine), anatomia embaixo (card de leitura).
-class ResultadoScreen extends ConsumerWidget {
+/// Resultado (Blueprint §5.3): o clímax. Regra da casa: resposta de dinheiro
+/// vive numa SUPERFÍCIE, nunca solta no fundo — resposta-mãe em cima (vitrine),
+/// anatomia embaixo (card de leitura).
+///
+/// v0.4 — o momento-ALÍVIO: o bloco do imposto conta a verdade do regime
+/// (MEI: DAS fixo, ~1% — não 16%; CPF/Simples: alíquota EFETIVA, não a cheia).
+/// O Salvar vive numa barra fixa (nunca abaixo da dobra) e o haptic do clímax
+/// vibra no NASCIMENTO do número, não no tap do botão que trouxe até aqui.
+class ResultadoScreen extends ConsumerStatefulWidget {
   const ResultadoScreen({super.key, this.perfil});
 
   final Perfil? perfil;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final Perfil? p = perfil;
+  ConsumerState<ResultadoScreen> createState() => _ResultadoScreenState();
+}
+
+class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final Perfil? p = widget.perfil;
+    if (p == null) return;
+    // O haptic pertence ao primeiro frame do resultado (MOTION-SPEC §1.1):
+    // o corpo sente "nasceu" junto com os olhos, não 350ms antes.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Haptics.resultBorn();
+      // O aha chega junto pra quem ouve: anúncio após o count-up assentar.
+      final ValorHoraResult r = computeValorHora(p);
+      Future<void>.delayed(Motion.countUp, () {
+        if (mounted) {
+          announce(
+            context,
+            'Cobre ${moneyBRL(r.valorHora)} por hora. Esse é o seu piso.',
+          );
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Perfil? p = widget.perfil;
     if (p == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Seu resultado')),
@@ -37,8 +73,10 @@ class ResultadoScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Text('Não recebi os dados do cálculo. Vamos refazer?',
-                    textAlign: TextAlign.center),
+                const Text(
+                  'Não recebi os dados do cálculo. Vamos refazer?',
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: Space.x4),
                 FilledButton(
                   onPressed: () => context.push(Routes.calc),
@@ -58,36 +96,43 @@ class ResultadoScreen extends ConsumerWidget {
     final Divisao div = divisaoFromProfile(p, r);
     final bool custoMaiorQueMeta = p.custosTotal > p.renda;
     final bool stale = tabelasDefasadas(DateTime.now());
-    final bool dark = theme.brightness == Brightness.dark;
+    final TextStyle heroStyle = AppType.valueHero.copyWith(color: cs.primary);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Seu resultado')),
+      // Salvar SEMPRE visível: a ação que completa o Ato 1 não exige rolar.
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x4),
+        child: FilledButton(
+          onPressed: () async {
+            Haptics.commit();
+            announce(context, 'Trabalho salvo. Voltando pro painel.');
+            await ref.read(profilesProvider.notifier).saveAndActivate(p);
+            // Sem snackbar: o count-up + stagger do Painel É a confirmação
+            // (e o haptic já selou o gesto).
+            if (context.mounted) context.go(Routes.painel);
+          },
+          child: const Text('Salvar este trabalho'),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(Space.x4),
         children: <Widget>[
-          // Card-vitrine: a resposta-mãe (mesma moldura do herói do Painel).
+          // Ato 1 — vitrine: a resposta-mãe, com a aurora do clímax.
           StaggerIn(
             index: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: dark
-                    ? LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: <Color>[cs.surfaceContainerHigh, cs.surfaceContainer],
-                      )
-                    : null,
-                color: dark ? null : cs.surfaceContainerHigh,
-                borderRadius: const BorderRadius.all(Radii.xl),
-                border: dark ? null : Border.all(color: cs.outlineVariant),
-              ),
-              padding: const EdgeInsets.all(Space.x6),
+            child: VitrineCard(
+              climax: true,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('COBRE POR HORA',
-                      style: theme.textTheme.labelLarge
-                          ?.copyWith(color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+                  Text(
+                    'COBRE POR HORA',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: Space.x1),
                   FittedBox(
                     fit: BoxFit.scaleDown,
@@ -96,32 +141,58 @@ class ResultadoScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: <Widget>[
-                        MoneyCountUp(
-                          r.valorHora,
-                          style: AppType.valueHero.copyWith(color: cs.primary),
-                          semanticLabel: 'Cobre ${moneyBRL(r.valorHora)} por hora',
+                        Stack(
+                          alignment: Alignment.centerLeft,
+                          children: <Widget>[
+                            ExcludeSemantics(
+                              child: Opacity(
+                                opacity: 0,
+                                child: Text(
+                                  moneyBRL(r.valorHora),
+                                  style: heroStyle,
+                                ),
+                              ),
+                            ),
+                            MoneyCountUp(
+                              r.valorHora,
+                              style: heroStyle,
+                              semanticLabel:
+                                  'Cobre ${moneyBRL(r.valorHora)} por hora',
+                            ),
+                          ],
                         ),
-                        Text(' /hora',
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(color: cs.onSurfaceVariant)),
+                        ExcludeSemantics(
+                          child: Text(
+                            ' /hora',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: Space.x1),
-                  Text('Esse é o seu piso. Cobre mais quando o trabalho valer mais.',
-                      style:
-                          theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Text(
+                    'Esse é o seu piso. Cobre mais quando o trabalho valer mais.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
                   const SizedBox(height: Space.x2),
                   Text(
-                      '≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
-                      style: theme.textTheme.bodyMedium),
+                    '≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
+                    style: theme.textTheme.bodyMedium,
+                    semanticsLabel:
+                        'Cerca de ${moneyBRL(r.valorDia)} por dia, faturando ${moneyBRL(r.faturamento)} por mês',
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: Space.x4),
 
-          // Card de anatomia: as outras 2 respostas + a Divisão.
+          // Ato 2 e 3 — anatomia: o imposto de verdade + o lucro, e a Divisão.
           StaggerIn(
             index: 1,
             child: Card(
@@ -131,14 +202,17 @@ class ResultadoScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    MergeSemantics(
-                      child: _bloco(
-                          context, 'DE CADA PAGAMENTO, RESERVE', '${r.reservaPct}%', d.reserva),
-                    ),
+                    _blocoImposto(context, r, d),
                     const Divider(),
                     MergeSemantics(
                       child: _bloco(
-                          context, 'LUCRO REAL ESTIMADO', '${moneyBRL(r.lucro)}/mês', d.lucro),
+                        context,
+                        'LUCRO REAL ESTIMADO',
+                        '${moneyBRL(r.lucro)}/mês',
+                        d.lucro,
+                        semantica:
+                            'Lucro real estimado: ${moneyBRL(r.lucro)} por mês',
+                      ),
                     ),
                     const Divider(),
                     DivisaoBar(
@@ -146,12 +220,65 @@ class ResultadoScreen extends ConsumerWidget {
                       reserva: div.reserva,
                       custo: div.custo,
                       emphasis: DivisaoEmphasis.lucro,
+                      // Nasce DEPOIS do véu do stagger: o usuário VÊ o dinheiro
+                      // se repartir (K1) — e o número continua parando por último.
+                      bornDelay: Motion.quick,
                     ),
                   ],
                 ),
               ),
             ),
           ),
+
+          // Teto do MEI: enquadrado como CRESCIMENTO, não erro (terracota calmo).
+          if (r.acimaTetoMei) ...<Widget>[
+            const SizedBox(height: Space.x3),
+            StaggerIn(
+              index: 2,
+              child: MergeSemantics(
+                child: Container(
+                  padding: const EdgeInsets.all(Space.x4),
+                  decoration: BoxDecoration(
+                    color: d.alertaContainer,
+                    borderRadius: const BorderRadius.all(Radii.md),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Icon(
+                            Icons.trending_up,
+                            size: 20,
+                            color: d.onAlertaContainer,
+                          ),
+                          const SizedBox(width: Space.x2),
+                          Expanded(
+                            child: Text(
+                              'Sua meta passou o teto do MEI',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: d.onAlertaContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Space.x2),
+                      Text(
+                        'Pra ganhar isso, você precisaria faturar ${moneyBRL(r.faturamento)}/mês — '
+                        'o MEI permite até ${moneyBRL(kTetoMensalMei)}/mês. Bom sinal: seu trabalho '
+                        'está maior que o MEI. Vale conversar com um contador sobre o Simples. '
+                        'Seu valor-hora continua valendo.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: d.onAlertaContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
 
           if (custoMaiorQueMeta) ...<Widget>[
             const SizedBox(height: Space.x3),
@@ -166,13 +293,18 @@ class ResultadoScreen extends ConsumerWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(Icons.trending_down, size: 20, color: d.onAlertaContainer),
+                    Icon(
+                      Icons.trending_down,
+                      size: 20,
+                      color: d.onAlertaContainer,
+                    ),
                     const SizedBox(width: Space.x2),
                     Expanded(
                       child: Text(
                         'Seus custos estão maiores que a renda que você quer. Vale rever.',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: d.onAlertaContainer),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: d.onAlertaContainer,
+                        ),
                       ),
                     ),
                   ],
@@ -180,47 +312,171 @@ class ResultadoScreen extends ConsumerWidget {
               ),
             ),
           ],
-          if (stale) ...<Widget>[
-            const SizedBox(height: Space.x3),
-            StaleBanner(ano: kTabelasAno),
-          ],
-          const SizedBox(height: Space.x6),
-          FilledButton(
-            onPressed: () async {
-              Haptics.commit();
-              await ref.read(profilesProvider.notifier).saveAndActivate(p);
-              // Sem snackbar: o count-up + stagger do Painel É a confirmação
-              // (e o haptic já selou o gesto).
-              if (context.mounted) context.go(Routes.painel);
-            },
-            child: const Text('Salvar este trabalho'),
-          ),
-          TextButton(
-            onPressed: () => context.push(Routes.detalhe, extra: p),
-            child: const Text('Ver detalhamento'),
-          ),
           const SizedBox(height: Space.x4),
-          const EstimativaSeal(),
+          StaggerIn(
+            index: 3,
+            child: TextButton(
+              onPressed: () => context.push(Routes.detalhe, extra: p),
+              child: const Text('Ver detalhamento'),
+            ),
+          ),
+          const SizedBox(height: Space.x2),
+          StaggerIn(
+            index: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const EstimativaSeal(),
+                if (stale) ...<Widget>[
+                  const SizedBox(height: Space.x2),
+                  // Rebaixado a footnote: informa sem carimbar desconfiança
+                  // nem empurrar nada pra baixo da dobra.
+                  StaleBanner(ano: kTabelasAno, footnote: true),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.x2),
         ],
       ),
     );
   }
 
-  Widget _bloco(BuildContext context, String label, String value, Color color) {
+  /// O bloco do imposto conta a verdade do regime — o momento-alívio.
+  Widget _blocoImposto(
+    BuildContext context,
+    ValorHoraResult r,
+    DivisaoColors d,
+  ) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final Perfil p = widget.perfil!;
+    final String pctFino = (r.rate * 100)
+        .toStringAsFixed(1)
+        .replaceAll('.', ',');
+
+    switch (p.regime) {
+      case RegimeId.mei:
+        return MergeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _label(context, 'SEU DAS FIXO'),
+              const SizedBox(height: Space.x1),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${moneyBRLCents(r.dasMensal!)}/mês',
+                  maxLines: 1,
+                  style: AppType.valueXl.copyWith(color: d.reserva),
+                ),
+              ),
+              const SizedBox(height: Space.x1),
+              Text(
+                'MEI não paga % por pagamento — é um boleto fixo. '
+                'Dá ~$pctFino% do que você fatura.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        );
+      case RegimeId.cpf:
+        return _reservePct(
+          context,
+          r,
+          d,
+          apoio: r.reservaPct < 25
+              ? 'Sua alíquota efetiva (INSS + IRPF). A tabela fala em até 27,5%, '
+                    'mas com a sua renda o Leão leva bem menos.'
+              : 'Sua alíquota efetiva: INSS (20%) + IRPF pela sua faixa, já no gross-up.',
+        );
+      case RegimeId.simples:
+        return _reservePct(
+          context,
+          r,
+          d,
+          apoio:
+              'Alíquota efetiva do Simples pela sua faixa (estimativa pelo Anexo III — serviços).',
+        );
+      case RegimeId.intl:
+        return _reservePct(
+          context,
+          r,
+          d,
+          apoio:
+              'Regra de bolso pra quem recebe de fora: 25–30% de segurança. Ajuste com seu contador.',
+        );
+    }
+  }
+
+  Widget _reservePct(
+    BuildContext context,
+    ValorHoraResult r,
+    DivisaoColors d, {
+    required String apoio,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _label(context, 'DE CADA PAGAMENTO, RESERVE'),
+          const SizedBox(height: Space.x1),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '~${r.reservaPct}%',
+              maxLines: 1,
+              style: AppType.valueXl.copyWith(color: d.reserva),
+              semanticsLabel:
+                  'Reserve cerca de ${r.reservaPct} por cento de cada pagamento',
+            ),
+          ),
+          const SizedBox(height: Space.x1),
+          Text(
+            apoio,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _label(BuildContext context, String label) => Text(
+    label,
+    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      letterSpacing: 0.5,
+    ),
+  );
+
+  Widget _bloco(
+    BuildContext context,
+    String label,
+    String value,
+    Color color, {
+    String? semantica,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                )),
+        _label(context, label),
         const SizedBox(height: Space.x1),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(value,
-              maxLines: 1, style: AppType.valueXl.copyWith(color: color)),
+          child: Text(
+            value,
+            maxLines: 1,
+            style: AppType.valueXl.copyWith(color: color),
+            semanticsLabel: semantica,
+          ),
         ),
       ],
     );
