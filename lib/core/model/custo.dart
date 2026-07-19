@@ -54,7 +54,7 @@ class CostChip {
     CostChip(id: 'equip', label: 'Equipamento', icon: 'devices', sugg: 150),
     CostChip(
       id: 'prolabore',
-      label: 'Pró-labore',
+      label: 'Pró-labore (seu salário)',
       icon: 'account_balance',
       sugg: 0,
     ),

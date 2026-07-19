@@ -13,6 +13,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/help_dot.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 
@@ -837,7 +838,15 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         _subtitle(
           'Se você não faz ideia, tem uma opção pra isso logo abaixo. Sem estresse.',
         ),
-        const SizedBox(height: Space.x4),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => showHelpSheet(context, 'qual_regime'),
+            icon: const Icon(Icons.help_outline, size: 18),
+            label: const Text('Não sei qual sou eu'),
+          ),
+        ),
+        const SizedBox(height: Space.x3),
         for (final Regime r in Regime.all.values) _regimeOption(r),
       ],
     );

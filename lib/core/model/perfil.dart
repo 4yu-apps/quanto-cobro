@@ -62,7 +62,7 @@ class Perfil {
         custos: const <Custo>[
           Custo(id: 'software', label: 'Software/ferramentas', valor: 120),
           Custo(id: 'internet', label: 'Internet/telefone', valor: 100),
-          Custo(id: 'equip', label: 'Equipamento (rateio)', valor: 150),
+          Custo(id: 'equip', label: 'Equipamento (parcela no mês)', valor: 150),
           Custo(id: 'contador', label: 'Contador', valor: 200),
           Custo(id: 'coworking', label: 'Coworking', valor: 280),
         ],

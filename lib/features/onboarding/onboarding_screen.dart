@@ -161,7 +161,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     icon: Icons.savings_outlined,
     title: 'Pare de trabalhar de graça.',
     body:
-        'Descubra quanto cobrar por hora, quanto guardar pro Leão e quanto realmente sobra.',
+        'Descubra quanto cobrar por hora, quanto guardar pro Leão (o imposto) e quanto realmente sobra.',
   );
 
   String _pageTitle(int page) => switch (page) {
@@ -203,7 +203,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     icon: Icons.lock_outline,
     title: '100% no seu aparelho.',
     body:
-        'Sem cadastro, sem login, sem enviar seus dados pra ninguém. É só abrir e usar, mesmo offline. Isso só pré-ajusta seu regime; você confirma no passo 4.',
+        'Sem cadastro, sem login, sem enviar seus dados pra ninguém. É só abrir e usar, mesmo offline. Isso só deixa pré-escolhido como você trabalha; você confirma depois.',
     extra: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
