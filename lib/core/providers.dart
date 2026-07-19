@@ -221,6 +221,20 @@ class TextScaleNotifier extends Notifier<double> {
 final NotifierProvider<TextScaleNotifier, double> textScaleProvider =
     NotifierProvider<TextScaleNotifier, double>(TextScaleNotifier.new);
 
+// ---- Lembrete mensal (nudge in-app pra trabalhos recorrentes) ----
+class ReminderMensalNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(settingsRepositoryProvider).reminderMensal();
+
+  Future<void> set(bool value) async {
+    await ref.read(settingsRepositoryProvider).setReminderMensal(value);
+    state = value;
+  }
+}
+
+final NotifierProvider<ReminderMensalNotifier, bool> reminderMensalProvider =
+    NotifierProvider<ReminderMensalNotifier, bool>(ReminderMensalNotifier.new);
+
 // ---- Histórico de reservas (gancho de hábito, IA §2.12) ----
 final Provider<ReservaHistoryRepository> reservaHistoryRepositoryProvider =
     Provider<ReservaHistoryRepository>(

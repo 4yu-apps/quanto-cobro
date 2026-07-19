@@ -105,13 +105,33 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-class _PainelBody extends ConsumerWidget {
+/// Se o nudge mensal deve aparecer: lembrete LIGADO, trabalho é recorrente
+/// ("mensal") e nada foi registrado ainda este mês. Extraída pura (sem
+/// `DateTime.now()`, sem `ref`) pra ser testável direto.
+bool shouldNudge({
+  required bool enabled,
+  required TipoContrato tipo,
+  required double brutoDoMes,
+}) {
+  return enabled && tipo == TipoContrato.mensal && brutoDoMes == 0;
+}
+
+class _PainelBody extends ConsumerStatefulWidget {
   const _PainelBody({required this.perfil});
 
   final Perfil perfil;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PainelBody> createState() => _PainelBodyState();
+}
+
+class _PainelBodyState extends ConsumerState<_PainelBody> {
+  // Dispensar o nudge mensal vale só pra esta sessão do app (não persiste).
+  bool _nudgeMensalDispensado = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Perfil perfil = widget.perfil;
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
     final ValorHoraResult r = computeValorHora(perfil);
@@ -139,6 +159,18 @@ class _PainelBody extends ConsumerWidget {
         ? 'Seu DAS: ${moneyBRLCents(r.dasMensal!)}/mês, já dentro da conta. De cada pagamento, o resto é seu.'
         : 'Separe ~${r.reservaPct}% de cada pagamento (sua faixa real, regime: $regimeTag).';
 
+    final bool reminderMensalOn = ref.watch(reminderMensalProvider);
+    final double brutoMesTrabalho = ref
+        .read(reservaHistoryRepositoryProvider)
+        .brutoDoMes(now, perfilId: perfil.id);
+    final bool mostrarNudgeMensal =
+        !_nudgeMensalDispensado &&
+        shouldNudge(
+          enabled: reminderMensalOn,
+          tipo: perfil.tipoContrato,
+          brutoDoMes: brutoMesTrabalho,
+        );
+
     return _ambientWash(context, ListView(
       padding: EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, kFloatingNavReserve + MediaQuery.viewPaddingOf(context).bottom),
       children: <Widget>[
@@ -154,6 +186,69 @@ class _PainelBody extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: Space.x6),
+
+        if (mostrarNudgeMensal) ...<Widget>[
+          Semantics(
+            liveRegion: true,
+            child: Card(
+              color: theme.colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(Space.x4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            'Novo mês começou',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: theme.colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                        ),
+                        Semantics(
+                          button: true,
+                          label: 'Dispensar aviso',
+                          child: InkWell(
+                            onTap: () =>
+                                setState(() => _nudgeMensalDispensado = true),
+                            borderRadius: const BorderRadius.all(Radii.sm),
+                            child: Padding(
+                              padding: const EdgeInsets.all(Space.x1),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: theme.colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Space.x1),
+                    Text(
+                      'Já recebeu algo por "${perfil.nome}" este mês? Registra pra manter sua reserva em dia.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: Space.x2),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => context.push(Routes.reserva),
+                        child: const Text('Registrar agora'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: Space.x4),
+        ],
 
         if (lembrarDas) ...<Widget>[
           Semantics(

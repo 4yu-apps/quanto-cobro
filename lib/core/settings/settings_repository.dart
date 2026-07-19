@@ -76,6 +76,14 @@ class SettingsRepository {
     return _prefs.setStringList(_kReservaRegimes, items);
   }
 
+  // Lembrete mensal: avisa no Painel quando um trabalho "mensal" ainda não
+  // teve renda registrada no mês. Default LIGADO (é o comportamento seguro
+  // pra quem depende de renda recorrente não esquecer de registrar).
+  static const String _kReminderMensal = 'reminder_mensal';
+  bool reminderMensal() => _prefs.getBool(_kReminderMensal) ?? true;
+  Future<void> setReminderMensal(bool v) =>
+      _prefs.setBool(_kReminderMensal, v);
+
   // "Paguei o Leão deste mês" — quitação mensal do loop da reserva (P1-7).
   // Guardado como lista de meses 'yyyy-MM'.
   static const String _kLeaoPago = 'leao_pago_meses';

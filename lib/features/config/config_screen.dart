@@ -35,6 +35,7 @@ class ConfigScreen extends ConsumerWidget {
     final bool isPro = ref.watch(proProvider);
     final bool telemetria = ref.watch(telemetryProvider);
     final bool reduzirTransp = ref.watch(reduceTransparencyProvider);
+    final bool lembreteMensal = ref.watch(reminderMensalProvider);
     final double textScale = ref.watch(textScaleProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
@@ -164,6 +165,23 @@ class ConfigScreen extends ConsumerWidget {
                   ? const Icon(Icons.check)
                   : const Icon(Icons.chevron_right),
               onTap: () => context.push(Routes.pro),
+            ),
+          ),
+          const SizedBox(height: Space.x6),
+
+          _secao(context, 'GESTÃO'),
+          Card(
+            color: theme.colorScheme.surfaceContainer,
+            child: SwitchListTile(
+              value: lembreteMensal,
+              onChanged: (bool v) {
+                Haptics.select();
+                ref.read(reminderMensalProvider.notifier).set(v);
+              },
+              title: const Text('Lembrete mensal'),
+              subtitle: const Text(
+                'Um aviso no início do app quando um trabalho mensal ainda não teve renda registrada no mês.',
+              ),
             ),
           ),
           const SizedBox(height: Space.x6),
