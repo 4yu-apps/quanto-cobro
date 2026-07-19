@@ -55,7 +55,7 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
     final DateFormat df = DateFormat('d MMM', 'pt_BR');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Histórico de reservas')),
+      appBar: AppBar(title: const Text('Guardado')),
       body: all.isEmpty
           ? _empty(context)
           : ListView(

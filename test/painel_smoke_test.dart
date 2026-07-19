@@ -49,11 +49,11 @@ void main() {
     // A casca de navegação existe, com as 3 abas.
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.text('Início'), findsOneWidget);
-    expect(find.text('Histórico'), findsOneWidget);
+    expect(find.text('Guardado'), findsOneWidget);
     expect(find.text('Trabalhos'), findsOneWidget);
 
-    // Troca pra Histórico → estado vazio da tela renderiza sem crash.
-    await tester.tap(find.text('Histórico'));
+    // Troca pra Guardado → estado vazio da tela renderiza sem crash.
+    await tester.tap(find.text('Guardado'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Sem reservas'), findsOneWidget);
 

@@ -111,7 +111,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.history),
-            tooltip: 'Histórico de reservas',
+            tooltip: 'Guardado',
             onPressed: () => context.push(Routes.historico),
           ),
         ],

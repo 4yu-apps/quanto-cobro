@@ -71,7 +71,7 @@ class _GlassBottomBar extends ConsumerWidget {
         NavigationDestination(
           icon: Icon(Icons.savings_outlined),
           selectedIcon: Icon(Icons.savings),
-          label: 'Histórico',
+          label: 'Guardado',
         ),
         NavigationDestination(
           icon: Icon(Icons.work_outline),
