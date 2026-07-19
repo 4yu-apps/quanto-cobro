@@ -27,6 +27,10 @@ dependencies:
   # Settings locais
   shared_preferences: ^2.5.5
 
+  # Câmbio offline-first (Fase 3): pure-Dart, sem plugin nativo — só a chamada
+  # HTTP pra API pública de cotação, sob ação explícita do usuário.
+  http: ^1.2.0
+
   # Dados local-first (SQLite) — camada de dados nas próximas etapas
   drift: ^2.34.2
   drift_flutter: ^0.3.1
