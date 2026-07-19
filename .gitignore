@@ -29,6 +29,9 @@ pubspec.lock.bak
 # fvm — versiona só o .fvmrc (a versão pinada), não o SDK baixado
 .fvm/
 
+# scratch de execução por subagentes (ledger de progresso, briefs, reports)
+.superpowers/
+
 # ===== Android =====
 android/.gradle/
 android/local.properties
