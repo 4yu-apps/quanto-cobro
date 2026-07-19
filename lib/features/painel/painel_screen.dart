@@ -158,41 +158,43 @@ class _PainelBody extends ConsumerWidget {
         if (lembrarDas) ...<Widget>[
           Semantics(
             liveRegion: true,
-            child: PanelCard(
-              accent: theme.colorScheme.secondary,
-              padding: const EdgeInsets.all(Space.x4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'O DAS de ${_mesNome(now)} vence dia $kDasVencimentoDia',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    '${moneyBRLCents(r.dasMensal!)} — ${guardadoMes >= r.dasMensal! ? 'você já separou o DAS.' : 'ainda não separou nada.'}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: Space.x2),
-                  Wrap(
-                    spacing: Space.x2,
-                    children: <Widget>[
-                      TextButton(
-                        onPressed: () =>
-                            ref.read(leaoPagoProvider.notifier).set(true),
-                        child: const Text('Já paguei'),
+            child: Card(
+              color: theme.colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(Space.x4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'O DAS de ${_mesNome(now)} vence dia $kDasVencimentoDia',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.onSecondaryContainer,
                       ),
-                      TextButton(
-                        onPressed: () => context.push(Routes.reserva),
-                        child: const Text('Separar agora'),
+                    ),
+                    const SizedBox(height: Space.x1),
+                    Text(
+                      '${moneyBRLCents(r.dasMensal!)} — ${guardadoMes >= r.dasMensal! ? 'você já separou o DAS.' : 'ainda não separou nada.'}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSecondaryContainer,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: Space.x2),
+                    Wrap(
+                      spacing: Space.x2,
+                      children: <Widget>[
+                        TextButton(
+                          onPressed: () =>
+                              ref.read(leaoPagoProvider.notifier).set(true),
+                          child: const Text('Já paguei'),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push(Routes.reserva),
+                          child: const Text('Separar agora'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -283,34 +285,37 @@ class _PainelBody extends ConsumerWidget {
                     button: true,
                     label:
                         'Você já guardou ${moneyBRL(guardadoMes)} este mês. Ver histórico.',
-                    child: InkWell(
-                      // Troca de aba (não empilha 2ª cópia do Histórico).
-                      onTap: () => context.go(Routes.historico),
-                      borderRadius: const BorderRadius.all(Radii.sm),
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 48),
-                        child: Row(
-                          children: <Widget>[
-                            Icon(
-                              Icons.savings_outlined,
-                              size: 16,
-                              color: d.reserva,
-                            ),
-                            const SizedBox(width: Space.x2),
-                            Expanded(
-                              child: Text(
-                                'Você já guardou ${moneyBRL(guardadoMes)} este mês',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        // Troca de aba (não empilha 2ª cópia do Histórico).
+                        onTap: () => context.go(Routes.historico),
+                        borderRadius: const BorderRadius.all(Radii.sm),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          child: Row(
+                            children: <Widget>[
+                              Icon(
+                                Icons.savings_outlined,
+                                size: 16,
+                                color: d.reserva,
+                              ),
+                              const SizedBox(width: Space.x2),
+                              Expanded(
+                                child: Text(
+                                  'Você já guardou ${moneyBRL(guardadoMes)} este mês',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
-                            ),
-                            Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ],
+                              Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
