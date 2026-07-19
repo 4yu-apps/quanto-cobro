@@ -44,10 +44,12 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
   Timer? _announceTimer;
 
   // ---- Câmbio (Fase 3 — cliente estrangeiro) ----
-  // Offline-first: nunca busca sozinho ao abrir a tela, só lê o cache local
-  // (síncrono) e só sai pra rede quando a pessoa toca em "Atualizar".
+  // Offline-first: nunca busca sozinho ao abrir a tela. Sai pra rede só por
+  // ação explícita da pessoa — escolher uma moeda estrangeira sem cotação em
+  // cache, ou tocar em "Atualizar".
   Moeda _moeda = Moeda.brl;
   FxRate? _rate;
+  bool _buscandoCotacao = false;
 
   /// 'USD->BRL' etc. — o par que o repo/serviço de câmbio usam como chave.
   String get _par => '${_moeda.codigo}->${Moeda.brl.codigo}';
@@ -110,12 +112,18 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
     setState(() {
       _moeda = m;
       _saved = false;
-      // Só lê o cache local (síncrono) — nenhuma chamada de rede automática.
+      // Lê o cache local (síncrono) primeiro — sem custo de rede nenhum.
       _rate = m == Moeda.brl ? null : ref.read(fxRepositoryProvider).get(_par);
     });
+    // Escolher a moeda é ação explícita da pessoa: sem cotação usável em
+    // cache, busca na hora (sem exigir um toque extra em "Atualizar").
+    if (m != Moeda.brl && _rate == null) {
+      _atualizarCotacao();
+    }
   }
 
   Future<void> _atualizarCotacao() async {
+    setState(() => _buscandoCotacao = true);
     try {
       final FxRate rate = await ref
           .read(fxServiceProvider)
@@ -140,6 +148,8 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
             ),
           ),
         );
+    } finally {
+      if (mounted) setState(() => _buscandoCotacao = false);
     }
   }
 
@@ -195,6 +205,26 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
     final TextStyle? style = theme.textTheme.bodySmall?.copyWith(
       color: cs.onSurfaceVariant,
     );
+    if (_buscandoCotacao) {
+      return Padding(
+        padding: const EdgeInsets.only(top: Space.x1),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: Space.x2),
+            Text('Buscando cotação…', style: style),
+          ],
+        ),
+      );
+    }
     final FxRate? rate = _rate;
     if (rate == null) {
       return Padding(

@@ -3,17 +3,23 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:quantocobro/core/fx/fx_rate.dart';
+import 'package:quantocobro/core/fx/fx_repository.dart';
+import 'package:quantocobro/core/fx/fx_service.dart';
 import 'package:quantocobro/core/providers.dart';
 import 'package:quantocobro/core/theme/app_theme.dart';
 import 'package:quantocobro/features/reserva/reserva_screen.dart';
 
 /// Fase 3 Task 4 — seletor de moeda + câmbio transparente na Reserva.
-/// A tela é offline-first: nunca busca cotação sozinha, só lê o cache local
-/// (por isso os testes seedam `fx_rate_v1_USD->BRL` direto no
-/// SharedPreferences mockado — nenhuma chamada de rede acontece aqui).
+/// A tela é offline-first: nunca busca cotação sozinha ao abrir, só lê o
+/// cache local — mas escolher uma moeda estrangeira sem cotação em cache
+/// É uma ação explícita da pessoa, então dispara a busca na hora. Nesses
+/// casos os testes sobrescrevem `fxServiceProvider` com um [FxService]
+/// ligado a um `MockClient` — nenhuma chamada de rede real acontece aqui.
 void main() {
   final DateTime hoje = DateTime(2026, 7, 19);
 
@@ -26,10 +32,25 @@ void main() {
     return SharedPreferences.getInstance();
   }
 
-  Future<void> pumpReserva(WidgetTester tester, SharedPreferences prefs) async {
+  Future<SharedPreferences> prefsSemCotacao() async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'onboarding_done': true,
+    });
+    return SharedPreferences.getInstance();
+  }
+
+  Future<void> pumpReserva(
+    WidgetTester tester,
+    SharedPreferences prefs, {
+    FxService? fxService,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          if (fxService != null)
+            fxServiceProvider.overrideWithValue(fxService),
+        ],
         child: MaterialApp(theme: AppTheme.dark, home: const ReservaScreen()),
       ),
     );
@@ -64,10 +85,19 @@ void main() {
   });
 
   testWidgets(
-    'sem cache pra EUR: mensagem calma (não-alarme) + Digitar a minha',
+    'sem cache pra EUR: a busca automática falha (offline) e cai na '
+    'mensagem calma (não-alarme) + Digitar a minha, sem spinner preso',
     (WidgetTester tester) async {
       final SharedPreferences prefs = await prefsComCotacaoUsd();
-      await pumpReserva(tester, prefs);
+      final FxRepository repo = FxRepository(prefs);
+      final MockClient client = MockClient((http.Request request) async {
+        throw Exception('sem conexão');
+      });
+      await pumpReserva(
+        tester,
+        prefs,
+        fxService: FxService(repo, client: client),
+      );
 
       await tester.tap(find.text('EUR'));
       await tester.pumpAndSettle();
@@ -78,6 +108,33 @@ void main() {
       );
       expect(find.text('Digitar a minha'), findsOneWidget);
       expect(find.text('Atualizar'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'selecionar USD sem cotação em cache dispara a busca automática — a '
+    'cotação buscada aparece sem precisar tocar em "Atualizar"',
+    (WidgetTester tester) async {
+      final SharedPreferences prefs = await prefsSemCotacao();
+      final FxRepository repo = FxRepository(prefs);
+      final MockClient client = MockClient((http.Request request) async {
+        return http.Response('{"result":"success","rates":{"BRL":5.0}}', 200);
+      });
+      await pumpReserva(
+        tester,
+        prefs,
+        fxService: FxService(repo, client: client),
+      );
+
+      await tester.tap(find.text('USD'));
+      await tester.pumpAndSettle();
+
+      // Ninguém tocou em "Atualizar" — a cotação buscada já aparece.
+      expect(find.textContaining('Cotação de'), findsOneWidget);
+      expect(find.textContaining('5,00'), findsOneWidget);
+      expect(find.text('Atualizar'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     },
   );
 

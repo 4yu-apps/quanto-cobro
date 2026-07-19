@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessária pra buscar a cotação pública de câmbio (Fase 3) — sem ela
+         o build de release não tem rede nenhuma e a busca falha em silêncio. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="Quanto Cobro?"
         android:name="${applicationName}"
