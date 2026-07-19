@@ -295,7 +295,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Flexible(child: Text(label, style: style)),
-            Text(valor, style: style),
+            Flexible(child: Text(valor, style: style, textAlign: TextAlign.end)),
           ],
         ),
       ),
