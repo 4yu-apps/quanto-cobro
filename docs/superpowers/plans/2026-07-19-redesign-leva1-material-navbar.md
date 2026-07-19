@@ -113,7 +113,7 @@ class Materials extends ThemeExtension<Materials> {
     panelFillBottom: Color(0xFF1E2120), // surfaceContainer
     glassFill: Color(0xE1272B29), // surfaceContainerHigh @ ~0.88
     glassBlurSigma: 18,
-    navHalo: Color(0x1F57E5A9), // esmeralda 12%
+    navHalo: Color(0x1E57E5A9), // esmeralda ~12% (dentro do teto 0.12)
   );
 
   static const Materials light = Materials(
