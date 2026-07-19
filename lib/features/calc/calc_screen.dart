@@ -17,8 +17,9 @@ import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 
 /// Calculadora guiada (Blueprint §5.2): UMA pergunta por tela, com default e um
-/// momento didático. Cada passo tem sua validação (erro humano). O caminho free
-/// entrega um número credível em 5 passos.
+/// momento didático. v0.5 — a régua é o LEIGO: quem abre o app já não sabe
+/// cobrar. Nenhuma pergunta pode presumir conhecimento (nada de "horas
+/// faturáveis" ou "provisionar"). O passo 2 pergunta a ROTINA e o app faz a conta.
 class CalcScreen extends ConsumerStatefulWidget {
   const CalcScreen({super.key, this.novoTrabalho, this.initialDraft});
 
@@ -37,10 +38,14 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   int _step = 0;
   int _prevStep = 0;
   bool _triedContinue = false;
+
+  // Passo 2 — rotina.
+  late int _dias;
+  late int _horasDia;
+  late bool _horasManual; // expert digitou o número na mão
+
   final TextEditingController _renda = TextEditingController();
-  final TextEditingController _horas = TextEditingController();
   final FocusNode _rendaFocus = FocusNode();
-  final FocusNode _horasFocus = FocusNode();
 
   @override
   void initState() {
@@ -63,39 +68,52 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     } else if (st is ProfileReady) {
       _draft = st.perfil;
     } else {
-      // Primeiro uso: defaults honestos + regime pré-selecionado pelo modo BR/intl.
       final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
       _draft = Perfil.padrao().copyWith(
         regime: intl ? RegimeId.intl : RegimeId.mei,
       );
     }
+    _dias = _draft.diasSemana ?? 5;
+    _horasDia = _draft.horasDia ?? 6;
+    // Perfil legado (sem rotina) mas com horas salvo → abre em "digitar na mão".
+    _horasManual = _draft.diasSemana == null;
     _renda.text = _draft.renda.round().toString();
-    _horas.text = _draft.horas.toString();
   }
 
   @override
   void dispose() {
     _renda.dispose();
-    _horas.dispose();
     _rendaFocus.dispose();
-    _horasFocus.dispose();
     super.dispose();
   }
 
-  /// Foca o campo do passo corrente APOS o slide (teclado nao pula no meio
-  /// da transicao). Passos sem campo nao roubam foco.
   void _focusStep() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future<void>.delayed(Motion.base, () {
         if (!mounted) return;
         if (_step == 0) _rendaFocus.requestFocus();
-        if (_step == 1) _horasFocus.requestFocus();
       });
     });
   }
 
   int _digits(String s) =>
       int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
+  /// Recalcula as horas cobráveis pela rotina e grava tudo no draft.
+  void _recalcHorasPorRotina() {
+    final int horas = horasFaturaveisPorRotina(
+      diasSemana: _dias,
+      horasDia: _horasDia,
+    );
+    setState(() {
+      _horasManual = false;
+      _draft = _draft.copyWith(
+        horas: horas,
+        diasSemana: _dias,
+        horasDia: _horasDia,
+      );
+    });
+  }
 
   bool get _stepValid {
     switch (_step) {
@@ -111,14 +129,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   void _next() {
     if (!_stepValid) {
       setState(() => _triedContinue = true);
-      final bool renda = _step == 0;
-      announce(
-        context,
-        renda
-            ? 'Coloque quanto você quer ganhar pra eu calcular.'
-            : 'Preciso de pelo menos 1 hora faturável pra fazer a conta.',
-      );
-      (renda ? _rendaFocus : _horasFocus).requestFocus();
+      if (_step == 0) {
+        announce(context, 'Me diz um valor pra eu começar a conta.');
+        _rendaFocus.requestFocus();
+      }
       return;
     }
     FocusScope.of(context).unfocus();
@@ -275,14 +289,25 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   Widget _title(String q) =>
       Text(q, style: Theme.of(context).textTheme.headlineSmall);
 
+  Widget _subtitle(String s) => Padding(
+    padding: const EdgeInsets.only(top: Space.x2),
+    child: Text(
+      s,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
+
   String _stepTitle(int step) => switch (step) {
     0 => 'Quanto você quer ganhar por mês?',
-    1 => 'Quantas horas você realmente fatura por mês?',
-    2 => 'Seus custos pra trabalhar?',
-    3 => 'Como você recebe hoje?',
-    _ => 'Quer provisionar férias e décimo terceiro?',
+    1 => 'Quanto você trabalha por semana?',
+    2 => 'O que você gasta pra trabalhar?',
+    3 => 'E o imposto, como é pra você?',
+    _ => 'Quer guardar um dinheiro pra férias e 13º?',
   };
 
+  // ---------------------------------------------------------------- passo 1
   Widget _stepRenda() {
     final bool erro = _triedContinue && _draft.renda <= 0;
     return Column(
@@ -296,24 +321,23 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               borderRadius: const BorderRadius.all(Radii.md),
             ),
             child: Text(
-              "Comecei com os números do seu trabalho ativo. Ajuste o que for diferente.",
+              'Comecei com os números do seu trabalho ativo. Ajuste o que for diferente.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
           const SizedBox(height: Space.x4),
         ],
-        _title('Quanto você quer GANHAR por mês?'),
+        _title('Quanto você quer ganhar por mês?'),
         const SizedBox(height: Space.x4),
         MoneyField(
           controller: _renda,
           focusNode: _rendaFocus,
           autofocus: true,
-          label: 'Renda no bolso',
+          label: 'Seu salário, no bolso',
           prefix: r'R$ ',
-          helper: 'É o que você quer que sobre pra você, não o faturamento.',
-          errorText: erro
-              ? 'Coloque quanto você quer ganhar pra eu calcular.'
-              : null,
+          helper:
+              'O que você quer que sobre pra você, já livre de imposto e das contas do trabalho. Não é o quanto você cobra do cliente — isso a gente calcula.',
+          errorText: erro ? 'Me diz um valor pra eu começar a conta.' : null,
           onChanged: (String v) => setState(
             () => _draft = _draft.copyWith(renda: _digits(v).toDouble()),
           ),
@@ -322,63 +346,233 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     );
   }
 
+  // ---------------------------------------------------------------- passo 2
   Widget _stepHoras() {
     final ThemeData theme = Theme.of(context);
-    final bool erro = _triedContinue && _draft.horas <= 0;
+    final ColorScheme cs = theme.colorScheme;
+    final int horasMostradas = _draft.horas;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _title('Quantas horas você realmente FATURA por mês?'),
-        const SizedBox(height: Space.x4),
-        MoneyField(
-          controller: _horas,
-          focusNode: _horasFocus,
-          label: 'Horas faturáveis',
-          suffix: 'h/mês',
-          errorText: erro
-              ? 'Preciso de pelo menos 1 hora faturável pra fazer a conta.'
-              : null,
-          onChanged: (String v) =>
-              setState(() => _draft = _draft.copyWith(horas: _digits(v))),
+        _title('Quanto você trabalha por semana?'),
+        _subtitle(
+          'Não precisa saber "horas faturáveis". Me conta sua rotina que eu faço a conta.',
         ),
-        const SizedBox(height: Space.x4),
+        const SizedBox(height: Space.x6),
+        _stepper(
+          label: 'Dias por semana',
+          value: _dias,
+          min: 1,
+          max: 7,
+          suffix: _dias == 1 ? 'dia' : 'dias',
+          onChanged: (int v) {
+            _dias = v;
+            _recalcHorasPorRotina();
+          },
+        ),
+        const SizedBox(height: Space.x5),
+        _stepper(
+          label: 'Horas num dia normal',
+          helper: 'Conta só o tempo sentado pra trabalhar.',
+          value: _horasDia,
+          min: 1,
+          max: 16,
+          suffix: _horasDia == 1 ? 'hora' : 'horas',
+          onChanged: (int v) {
+            _horasDia = v;
+            _recalcHorasPorRotina();
+          },
+        ),
+        const SizedBox(height: Space.x6),
+        // Resultado ao vivo.
         Container(
-          padding: const EdgeInsets.all(Space.x3),
+          width: double.infinity,
+          padding: const EdgeInsets.all(Space.x5),
           decoration: BoxDecoration(
-            color: theme.colorScheme.secondaryContainer,
-            borderRadius: const BorderRadius.all(Radii.md),
+            color: cs.secondaryContainer,
+            borderRadius: const BorderRadius.all(Radii.lg),
           ),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(
-                Icons.schedule,
-                size: 20,
-                color: theme.colorScheme.onSecondaryContainer,
+              Text(
+                'VOCÊ COBRA POR MÊS',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: cs.onSecondaryContainer,
+                  letterSpacing: 0.5,
+                ),
               ),
-              const SizedBox(width: Space.x2),
-              Expanded(
-                child: Text(
-                  'Não são 160h. Tire férias, feriados e o tempo sem cliente (vendas, e-mail, estudo). Quase ninguém fatura mais que ~70%.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
+              const SizedBox(height: Space.x1),
+              MoneyCountUp(
+                horasMostradas,
+                suffix: ' h',
+                duration: Motion.quick,
+                style: AppType.valueMd.copyWith(color: cs.onSecondaryContainer),
+                semanticLabel: 'Aproximadamente $horasMostradas horas por mês',
+              ),
+              const SizedBox(height: Space.x2),
+              Text(
+                _horasManual
+                    ? 'Você digitou esse número. Toque nos + / − acima pra voltar pra sua rotina.'
+                    : 'Já tirei o tempo que não é pago — e-mail, proposta, imprevisto, férias e feriados. Quase ninguém cobra o dia inteiro, todo dia.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSecondaryContainer,
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: Space.x2),
-        TextButton.icon(
-          onPressed: _abrirEstimador,
-          icon: const Icon(Icons.auto_awesome),
-          label: const Text('Não sei, estimar pra mim'),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _digitarHorasNaMao,
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: const Text('Já sei meu número — digitar na mão'),
+          ),
         ),
       ],
     );
   }
 
+  /// Stepper −/+ com valor grande no meio. Alvo ≥48dp nos botões.
+  Widget _stepper({
+    required String label,
+    String? helper,
+    required int value,
+    required int min,
+    required int max,
+    required String suffix,
+    required ValueChanged<int> onChanged,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    Widget btn(IconData icon, bool enabled, VoidCallback onTap) => IconButton.filledTonal(
+      onPressed: enabled
+          ? () {
+              Haptics.select();
+              onTap();
+            }
+          : null,
+      icon: Icon(icon),
+      iconSize: 24,
+      style: IconButton.styleFrom(
+        minimumSize: const Size(52, 52),
+        backgroundColor: cs.surfaceContainerHigh,
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(label, style: theme.textTheme.titleMedium),
+        if (helper != null) ...<Widget>[
+          const SizedBox(height: 2),
+          Text(
+            helper,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+        ],
+        const SizedBox(height: Space.x3),
+        Semantics(
+          label: '$label: $value $suffix',
+          child: ExcludeSemantics(
+            child: Row(
+              children: <Widget>[
+                btn(
+                  Icons.remove,
+                  value > min,
+                  () => onChanged(value - 1),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '$value $suffix',
+                      style: AppType.valueMd.copyWith(color: cs.onSurface),
+                    ),
+                  ),
+                ),
+                btn(
+                  Icons.add,
+                  value < max,
+                  () => onChanged(value + 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _digitarHorasNaMao() async {
+    final TextEditingController controller = TextEditingController(
+      text: _draft.horas.toString(),
+    );
+    final int? horas = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          Space.x6,
+          Space.x2,
+          Space.x6,
+          Space.x6 + MediaQuery.of(sheet).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Suas horas por mês', style: Theme.of(sheet).textTheme.titleLarge),
+            const SizedBox(height: Space.x2),
+            const Text('Se você já calculou isso antes, é só colocar aqui.'),
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: controller,
+              label: 'Horas que você cobra por mês',
+              suffix: 'h/mês',
+              autofocus: true,
+            ),
+            const SizedBox(height: Space.x4),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () =>
+                    Navigator.pop(sheet, _digits(controller.text)),
+                child: const Text('Usar este número'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
+    if (horas == null || horas <= 0 || !mounted) return;
+    setState(() {
+      _horasManual = true;
+      // Número na mão: esquece a rotina (o horas passa a ser a fonte da verdade).
+      _draft = Perfil(
+        id: _draft.id,
+        nome: _draft.nome,
+        renda: _draft.renda,
+        horas: horas,
+        provisao: _draft.provisao,
+        provisaoOn: _draft.provisaoOn,
+        provisaoCustom: _draft.provisaoCustom,
+        diasSemana: null,
+        horasDia: null,
+        regime: _draft.regime,
+        custos: _draft.custos,
+      );
+    });
+  }
+
+  // ---------------------------------------------------------------- passo 3
   Widget _stepCustos() {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
     final List<Custo> custos = _draft.custos;
     final Set<String> jaTem = custos.map((Custo c) => c.id).toSet();
     final List<CostChip> faltam = CostChip.chips
@@ -388,7 +582,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _title('Seus custos pra trabalhar?'),
+        _title('O que você gasta pra trabalhar?'),
+        _subtitle(
+          'Tudo que sai do seu bolso todo mês por causa do trabalho. A gente soma aqui pra nada ficar escondido.',
+        ),
         const SizedBox(height: Space.x4),
         AnimatedSize(
           duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
@@ -402,22 +599,28 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(
                     Icons.check_circle_outline,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: cs.primary,
                   ),
                   title: Text(c.label),
                   subtitle: Text(
                     'Toque pra editar o valor',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
                   onTap: () => _editarCusto(c),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: Space.x2),
                       Text(
                         moneyBRL(c.valor),
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        style: theme.textTheme.labelLarge?.copyWith(
                           fontFeatures: AppType.tnum,
                         ),
                       ),
@@ -441,59 +644,65 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               const SizedBox(height: Space.x2),
               Row(
                 children: <Widget>[
-                  Text(
-                    'Total: ',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Total: ', style: theme.textTheme.titleMedium),
                   MoneyCountUp(
                     _draft.custosTotal,
                     duration: Motion.quick,
-                    style:
-                        Theme.of(context).textTheme.titleMedium ??
-                        const TextStyle(),
+                    style: theme.textTheme.titleMedium ?? const TextStyle(),
                     semanticLabel:
                         'Total de custos: ${moneyBRL(_draft.custosTotal)} por mês',
                   ),
-                  Text('/mês', style: Theme.of(context).textTheme.titleMedium),
+                  Text('/mês', style: theme.textTheme.titleMedium),
                 ],
               ),
-              const SizedBox(height: Space.x4),
+              const SizedBox(height: Space.x5),
+              if (faltam.isNotEmpty) ...<Widget>[
+                Text('Você também paga?', style: theme.textTheme.bodyMedium),
+                const SizedBox(height: Space.x2),
+                Wrap(
+                  spacing: Space.x2,
+                  runSpacing: Space.x2,
+                  children: <Widget>[
+                    for (final CostChip chip in faltam)
+                      ActionChip(
+                        avatar: Icon(_iconFor(chip.icon), size: 18),
+                        label: Text(chip.label),
+                        onPressed: () {
+                          Haptics.select();
+                          setState(() {
+                            _draft = _draft.copyWith(
+                              custos: <Custo>[
+                                ...custos,
+                                Custo(
+                                  id: chip.id,
+                                  label: chip.label,
+                                  valor: chip.sugg,
+                                ),
+                              ],
+                            );
+                          });
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: Space.x5),
+              ],
+              // "Adicionar um custo meu": AÇÃO de criar do zero — hierarquia
+              // separada dos chips de sugestão (não some no meio deles).
               Text(
-                'Não esqueça:',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'Algum gasto que não está na lista?',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: Space.x2),
-              Wrap(
-                spacing: Space.x2,
-                runSpacing: Space.x2,
-                children: <Widget>[
-                  for (final CostChip chip in faltam)
-                    ActionChip(
-                      avatar: Icon(_iconFor(chip.icon), size: 18),
-                      label: Text(chip.label),
-                      onPressed: () {
-                        Haptics.select();
-                        setState(() {
-                          _draft = _draft.copyWith(
-                            custos: <Custo>[
-                              ...custos,
-                              Custo(
-                                id: chip.id,
-                                label: chip.label,
-                                valor: chip.sugg,
-                              ),
-                            ],
-                          );
-                        });
-                      },
-                    ),
-                  // O SEU custo, com o SEU valor: ninguém disse que só existem os pré-setados.
-                  ActionChip(
-                    avatar: const Icon(Icons.add, size: 18),
-                    label: const Text('Outro custo'),
-                    onPressed: () => _editarCusto(null),
-                  ),
-                ],
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _editarCusto(null),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Adicionar um custo meu'),
+                ),
               ),
             ],
           ),
@@ -502,8 +711,6 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     );
   }
 
-  /// Sheet de custo: adiciona um custo PRÓPRIO (nome + valor) ou edita um
-  /// existente. Ninguém fica preso aos pré-setados.
   Future<void> _editarCusto(Custo? existente) async {
     final TextEditingController nomeC = TextEditingController(
       text: existente?.label ?? '',
@@ -603,8 +810,6 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         );
       },
     );
-    // Dispose atrasado: o sheet ainda anima a saída (viewInsets rebuilda os
-    // TextFields); descartar agora crasharia.
     Future<void>.delayed(const Duration(milliseconds: 600), () {
       nomeC.dispose();
       valorC.dispose();
@@ -623,11 +828,15 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     });
   }
 
+  // ---------------------------------------------------------------- passo 4
   Widget _stepRegime() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _title('Como você recebe hoje?'),
+        _title('E o imposto, como é pra você?'),
+        _subtitle(
+          'Se você não faz ideia, tem uma opção pra isso logo abaixo. Sem estresse.',
+        ),
         const SizedBox(height: Space.x4),
         for (final Regime r in Regime.all.values) _regimeOption(r),
       ],
@@ -704,15 +913,14 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     );
   }
 
+  // ---------------------------------------------------------------- passo 5
   Widget _stepProvisao() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _title('Quer provisionar férias e 13º?'),
-        const SizedBox(height: Space.x2),
-        Text(
-          'Autônomo não ganha de graça.',
-          style: Theme.of(context).textTheme.bodyMedium,
+        _title('Quer guardar um dinheiro pra férias e 13º?'),
+        _subtitle(
+          'Quem trabalha por conta não recebe férias nem 13º de ninguém. Dá pra separar um pouco todo mês e ter os seus.',
         ),
         const SizedBox(height: Space.x4),
         Card(
@@ -723,7 +931,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               Haptics.select();
               setState(() => _draft = _draft.copyWith(provisaoOn: v));
             },
-            title: Text(_draft.provisaoOn ? 'Sim, provisionar' : 'Agora não'),
+            title: Text(_draft.provisaoOn ? 'Sim, quero guardar' : 'Agora não'),
           ),
         ),
         if (_draft.provisaoOn) ...<Widget>[
@@ -739,12 +947,14 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 semanticLabel:
-                    '${moneyBRL(_draft.provisaoEfetiva)} por mês entram na conta',
+                    '${moneyBRL(_draft.provisaoEfetiva)} por mês a mais no seu preço',
               ),
-              Text(
-                '/mês entram na conta',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Flexible(
+                child: Text(
+                  ' /mês a mais no seu preço',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -777,14 +987,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'Sua provisão mensal',
-              style: Theme.of(sheet).textTheme.titleLarge,
-            ),
+            Text('Quanto guardar por mês', style: Theme.of(sheet).textTheme.titleLarge),
             const SizedBox(height: Space.x2),
             const Text(
-              '1 mês da sua renda por ano, pra férias e 13º. Ajuste se quiser.',
+              'Uma conta boa: 1 mês do seu salário por ano, dividido em 12. Mas quem manda é você.',
             ),
             const SizedBox(height: Space.x4),
             MoneyField(
@@ -839,110 +1047,6 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         return Icons.directions_car;
       default:
         return Icons.attach_money;
-    }
-  }
-
-  Future<void> _abrirEstimador() async {
-    int ferias = 4;
-    int pct = 60;
-    int feriados = 12;
-
-    final int? horas = await showModalBottomSheet<int>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext c) {
-        return StatefulBuilder(
-          builder: (BuildContext c, void Function(void Function()) setSheet) {
-            final int estimado = estimarHorasFaturaveis(
-              ferias: ferias,
-              pct: pct,
-              feriados: feriados,
-            );
-            final TextTheme t = Theme.of(c).textTheme;
-            return Padding(
-              padding: EdgeInsets.only(
-                left: Space.x6,
-                right: Space.x6,
-                top: Space.x2,
-                bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('Vamos achar suas horas reais', style: t.titleLarge),
-                  const SizedBox(height: Space.x4),
-                  Text(
-                    'Semanas de férias por ano: $ferias',
-                    style: t.bodyMedium,
-                  ),
-                  Slider(
-                    value: ferias.toDouble(),
-                    max: 8,
-                    divisions: 8,
-                    label: '$ferias',
-                    semanticFormatterCallback: (double v) =>
-                        '${v.round()} semanas de férias por ano',
-                    onChanged: (double v) => setSheet(() => ferias = v.round()),
-                  ),
-                  Text(
-                    'Do seu tempo, quanto é trabalho pago: $pct%',
-                    style: t.bodyMedium,
-                  ),
-                  Slider(
-                    value: pct.toDouble(),
-                    min: 30,
-                    max: 90,
-                    divisions: 12,
-                    label: '$pct%',
-                    semanticFormatterCallback: (double v) =>
-                        '${v.round()} por cento de trabalho pago',
-                    onChanged: (double v) => setSheet(() => pct = v.round()),
-                  ),
-                  Text('Feriados por ano: $feriados', style: t.bodyMedium),
-                  Slider(
-                    value: feriados.toDouble(),
-                    max: 20,
-                    divisions: 20,
-                    label: '$feriados',
-                    semanticFormatterCallback: (double v) =>
-                        '${v.round()} feriados por ano',
-                    onChanged: (double v) =>
-                        setSheet(() => feriados = v.round()),
-                  ),
-                  const SizedBox(height: Space.x2),
-                  MoneyCountUp(
-                    estimado,
-                    suffix: ' h/mês',
-                    duration: Motion.quick,
-                    style: t.headlineSmall ?? const TextStyle(),
-                    semanticLabel: 'Aproximadamente $estimado horas por mês',
-                  ),
-                  const SizedBox(height: Space.x4),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () {
-                        Haptics.select();
-                        Navigator.pop(c, estimado);
-                      },
-                      child: Text('Usar $estimado h/mês'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (horas != null && mounted) {
-      setState(() {
-        _draft = _draft.copyWith(horas: horas);
-        _horas.text = horas.toString();
-      });
     }
   }
 }

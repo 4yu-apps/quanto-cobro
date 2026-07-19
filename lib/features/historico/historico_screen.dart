@@ -129,6 +129,17 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                           ),
                         ),
                       ],
+                      // Com >1 trabalho, deixa claro que o imposto é por-PESSOA,
+                      // não por-trabalho (1 CNPJ, 1 DAS/mês).
+                      if (perfis.length > 1) ...<Widget>[
+                        const SizedBox(height: Space.x2),
+                        Text(
+                          'O imposto do mês é um só, pra você — vale pros seus trabalhos todos. Não é por trabalho.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

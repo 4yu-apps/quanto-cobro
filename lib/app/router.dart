@@ -16,6 +16,7 @@ import '../features/pro/pro_screen.dart';
 import '../features/reserva/reserva_screen.dart';
 import '../features/resultado/resultado_screen.dart';
 import '../features/simulador/simulador_screen.dart';
+import 'nav_shell.dart';
 import 'routes.dart';
 
 /// Dois sabores de transição (MOTION-SPEC §2):
@@ -88,14 +89,15 @@ CustomTransitionPage<void> _flowPage(GoRouterState state, Widget child) {
   );
 }
 
-/// Navegação hub-and-spoke centrada no Painel (Blueprint §4.2). A tela inicial
-/// depende do primeiro uso: onboarding uma vez, depois o Painel.
+/// Navegação v0.5: uma casca de 3 abas (Início · Histórico · Trabalhos) via
+/// `StatefulShellRoute` — o app ganha um mapa visível. Fluxos e ferramentas
+/// (calc, resultado, reserva, simulador, detalhe, config, pro, legal) e o
+/// onboarding ficam TOP-LEVEL, acima da casca (cobrem a barra). A tela inicial
+/// depende do primeiro uso: onboarding uma vez, depois o Painel (aba Início).
 GoRouter createAppRouter({String initialLocation = Routes.painel}) {
   return GoRouter(
     initialLocation: initialLocation,
     routes: <RouteBase>[
-      // Raízes: default (a chegada do Painel já tem o stagger próprio).
-      GoRoute(path: Routes.painel, builder: (_, _) => const PainelScreen()),
       GoRoute(
         path: Routes.onboarding,
         builder: (_, _) => const OnboardingScreen(),
@@ -140,10 +142,6 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
             _toolPage(s, const SimuladorScreen()),
       ),
       GoRoute(
-        path: Routes.perfis,
-        pageBuilder: (_, GoRouterState s) => _toolPage(s, const PerfisScreen()),
-      ),
-      GoRoute(
         path: Routes.config,
         pageBuilder: (_, GoRouterState s) => _toolPage(s, const ConfigScreen()),
       ),
@@ -151,10 +149,36 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
         path: Routes.legal,
         pageBuilder: (_, GoRouterState s) => _toolPage(s, const LegalScreen()),
       ),
-      GoRoute(
-        path: Routes.historico,
-        pageBuilder: (_, GoRouterState s) =>
-            _toolPage(s, const HistoricoScreen()),
+      // Casca de 3 abas (IndexedStack preserva o estado de cada uma).
+      StatefulShellRoute.indexedStack(
+        builder:
+            (_, _, StatefulNavigationShell shell) => NavShell(navigationShell: shell),
+        branches: <StatefulShellBranch>[
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: Routes.painel,
+                builder: (_, _) => const PainelScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: Routes.historico,
+                builder: (_, _) => const HistoricoScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: Routes.perfis,
+                builder: (_, _) => const PerfisScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );

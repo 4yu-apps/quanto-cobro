@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/routes.dart';
 import '../../core/config/app_config.dart';
@@ -12,6 +17,8 @@ import '../../core/providers.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+
+enum _ImportChoice { arquivo, colar }
 
 /// Configurações: tema, backup (sem nuvem), apagar dados, telemetria opt-in,
 /// Pro, legal e Sobre. Seções em cards (gramática premium), rótulos na mesma
@@ -59,40 +66,21 @@ class ConfigScreen extends ConsumerWidget {
           ),
           const SizedBox(height: Space.x6),
 
-          _secao(context, 'FERRAMENTAS'),
+          // Trabalhos e Histórico agora são ABAS (nav bar) — não duplicar aqui.
+          _secao(context, 'PRO'),
           Card(
             color: theme.colorScheme.surfaceContainer,
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  leading: Icon(
-                    isPro
-                        ? Icons.workspace_premium
-                        : Icons.workspace_premium_outlined,
-                  ),
-                  title: Text(isPro ? 'Pro ativo' : 'Conhecer o Pro'),
-                  trailing: isPro
-                      ? const Icon(Icons.check)
-                      : const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.pro),
-                ),
-                const Divider(height: 1, indent: Space.x4),
-                ListTile(
-                  leading: const Icon(Icons.switch_account_outlined),
-                  title: const Text('Meus trabalhos'),
-                  subtitle: const Text('Um preço pra cada tipo de trabalho'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.perfis),
-                ),
-                const Divider(height: 1, indent: Space.x4),
-                ListTile(
-                  leading: const Icon(Icons.history),
-                  title: const Text('Histórico de reservas'),
-                  subtitle: const Text('Quanto você já guardou pro Leão'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.historico),
-                ),
-              ],
+            child: ListTile(
+              leading: Icon(
+                isPro
+                    ? Icons.workspace_premium
+                    : Icons.workspace_premium_outlined,
+              ),
+              title: Text(isPro ? 'Pro ativo' : 'Conhecer o Pro'),
+              trailing: isPro
+                  ? const Icon(Icons.check)
+                  : const Icon(Icons.chevron_right),
+              onTap: () => context.push(Routes.pro),
             ),
           ),
           const SizedBox(height: Space.x6),
@@ -104,16 +92,19 @@ class ConfigScreen extends ConsumerWidget {
               children: <Widget>[
                 ListTile(
                   leading: const Icon(Icons.ios_share),
-                  title: const Text('Exportar dados (backup)'),
+                  title: const Text('Salvar um backup'),
                   subtitle: const Text(
-                    'Seu cálculo e seu histórico, sem nuvem, sem conta.',
+                    'Gera um arquivo com seus cálculos e seu histórico pra você guardar onde quiser.',
                   ),
                   onTap: () => _exportar(context, ref),
                 ),
                 const Divider(height: 1, indent: Space.x4),
                 ListTile(
                   leading: const Icon(Icons.download),
-                  title: const Text('Restaurar backup'),
+                  title: const Text('Restaurar de um arquivo'),
+                  subtitle: const Text(
+                    'Escolha o arquivo de backup que você salvou antes.',
+                  ),
                   onTap: () => _importar(context, ref),
                 ),
                 const Divider(height: 1, indent: Space.x4),
@@ -181,7 +172,7 @@ class ConfigScreen extends ConsumerWidget {
           ),
           const SizedBox(height: Space.x1),
           Text(
-            '${AppConfig.appName} · versão 0.4.2 · ${AppConfig.contactEmail}',
+            '${AppConfig.appName} · versão 0.5.0 · ${AppConfig.contactEmail}',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -204,7 +195,9 @@ class ConfigScreen extends ConsumerWidget {
     );
   }
 
-  void _exportar(BuildContext context, WidgetRef ref) {
+  /// Exporta = grava um arquivo .json e abre o share sheet (Drive, Arquivos,
+  /// WhatsApp pra si mesmo). Fim do JSON cru no clipboard.
+  Future<void> _exportar(BuildContext context, WidgetRef ref) async {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final String? json;
     try {
@@ -223,68 +216,131 @@ class ConfigScreen extends ConsumerWidget {
       messenger
         ..clearSnackBars()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('Ainda não há um cálculo pra exportar.'),
-          ),
+          const SnackBar(content: Text('Ainda não há um cálculo pra exportar.')),
         );
       return;
     }
-    final String data = json;
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext c) => AlertDialog(
-        title: const Text('Backup dos seus dados'),
-        content: Semantics(
-          label:
-              'Backup gerado com seus cálculos e histórico. Use o botão Copiar e guarde o texto num lugar seguro.',
-          child: ExcludeSemantics(
-            child: SingleChildScrollView(child: SelectableText(data)),
-          ),
+    try {
+      final DateTime now = DateTime.now();
+      final String dia =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final Directory dir = await getTemporaryDirectory();
+      final File file = File('${dir.path}/quanto-cobro-backup-$dia.json');
+      await file.writeAsString(json);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(file.path, mimeType: 'application/json')],
+          subject: 'Backup Quanto Cobro',
+          text: 'Backup do Quanto Cobro? — guarde num lugar seguro.',
         ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: data));
-              Navigator.pop(c);
-              messenger
-                ..clearSnackBars()
-                ..showSnackBar(const SnackBar(content: Text('Backup copiado')));
-            },
-            child: const Text('Copiar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(c),
-            child: const Text('Fechar'),
-          ),
-        ],
-      ),
-    );
+      );
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Backup gerado. Guarde num lugar seguro.')),
+        );
+    } catch (_) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Não consegui gerar o arquivo de backup.')),
+        );
+    }
   }
 
+  /// Importa. Caminho principal = escolher o arquivo .json; fallback = colar
+  /// texto (troca entre aparelhos por WhatsApp/e-mail).
   Future<void> _importar(BuildContext context, WidgetRef ref) async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final bool temCalculoAtual = ref.read(profileProvider) is ProfileReady;
+    final _ImportChoice? choice = await showModalBottomSheet<_ImportChoice>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Space.x6, 0, Space.x6, Space.x2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Restaurar backup', style: Theme.of(sheet).textTheme.titleLarge),
+                  if (temCalculoAtual) ...<Widget>[
+                    const SizedBox(height: Space.x2),
+                    Text(
+                      'Isso substitui seu cálculo atual.',
+                      style: Theme.of(sheet).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(sheet).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder_open),
+              title: const Text('Escolher arquivo'),
+              subtitle: const Text('O arquivo .json que você salvou antes'),
+              onTap: () => Navigator.pop(sheet, _ImportChoice.arquivo),
+            ),
+            ListTile(
+              leading: const Icon(Icons.content_paste),
+              title: const Text('Prefiro colar o texto'),
+              onTap: () => Navigator.pop(sheet, _ImportChoice.colar),
+            ),
+            const SizedBox(height: Space.x2),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !context.mounted) return;
+    if (choice == _ImportChoice.arquivo) {
+      await _importarArquivo(context, ref);
+    } else {
+      await _importarColando(context, ref);
+    }
+  }
+
+  Future<void> _importarArquivo(BuildContext context, WidgetRef ref) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final FilePickerResult? picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: <String>['json'],
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty) return;
+    final PlatformFile pf = picked.files.first;
+    String? texto;
+    if (pf.bytes != null) {
+      texto = utf8.decode(pf.bytes!, allowMalformed: true);
+    } else if (pf.path != null) {
+      texto = await File(pf.path!).readAsString();
+    }
+    if (texto == null) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(content: Text('Não consegui abrir esse arquivo.')),
+        );
+      return;
+    }
+    await _aplicarImport(messenger, ref, texto, arquivo: true);
+  }
+
+  Future<void> _importarColando(BuildContext context, WidgetRef ref) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final TextEditingController controller = TextEditingController();
     final bool? ok = await showDialog<bool>(
       context: context,
       builder: (BuildContext c) => AlertDialog(
-        title: const Text('Restaurar backup'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            if (temCalculoAtual) ...<Widget>[
-              const Text('Isso substitui seu cálculo atual.'),
-              const SizedBox(height: Space.x3),
-            ],
-            TextField(
-              controller: controller,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                hintText: 'Cole aqui o texto do seu backup',
-              ),
-            ),
-          ],
+        title: const Text('Colar backup em texto'),
+        content: TextField(
+          controller: controller,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            hintText: 'Cole aqui o texto do seu backup',
+          ),
         ),
         actions: <Widget>[
           TextButton(
@@ -301,6 +357,15 @@ class ConfigScreen extends ConsumerWidget {
     final String texto = controller.text;
     Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
     if (ok != true) return;
+    await _aplicarImport(messenger, ref, texto, arquivo: false);
+  }
+
+  Future<void> _aplicarImport(
+    ScaffoldMessengerState messenger,
+    WidgetRef ref,
+    String texto, {
+    required bool arquivo,
+  }) async {
     try {
       await ref.read(backupServiceProvider).importJson(texto);
       ref.invalidate(profilesProvider);
@@ -316,9 +381,11 @@ class ConfigScreen extends ConsumerWidget {
       messenger
         ..clearSnackBars()
         ..showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Não consegui ler esse backup. Confere se o texto foi colado inteiro.',
+              arquivo
+                  ? 'Não consegui ler esse arquivo. Confere se é o backup certo (.json).'
+                  : 'Não consegui ler esse backup. Confere se o texto foi colado inteiro.',
             ),
           ),
         );

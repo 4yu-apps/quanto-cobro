@@ -205,7 +205,9 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       VitrineCard(
-                        highlight: res.isMei && dasSeparado,
+                        // O cofre "tranca" (borda fio-de-ouro) em QUALQUER save,
+                        // não só no MEI — a batida emocional de "guardei do Leão".
+                        highlight: _saved || (res.isMei && dasSeparado),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
@@ -240,7 +242,7 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                   ? dasSeparado
                                         ? 'DAS de ${_mesNome(now)} separado. O resto do mês é seu.'
                                         : 'Do Leão, este mês, só o DAS: ${moneyBRLCents(res.dasMensal!)}.'
-                                  : '~${res.pct}% — sua alíquota efetiva, não a cheia.',
+                                  : '~${res.pct}% — já é a sua faixa real de imposto, não a cheia.',
                               style: theme.textTheme.bodyLarge,
                             ),
                             const SizedBox(height: Space.x4),

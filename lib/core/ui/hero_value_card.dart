@@ -75,7 +75,7 @@ class HeroValueCard extends StatelessWidget {
                               ),
                             ),
                             Icon(
-                              Icons.unfold_more,
+                              Icons.keyboard_arrow_down,
                               size: 16,
                               color: cs.onSecondaryContainer,
                             ),

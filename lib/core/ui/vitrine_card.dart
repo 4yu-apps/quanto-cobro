@@ -110,10 +110,12 @@ class _CofrePainter extends CustomPainter {
     // Base da vitrine.
     canvas.drawRect(rect, Paint()..color = base);
 
-    // Aurora do Cofre: 2 glows radiais estáticos, nunca acima de 8% de alpha.
+    // Aurora do Cofre: 2 glows radiais estáticos. Com o fundo agora NEUTRO, o
+    // glow esmeralda aparece mais — baixei pela metade (0.07→0.035) pra não
+    // voltar a "lavar" o cartão de verde; o ouro (a joia do canto) fica.
     final double boost = climax ? 1.4 : 1.0;
-    final double aEsm = (dark ? 0.07 : 0.04) * boost;
-    final double aOuro = (dark ? 0.05 : 0.03) * boost;
+    final double aEsm = (dark ? 0.035 : 0.04) * boost;
+    final double aOuro = (dark ? 0.045 : 0.03) * boost;
     final double raio = size.width * 1.2;
 
     canvas.drawRect(
@@ -153,7 +155,7 @@ class _CofrePainter extends CustomPainter {
     if (dark) {
       final math.Random rnd = math.Random(42);
       final Paint grain = Paint()
-        ..color = Colors.white.withValues(alpha: 0.025)
+        ..color = Colors.white.withValues(alpha: 0.020)
         ..strokeWidth = 1;
       final int n = (size.width * size.height / 220).round();
       final List<Offset> pts = List<Offset>.generate(

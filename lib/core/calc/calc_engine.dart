@@ -206,18 +206,19 @@ class SimuladorResult {
   final bool isMei;
 }
 
-/// Estima horas faturáveis/mês a partir de 3 perguntas simples (Blueprint §7.1):
-/// semanas de férias, % do tempo que é trabalho pago, feriados. Resolve o erro
-/// nº1 (dividir por 160h) sem o usuário precisar saber a fórmula.
-int estimarHorasFaturaveis({
-  required int ferias,
-  required int pct,
-  required int feriados,
+/// Horas cobráveis/mês a partir da ROTINA real (Passo 2, v0.5). Um leigo não
+/// sabe "horas faturáveis" — mas sabe quantos dias por semana trabalha e quantas
+/// horas num dia normal. O app deduz, aplicando o desconto honesto do tempo
+/// não-pago (e-mail, proposta, imprevisto, férias, feriados) num fator só, que a
+/// pessoa NUNCA vê. Regra de segurança: na dúvida, MENOS horas (o valor-hora
+/// sobe; o app existe pra provar que a pessoa cobra pouco, nunca pra baratear).
+int horasFaturaveisPorRotina({
+  required int diasSemana,
+  required int horasDia,
+  double fatorPago = 0.65,
 }) {
-  final int semanas = (52 - ferias).clamp(1, 52);
-  final int rawAno = semanas * 40 - feriados * 8;
-  final double faturavel = rawAno * pct / 100;
-  return (faturavel / 12).round().clamp(1, 400);
+  final double brutasMes = diasSemana * horasDia * 52 / 12;
+  return (brutasMes * fatorPago).round().clamp(1, 400);
 }
 
 SimuladorResult computeSimulador(

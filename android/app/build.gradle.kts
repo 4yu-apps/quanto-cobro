@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.fouryuapps.quantocobro"
-    compileSdk = flutter.compileSdkVersion
+    // Plugins recentes (file_picker etc.) exigem compileSdk 36+.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

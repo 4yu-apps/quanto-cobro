@@ -45,16 +45,18 @@ class DivisaoColors extends ThemeExtension<DivisaoColors> {
     lucro: Color(0xFF57E5A9),
     reserva: Color(0xFFEFCE6F),
     custo: Color(0xFF96A298),
-    track: Color(0xFF25312B),
+    // Superfícies re-neutralizadas p/ acompanhar o charcoal "Cofre de Aço"
+    // (os acentos lucro/reserva/custo/alerta permanecem).
+    track: Color(0xFF222524),
     alerta: Color(0xFFF2A26A),
     alertaContainer: Color(0xFF542C13),
     onAlertaContainer: Color(0xFFFEE2CC),
-    sealBg: Color(0xFF202E27),
-    sealFg: Color(0xFFA2B3A7),
+    sealBg: Color(0xFF272B29),
+    sealFg: Color(0xFFACB4B1),
     staleBg: Color(0xFF213D56),
     staleFg: Color(0xFFCAE2F3),
-    adSurface: Color(0xFF121C17),
-    adLabel: Color(0xFFA2B3A7),
+    adSurface: Color(0xFF171A19),
+    adLabel: Color(0xFFACB4B1),
     brand4yu: Color(0xFFAA95E8),
   );
 

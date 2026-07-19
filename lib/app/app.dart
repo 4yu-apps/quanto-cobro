@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/config/app_config.dart';
 import '../core/providers.dart';
 import '../core/theme/app_theme.dart';
+import '../features/splash/splash_overlay.dart';
 import 'router.dart';
 import 'routes.dart';
 
@@ -22,6 +23,7 @@ class QuantoCobroApp extends ConsumerStatefulWidget {
 
 class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
   late final GoRouter _router;
+  bool _splashDone = false;
 
   @override
   void initState() {
@@ -56,6 +58,14 @@ class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
       supportedLocales: const <Locale>[Locale('pt', 'BR')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: _router,
+      // Brand reveal por cima do app já pronto (não é loading). Sai sozinho.
+      builder: (BuildContext context, Widget? child) => Stack(
+        children: <Widget>[
+          child ?? const SizedBox.shrink(),
+          if (!_splashDone)
+            SplashOverlay(onDone: () => setState(() => _splashDone = true)),
+        ],
+      ),
     );
   }
 }

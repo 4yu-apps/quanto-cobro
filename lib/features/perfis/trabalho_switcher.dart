@@ -35,9 +35,23 @@ Future<void> showTrabalhoSwitcher(BuildContext context, WidgetRef ref) async {
                 Space.x6,
                 Space.x2,
               ),
-              child: Text(
-                'Qual trabalho você quer ver?',
-                style: theme.textTheme.titleLarge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Qual trabalho você quer ver?',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  if (data.perfis.length == 1) ...<Widget>[
+                    const SizedBox(height: Space.x2),
+                    Text(
+                      'Você tem 1 trabalho aqui. Dá pra criar outros — freela, cliente fixo, um bico — e ter um preço certo pra cada um.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             for (final Perfil p in data.perfis)

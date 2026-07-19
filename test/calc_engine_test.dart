@@ -51,7 +51,7 @@ void main() {
       expect(r.base, closeTo(6266.67, 0.1));
       expect(r.imposto, closeTo(kDasMensalMei, 0.01));
       expect(r.faturamento, closeTo(6352.72, 0.1));
-      expect(r.valorHora, 77); // 6352,72 / 82h
+      expect(r.valorHora, 75); // 6352,72 / 85h
       expect(r.reservaPct, lessThanOrEqualTo(2));
       expect(r.dasMensal, kDasMensalMei);
       expect(r.acimaTetoMei, isFalse);
@@ -163,18 +163,20 @@ void main() {
     );
   });
 
-  group('estimarHorasFaturaveis', () {
-    test('valores típicos caem numa faixa realista (nunca 160h)', () {
-      final int h = estimarHorasFaturaveis(ferias: 4, pct: 60, feriados: 12);
-      expect(h, greaterThan(60));
-      expect(h, lessThan(140));
+  group('horasFaturaveisPorRotina', () {
+    test('rotina padrão 5×6 cai na faixa realista (~85h, nunca 160h)', () {
+      final int h = horasFaturaveisPorRotina(diasSemana: 5, horasDia: 6);
+      expect(h, 85); // 5*6*52/12 = 130 → ×0,65 = 84,5 → 85
     });
 
-    test('nunca retorna zero ou negativo (evita divisão por zero adiante)', () {
-      expect(
-        estimarHorasFaturaveis(ferias: 52, pct: 30, feriados: 20),
-        greaterThan(0),
-      );
+    test('mais dias/horas = mais horas cobráveis (monotônico)', () {
+      final int a = horasFaturaveisPorRotina(diasSemana: 3, horasDia: 4);
+      final int b = horasFaturaveisPorRotina(diasSemana: 6, horasDia: 8);
+      expect(b, greaterThan(a));
+    });
+
+    test('nunca retorna zero (evita divisão por zero adiante)', () {
+      expect(horasFaturaveisPorRotina(diasSemana: 1, horasDia: 1), greaterThan(0));
     });
   });
 }

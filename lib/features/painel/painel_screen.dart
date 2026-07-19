@@ -136,7 +136,7 @@ class _PainelBody extends ConsumerWidget {
         !leaoPago;
     final String impostoTexto = perfil.regime == RegimeId.mei
         ? 'Seu DAS: ${moneyBRLCents(r.dasMensal!)}/mês, já dentro da conta. De cada pagamento, o resto é seu.'
-        : 'Reserve ~${r.reservaPct}% de cada pagamento (alíquota efetiva, regime: $regimeTag).';
+        : 'Separe ~${r.reservaPct}% de cada pagamento (sua faixa real, regime: $regimeTag).';
 
     return ListView(
       padding: const EdgeInsets.all(Space.x4),
@@ -287,7 +287,8 @@ class _PainelBody extends ConsumerWidget {
                       label:
                           'Você já guardou ${moneyBRL(guardadoMes)} este mês. Ver histórico.',
                       child: InkWell(
-                        onTap: () => context.push(Routes.historico),
+                        // Troca de aba (não empilha 2ª cópia do Histórico).
+                        onTap: () => context.go(Routes.historico),
                         borderRadius: const BorderRadius.all(Radii.sm),
                         child: Container(
                           constraints: const BoxConstraints(minHeight: 48),

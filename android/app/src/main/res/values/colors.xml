@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cor de janela do cold-start: casa com a borda do splash Flutter
+         (Cofre de Aço #0A0C0B) pra o frame do SO nascer sem flash. -->
+    <color name="splash_bg">#FF0A0C0B</color>
+</resources>
