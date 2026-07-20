@@ -33,9 +33,28 @@ promessa central. É uma correção de foco fundamentada em dados, não um recom
 
 Da [fase 2](../research/ANALISE-QUANTITATIVA-REVIEWS.md), 16.961 reviews reais:
 
+> ⚠️ **CORREÇÃO (19/07/2026) — leia antes de usar a primeira linha da tabela.**
+> O 4,42★ da categoria "precificação" **não é do nosso público**. Auditando o
+> `inventory.csv`, os 11 apps desse balde são de **precificação de PRODUTO**:
+> PeqArt (artesãos), Receitas – Quanto Cobrar (confeitaria), Doce Lucro, Craft
+> Pricing Calculator, Precificação Impressão 3D. O único de hora de serviço é
+> o *Time rate calculator*, com **5 reviews**.
+>
+> Precificar um bolo (custo de material + margem) é um trabalho diferente de
+> precificar a própria hora (renda desejada + custo de vida + imposto). O
+> [02](02-PERSONAS-E-JOBS.md) inclusive declara o artesão como anti-persona.
+>
+> **O que sobrevive:** o formato calculadora funciona, e ninguém consolidou o
+> nicho. **O que NÃO se pode mais afirmar:** que "o nosso povo ama" — não há
+> amostra do nosso povo. O balde `freelance` do inventário é quase todo
+> marketplace (Fiverr, 99Freelas) e crédito (Zippi), não ferramenta de preço.
+>
+> Consequência prática registrada em [08](08-PLANO-OFICIAL.md): o comparável de
+> preço muda, e a validação com usuário real vira mais urgente que mais análise.
+
 | Sinal | Número | O que decide |
 |---|---|---|
-| Calculadora de preço é **amada** | 4,42★ · 11% neg | a experiência funciona — o povo gosta do formato |
+| Calculadora de preço é **amada** ⚠️ | 4,42★ · 11% neg | ⚠️ ver correção acima — amostra é de precificação de produto, não de hora |
 | ...mas o **nicho é oco** | ~2,5k reviews totais | ninguém consolidou; e calc pura **não retém** (fase 1: melhor app gringo, 100+ instalações) |
 | Imposto/MEI tem **volume e dor** | 13,8k reviews · 3,33★ · 40% neg | mercado grande, disputado e **odiado** — brecha aberta |
 | A **ponte não existe** | 0 concorrentes | ninguém liga preço → reserva → lucro. É a nossa espinha |

@@ -23,6 +23,22 @@ saber, a cada pagamento, o que é dele.
 | 03 | [Arquitetura de Informação](03-ARQUITETURA-DE-INFORMACAO.md) | O "sitemap" do app: telas, objetivo, conteúdo e cenários de cada uma |
 | 04 | [Diferenciais & regras da casa](04-DIFERENCIAIS-E-REGRAS.md) | Por que escolher o nosso + o que nunca fazer (anti-★1) |
 | 05 | [Escopo & roadmap](05-ESCOPO-E-ROADMAP.md) | MVP/Pro/futuro + modelo de monetização |
+| 06 | [Fundação técnica](06-FUNDACAO-TECNICA.md) | Stack, dados locais, decisões de engenharia |
+| 07 | [Proposta & gestão](07-PROPOSTA-E-GESTAO-DE-PROJETOS.md) | Proposta em PDF + a gestão ancorada na reserva |
+| **08** | **[PLANO OFICIAL](08-PLANO-OFICIAL.md)** | **⭐ O documento vigente: as fases, o inventário de defeitos e as decisões abertas** |
+
+### Revisões que corrigem os documentos acima
+
+| Pasta | O que tem |
+|---|---|
+| [`ux-revisao/`](ux-revisao/) | Três especialistas de UX (modelo/IA · fluxo · motion) sobre o app construído |
+| [`produto/`](produto/) | Dois donos de produto relendo os 16.961 reviews de forma independente |
+
+> ⚠️ **Antes de citar número dos docs 00 e 05:** os dois carregam correções de
+> auditoria (19/07/2026). O 4,42★ da categoria "precificação" vem de apps de
+> precificação de **produto** (confeitaria/artesanato), não da nossa persona; e
+> a âncora de preço usada é de um SaaS de gestão, categoria que decidimos não
+> ser. Os avisos estão dentro dos próprios documentos.
 
 ## Como este pacote se conecta ao resto
 

@@ -32,6 +32,30 @@
 | **Precificação** (nicho direto) | 3.118 | **4,42★** | **11%** | **85%** |
 | **Imposto / MEI** | 13.843 | **3,33★** | **40%** | 56% |
 
+> ⚠️ **AUDITORIA (19/07/2026) — duas ressalvas que mudam como esta tabela se usa.**
+>
+> **1. O 4,42★ não é do nosso público.** A ressalva já estava escrita logo abaixo
+> ("quase todos de precificação de produto/confeitaria") — mas ela **se perdeu**
+> ao virar conclusão no [00 §2](../planning/00-PROPOSTA-DE-PRODUTO.md), que passou
+> a afirmar "o povo gosta do formato". Auditando o `inventory.csv`: dos 11 apps do
+> balde, o único de hora de serviço é o *Time rate calculator*, com **5 reviews**.
+> O balde `freelance` (17 apps) é quase todo marketplace e crédito, não ferramenta
+> de preço. **Não existe amostra do nosso público neste corpus.**
+>
+> **2. O "mercado de imposto é odiado" é, em grande parte, UM app.** No
+> `inventory.csv`, o *MEI Fácil está no app Neon* sozinho tem **98.885 dos
+> 154.948 reviews** do balde fiscal (64%). Ponderando a nota de loja por volume
+> de reviews, a categoria dá **3,58★**; removendo os 5 piores apps, sobe pra
+> **4,77★**. *(Métrica diferente da tabela acima — aqui é nota agregada da loja
+> ponderada por volume, lá é média das reviews coletadas. As duas apontam pro
+> mesmo lado.)*
+>
+> **Consequência:** "a brecha está aberta porque a categoria é odiada" é frágil —
+> o que existe é **um incumbente grande com má reputação** (e que virou funil de
+> banco), não uma categoria falhando por inteiro. A tese do produto não morre
+> com isso, mas ela deixa de ter o apoio quantitativo que se supunha ter, e
+> **validar com usuário real passa a valer mais que mais análise**.
+
 **Essa é a foto do mercado, e a tese da 4YU inteira cabe nela:**
 
 - **Onde tem calculadora de preço, o povo AMA** (4,42★, só 11% de negativos) — mas o

@@ -75,12 +75,27 @@ fiscais validadas na Receita (R5), anúncio nunca sobre número (R6), default di
 > escondida, forçada e revelada tarde** (o crime do TurboTax/MEI Fácil). Então: modelo
 > **freemium híbrido, transparente**.
 
+> ⚠️ **CORREÇÃO (19/07/2026) — a âncora de preço abaixo está sob revisão.**
+> O Precifica.app (R$ 97,80/ano) é **SaaS de gestão** — o produto que decidimos
+> explicitamente NÃO construir. O comparável honesto do que estamos fazendo é
+> *Receitas – Quanto Cobrar*: **R$ 12,90–29,90 de compra única**, 100k+
+> instalações, 4,73★. Ancorar num SaaS pra vender uma calculadora com memória
+> infla o preço em ~4×.
+>
+> Some-se a isso: o 4,42★ que sustentava a leitura do nicho vem de apps de
+> precificação de PRODUTO, não de hora ([ver correção no 00](00-PROPOSTA-DE-PRODUTO.md)).
+> Não há dado de willingness-to-pay do nosso público — porque não há amostra do
+> nosso público.
+>
+> **Decisão pendente do dono**, registrada em [08](08-PLANO-OFICIAL.md) §9.
+
 **A estrutura:**
-- **Núcleo grátis pra sempre:** calculadora + Divisão + reserva básica. É o motor de instalação
-  e boca-a-boca na comunidade MEI/freela (público massa, Android, orçamento apertado).
+- **Núcleo grátis pra sempre:** calculadora + Divisão + reserva básica **+ o
+  primeiro Trabalho salvo**. É o motor de instalação e boca-a-boca na
+  comunidade MEI/freela (público massa, Android, orçamento apertado).
 - **Pro — o usuário escolhe como pagar** (respeita quem odeia assinatura E quem prefere anual):
-  - **Vitalício (compra única): ~R$ 129–149** — a opção que o público avesso a assinatura ama.
-  - **Anual: ~R$ 89,90/ano** (~R$ 7,49/mês, logo abaixo da âncora Precifica.app R$ 97,80).
+  - **Vitalício (compra única): ~R$ 129–149** ⚠️ *sob revisão — ver correção acima*
+  - **Anual: ~R$ 89,90/ano** ⚠️ *sob revisão — a âncora usada é de outra categoria*
   - **Mensal: R$ 12,90** (topo do teto de impulso do nicho).
   - *Preços são hipótese a testar — não há dado duro de willingness-to-pay BR ([F](../research/raw/F-mercado-sizing.md)).*
 - **Trial curto (3–7 dias)** nas saídas Pro — utilitários convertem melhor com trial curto.
