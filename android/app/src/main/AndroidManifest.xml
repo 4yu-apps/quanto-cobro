@@ -1,7 +1,16 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Necessária pra buscar a cotação pública de câmbio (Fase 3) — sem ela
          o build de release não tem rede nenhuma e a busca falha em silêncio. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- O SDK do Firebase Analytics injeta a permissão AD_ID via merge e coleta
+         o ID de publicidade por padrão. Este app não tem anúncio nenhum, então
+         removemos a permissão E desligamos a coleta (meta-data abaixo). Assim a
+         política de privacidade e o Data Safety podem dizer, com verdade, que o
+         app NÃO coleta identificador de publicidade. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove"/>
 
     <!-- Tela grande e janela livre: o app roda em tablet, dobravel e modo
          multi-janela, e o layout responde a isso (core/ui/breakpoints.dart).
@@ -16,6 +25,11 @@
         <meta-data
             android:name="android.supports_size_changes"
             android:value="true"/>
+        <!-- Desliga a coleta do ID de publicidade pelo Analytics (ver a permissão
+             AD_ID removida acima). App sem anúncio não precisa disso. -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
