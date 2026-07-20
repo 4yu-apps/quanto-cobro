@@ -52,12 +52,17 @@
 -dontwarn org.sqlite.**
 
 # ---------------------------------------------------------------------------
-# Stack trace legivel depois de ofuscado. Sem Crashlytics ainda (ver
-# docs/planning/11-HANDOFF.md §2.2b); quando entrar, o mapping.txt sobe sozinho.
+# Firebase (Crashlytics + Analytics). O plugin crashlytics sobe o mapping.txt
+# sozinho; estas regras mantem o stack trace legivel e evitam R8 remover classes
+# resolvidas por reflexao. gms.** cobre o transporte do Analytics.
 # ---------------------------------------------------------------------------
 -keepattributes SourceFile,LineNumberTable
 -keepattributes *Annotation*
 -keep public class * extends java.lang.Exception
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
 
 # ---------------------------------------------------------------------------
 # NAO tem aqui, de proposito (ver 11-HANDOFF.md §6): AdMob, Maps, ML Kit,

@@ -3,7 +3,7 @@ description: "Quanto Cobro? - calculadora do freelancer BR (valor-hora, reserva 
 publish_to: 'none'
 
 # versionName+versionCode. Nome de EXIBIÇÃO fica em lib/core/config/app_config.dart.
-version: 0.8.0+11
+version: 0.8.0+12
 
 environment:
   sdk: ^3.12.2
@@ -50,18 +50,25 @@ dependencies:
   url_launcher: ^6.3.2
   file_picker: ^8.1.4 # 8.x = gradle moderno (compatível AGP 9); 3.x quebra o build
 
+  # Telemetria — o destino real da camada core/telemetry/. Crash (Crashlytics)
+  # e eventos (Analytics), opt-in de verdade (LGPD, desligado por padrão). Só
+  # entram agora porque o google-services.json existe (android/app/) — sem ele o
+  # firebase_core não sobe e o app morre no boot.
+  firebase_core: ^3.8.0
+  firebase_analytics: ^11.4.0
+  firebase_crashlytics: ^4.2.0
+
 # win32 é dep transitiva SÓ do Windows (share_plus quer ^6, file_picker quer ^5).
 # O app é Android/iOS — win32 nunca é compilado. Fixo num 5.x pra os dois
 # resolverem sem tocar no build mobile.
 dependency_overrides:
   win32: ^5.14.0
 
-  # REMOVIDOS até a configuração real (aprendido com crash em produção):
+  # REMOVIDO até a configuração real (aprendido com crash em produção):
   # - google_mobile_ads: o MobileAdsInitProvider DERRUBA o app no boot se o
   #   APPLICATION_ID do AdMob não estiver no AndroidManifest. Recolocar JUNTO
   #   com o meta-data com.google.android.gms.ads.APPLICATION_ID.
-  # - firebase_core/analytics/crashlytics: exigem google-services.json.
-  #   Recolocar junto com o arquivo e o plugin gradle google-services.
+  #   (firebase_core/analytics/crashlytics já entraram — ver dependencies.)
 
 dev_dependencies:
   flutter_test:
