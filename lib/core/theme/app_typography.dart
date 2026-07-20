@@ -11,9 +11,12 @@ abstract final class AppType {
   /// Tabulares em TUDO que é dinheiro — o número não pode "dançar".
   static const List<FontFeature> tnum = [FontFeature.tabularFigures()];
 
+  // 72 competia com a anatomia embaixo (56): só 16px separavam o herói do
+  // resto, e a tela toda "gritava". 64 dá respiro sem tirar o protagonismo do
+  // valor-hora — o número-herói continua sendo o maior da tela por larga margem.
   static const TextStyle valueHero = TextStyle(
     fontFamily: numberFamily,
-    fontSize: 72,
+    fontSize: 64,
     fontWeight: FontWeight.w700,
     letterSpacing: -1.5,
     height: 1.0,

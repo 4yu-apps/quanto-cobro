@@ -163,8 +163,11 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       ),
       GoRoute(
         path: Routes.detalhe,
+        // `extra` = o draft do Resultado (área ainda não salva). Sem repassar,
+        // a tela caía no area salvo e mostrava "não tem cálculo salvo" pra quem
+        // acabou de calcular — o botão "Ver detalhamento" abria o vazio.
         pageBuilder: (_, GoRouterState s) =>
-            _toolPage(s, const DetalheScreen()),
+            _toolPage(s, DetalheScreen(area: s.extra as Area?)),
       ),
       GoRoute(
         path: Routes.simulador,

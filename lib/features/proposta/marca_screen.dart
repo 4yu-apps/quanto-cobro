@@ -114,6 +114,17 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
       announce(context, msg);
       return;
     }
+    // E-mail é opcional, mas se preenchido tem que ser um e-mail: "teste"
+    // entrava na proposta como contato e o cliente não tinha como responder.
+    // O aviso inline (onFocusLost) só cutuca; salvar é o compromisso, e aqui
+    // um endereço claramente quebrado (sem @ ou sem domínio) trava. Vazio passa.
+    final String email = _email.text.trim();
+    if (email.isNotEmpty && !emailParecemValido(email)) {
+      const String msg = 'Esse e-mail não parece válido. Confere, ou deixa em branco.';
+      setState(() => _erroEmail = msg);
+      announce(context, msg);
+      return;
+    }
     Haptics.commit();
     await ref
         .read(marcaProvider.notifier)

@@ -412,7 +412,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
                 child: Text(
                   '${moneyBRLCents(r.dasMensal!)}/mês',
                   maxLines: 1,
-                  style: AppType.valueXl.copyWith(color: d.reserva),
+                  style: AppType.valueMd.copyWith(color: d.reserva),
                 ),
               ),
               const SizedBox(height: Space.x1),
@@ -482,7 +482,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
             child: Text(
               '~${r.reservaPct}%',
               maxLines: 1,
-              style: AppType.valueXl.copyWith(color: d.reserva),
+              style: AppType.valueMd.copyWith(color: d.reserva),
               semanticsLabel:
                   'Reserve cerca de ${r.reservaPct} por cento de cada pagamento',
             ),
@@ -525,7 +525,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           child: Text(
             value,
             maxLines: 1,
-            style: AppType.valueXl.copyWith(color: color),
+            style: AppType.valueMd.copyWith(color: color),
             semanticsLabel: semantica,
           ),
         ),
