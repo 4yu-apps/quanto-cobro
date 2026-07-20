@@ -11,6 +11,7 @@ import '../../core/ui/money_field.dart';
 import 'proposta_flow.dart';
 import 'proposta_preview_screen.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// O formulário da proposta (07 §A.3): curto, com tudo que dá já preenchido.
 /// Sete campos, três deles opcionais — a pessoa acabou de validar um preço e
@@ -173,14 +174,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
             ),
             const SizedBox(height: Space.x6),
 
-            Text(
-              'VALIDADE DA PROPOSTA',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: Space.x1),
+            SecaoTitulo('Validade da proposta', bottom: Space.x1),
             Text(
               'Depois disso o preço pode mudar — é o que te protege de honrar '
               'orçamento velho.',

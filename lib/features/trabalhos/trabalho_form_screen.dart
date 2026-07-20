@@ -10,6 +10,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// Cadastrar/editar um trabalho — **três campos**, e dois deles opcionais.
 ///
@@ -129,14 +130,7 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
             // resto, a palavra "área" nunca aparece no app.
             if (areas.hierarquiaVisivel) ...<Widget>[
               const SizedBox(height: Space.x6),
-              Text(
-                'ÁREA',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: Space.x2),
+              SecaoTitulo('Área', bottom: Space.x2),
               Wrap(
                 spacing: Space.x2,
                 runSpacing: Space.x2,

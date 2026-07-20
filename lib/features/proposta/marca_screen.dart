@@ -13,6 +13,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/breakpoints.dart';
 import '../../core/ui/money_field.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// "Sua marca — só uma vez" (07 §A.2/§F).
 ///
@@ -35,12 +36,29 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
   final TextEditingController _whatsapp = TextEditingController();
   final TextEditingController _email = TextEditingController();
   String? _erroNome;
+
+  /// Só nasce quando o campo perde o foco — ver o comentário no TextField.
+  String? _erroEmail;
+  final FocusNode _focoEmail = FocusNode();
   String _ddi = '+55';
   late int _cor;
 
   @override
   void initState() {
     super.initState();
+    // "Erro visível" não é "erro percebido": o MoneyField já anuncia o dele
+    // (money_field.dart), e este campo era o único que mostrava a mensagem sem
+    // nunca falar — quem não vê a tela nunca soube que digitou errado.
+    _focoEmail.addListener(() {
+      if (_focoEmail.hasFocus) return;
+      final String texto = _email.text.trim();
+      final String? erro = texto.isEmpty || emailParecemValido(texto)
+          ? null
+          : 'Isso não parece um e-mail. Confere?';
+      if (erro == _erroEmail) return;
+      setState(() => _erroEmail = erro);
+      if (erro != null) announce(context, erro);
+    });
     final Marca m = ref.read(marcaProvider);
     _nome.text = m.nome;
     _whatsapp.text = formatarTelefone(m.whatsapp);
@@ -54,6 +72,7 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
     _nome.dispose();
     _whatsapp.dispose();
     _email.dispose();
+    _focoEmail.dispose();
     super.dispose();
   }
 
@@ -209,28 +228,27 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
             const SizedBox(height: Space.x4),
             TextField(
               controller: _email,
+              focusNode: _focoEmail,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               decoration: InputDecoration(
                 labelText: 'E-mail (opcional)',
                 // AVISA sem bloquear: travar quem digitou certo é pior que
                 // deixar passar quem digitou errado.
-                errorText: emailParecemValido(_email.text)
-                    ? null
-                    : 'Isso não parece um e-mail. Confere?',
+                //
+                // Mas o aviso nascia no PRIMEIRO caractere digitado — "a" já
+                // não parece um e-mail —, então ele acusava erro a tela toda
+                // enquanto a pessoa escrevia certo. Agora só aparece quando ela
+                // termina (perda de foco), que é quando a frase faz sentido.
+                errorText: _erroEmail,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) {
+                if (_erroEmail != null) setState(() => _erroEmail = null);
+              },
             ),
             const SizedBox(height: Space.x6),
 
-            Text(
-              'COR DA SUA MARCA',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: Space.x1),
+            SecaoTitulo('Cor da sua marca', bottom: Space.x1),
             Text(
               'Aparece como detalhe na proposta — no valor e no topo. O texto '
               'continua sempre legível, seja qual for a cor.',
@@ -303,14 +321,7 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
             ),
             const SizedBox(height: Space.x6),
 
-            Text(
-              'SUA LOGO (OPCIONAL)',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: Space.x3),
+            SecaoTitulo('Sua logo (opcional)', bottom: Space.x3),
             if (logoPath != null && File(logoPath).existsSync())
               Row(
                 children: <Widget>[

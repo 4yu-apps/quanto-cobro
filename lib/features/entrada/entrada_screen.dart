@@ -342,13 +342,22 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(
-                                res.impostoDoMesQuitado
-                                    ? 'ESSE DINHEIRO É TODO SEU'
-                                    : 'SEPARE PRO IMPOSTO',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                  letterSpacing: 0.5,
+                              // O sobrolho é a legenda do número logo abaixo,
+                              // e o `semanticLabel` do MoneyCountUp já diz a
+                              // frase inteira ("Separe R$ 68 pro imposto").
+                              // Sem o Exclude, este card falava a mesma coisa
+                              // três vezes: aqui, no número, e na legenda.
+                              // Escolha UMA fonte da verdade — e a que fica é
+                              // a que carrega o valor.
+                              ExcludeSemantics(
+                                child: Text(
+                                  res.impostoDoMesQuitado
+                                      ? 'ESSE DINHEIRO É TODO SEU'
+                                      : 'SEPARE PRO IMPOSTO',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: Space.x1),
@@ -376,10 +385,16 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                                 style: theme.textTheme.bodyLarge,
                               ),
                               const SizedBox(height: Space.x4),
-                              EntradaBar(
-                                total: valor,
-                                separado: res.separado,
-                                sobra: res.sobra,
+                              // A barra e as duas legendas dizem o MESMO par
+                              // de números. As legendas são texto de verdade
+                              // (e é delas que sai a garantia "cor nunca
+                              // sozinha"), então a barra sai da fala.
+                              ExcludeSemantics(
+                                child: EntradaBar(
+                                  total: valor,
+                                  separado: res.separado,
+                                  sobra: res.sobra,
+                                ),
                               ),
                               const SizedBox(height: Space.x2),
                               // O cofre FECHA: a linha nasce dentro do mesmo

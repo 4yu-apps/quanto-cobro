@@ -17,6 +17,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/panel_card.dart';
 import '../proposta/proposta_flow.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// O detalhe de um trabalho — **a tela que o dono descreveu literalmente**:
 /// *"o Augusto me pagou 400 num mês, 600 no outro, 200 no outro — e quanto eu
@@ -172,26 +173,12 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
 
             if (trabalho.observacoes != null) ...<Widget>[
               const SizedBox(height: Space.x5),
-              Text(
-                'ANOTAÇÕES',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: Space.x2),
+              SecaoTitulo('Anotações', bottom: Space.x2),
               Text(trabalho.observacoes!, style: theme.textTheme.bodyMedium),
             ],
 
             const SizedBox(height: Space.x6),
-            Text(
-              'ENTRADAS',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: Space.x2),
+            SecaoTitulo('Entradas', bottom: Space.x2),
 
             if (porMes.isEmpty)
               Text(

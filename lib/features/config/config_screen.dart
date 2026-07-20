@@ -24,6 +24,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/text_scale.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 enum _ImportChoice { arquivo, colar }
 
@@ -54,7 +55,7 @@ class ConfigScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(Space.x4),
           children: <Widget>[
-            _secao(context, 'APARÊNCIA'),
+            _secao(context, 'Aparência'),
             SegmentedButton<ThemeMode>(
               segments: const <ButtonSegment<ThemeMode>>[
                 ButtonSegment<ThemeMode>(
@@ -160,7 +161,7 @@ class ConfigScreen extends ConsumerWidget {
             const SizedBox(height: Space.x6),
 
             // Trabalhos e Histórico agora são ABAS (nav bar) — não duplicar aqui.
-            _secao(context, 'PRO'),
+            _secao(context, 'Pro'),
             Card(
               color: theme.colorScheme.surfaceContainer,
               child: ListTile(
@@ -178,7 +179,7 @@ class ConfigScreen extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            _secao(context, 'GESTÃO'),
+            _secao(context, 'Gestão'),
             Card(
               color: theme.colorScheme.surfaceContainer,
               child: Column(
@@ -228,7 +229,7 @@ class ConfigScreen extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            _secao(context, 'SEUS DADOS'),
+            _secao(context, 'Seus dados'),
             Card(
               color: theme.colorScheme.surfaceContainer,
               child: Column(
@@ -267,7 +268,7 @@ class ConfigScreen extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            _secao(context, 'PRIVACIDADE'),
+            _secao(context, 'Privacidade'),
             Card(
               color: theme.colorScheme.surfaceContainer,
               child: Column(
@@ -295,7 +296,7 @@ class ConfigScreen extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            _secao(context, 'SOBRE'),
+            _secao(context, 'Sobre'),
             Row(
               children: <Widget>[
                 Container(
@@ -328,18 +329,10 @@ class ConfigScreen extends ConsumerWidget {
     );
   }
 
-  Widget _secao(BuildContext context, String titulo) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Space.x2),
-      child: Text(
-        titulo,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
+  /// As seções de Ajustes são a lista mais longa do app — e é justamente numa
+  /// lista longa que a navegação por cabeçalhos deixa de ser conforto e vira a
+  /// diferença entre achar o backup e desistir.
+  Widget _secao(BuildContext context, String titulo) => SecaoTitulo(titulo);
 
   /// Exporta = grava um arquivo .json e abre o share sheet (Drive, Arquivos,
   /// WhatsApp pra si mesmo). Fim do JSON cru no clipboard.

@@ -16,6 +16,7 @@ import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// Detalhamento ("como cheguei aqui", Blueprint §5.4): a conta linha a linha,
 /// custo a custo, com renda e horas editáveis inline e recálculo ao vivo.
@@ -126,14 +127,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           ],
         ),
         const SizedBox(height: Space.x6),
-        Text(
-          'COMO VOCÊ RECEBE',
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: Space.x2),
+        SecaoTitulo('Como você recebe', bottom: Space.x2),
         Wrap(
           spacing: Space.x2,
           runSpacing: Space.x2,
