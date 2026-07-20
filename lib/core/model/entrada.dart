@@ -33,6 +33,17 @@ class Entrada {
   /// ligado a nenhum trabalho da lista.
   final String? trabalhoId;
 
+  /// Só serve pra LIGAR depois uma entrada avulsa a um trabalho (histórico):
+  /// os campos só sobrescrevem, nunca limpam — passar null mantém o valor.
+  Entrada copyWith({String? areaId, String? trabalhoId}) => Entrada(
+    valor: valor,
+    separado: separado,
+    regimeTag: regimeTag,
+    at: at,
+    areaId: areaId ?? this.areaId,
+    trabalhoId: trabalhoId ?? this.trabalhoId,
+  );
+
   Map<String, dynamic> toJson() => <String, dynamic>{
     'valor': valor,
     'separado': separado,

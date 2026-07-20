@@ -10,6 +10,7 @@ import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
 import '../../core/model/proposta.dart';
 import '../../core/model/regime.dart';
+import '../../core/model/trabalho.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
@@ -21,6 +22,7 @@ import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
+import '../../core/ui/trabalho_field.dart';
 import '../proposta/proposta_flow.dart';
 import '../../core/ui/breakpoints.dart';
 
@@ -374,6 +376,20 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                           ),
                         ],
 
+                        // Fecha o loop orçar→acompanhar: guarda o projeto como
+                        // trabalho, opcional e secundário (não compete com a
+                        // proposta). Só memória — não muda o cálculo, não cria
+                        // estado. Quem só quer ver o número sai sem tocar aqui.
+                        const SizedBox(height: Space.x2),
+                        TextButton.icon(
+                          onPressed: () => _salvarComoTrabalho(valor.toDouble()),
+                          icon: const Icon(
+                            Icons.bookmark_add_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('Salvar como trabalho'),
+                        ),
+
                         const SizedBox(height: Space.x6),
                         if (tabelasDefasadas(DateTime.now())) ...<Widget>[
                           StaleBanner(ano: kTabelasAno),
@@ -387,6 +403,41 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
         ),
       ),
     );
+  }
+
+  /// Salvar o projeto orçado como trabalho — o botão que faltava pra o
+  /// orçamento validado não morrer na tela. `valorCombinado` pré-preenche a
+  /// entrada quando o dinheiro cair; é memória, não gestão.
+  Future<void> _salvarComoTrabalho(double valor) async {
+    final AreaState st = ref.read(areaAtivaProvider);
+    final String areaId = st is AreaPronta ? st.area.id : '';
+    final Trabalho? t = await escolherOuCriarTrabalho(
+      context: context,
+      ref: ref,
+      areaId: areaId,
+      titulo: 'Salvar esse projeto',
+      subtitulo: 'Guarda pra acompanhar os pagamentos. Não muda nada do cálculo.',
+      hintText: 'Ex.: Site da Padaria',
+      valorCombinado: valor,
+    );
+    if (t == null || !mounted) return;
+    Haptics.commit();
+    announce(
+      context,
+      '"${t.nome}" salvo. Quando o pagamento cair, o valor já vem preenchido.',
+    );
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${t.nome}" está nos seus trabalhos'),
+          action: SnackBarAction(
+            label: 'Ver',
+            onPressed: () =>
+                context.push(Routes.trabalhoDetalhe, extra: t.id),
+          ),
+        ),
+      );
   }
 
   SimuladorResult? _result({

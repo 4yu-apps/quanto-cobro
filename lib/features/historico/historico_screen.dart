@@ -18,6 +18,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/trabalho_field.dart';
 
 /// O histórico completo, mês a mês. **Deixou de ser aba** em 19/07/2026: era o
 /// mesmo balde do card do Início, só que num zoom maior — e um slot de aba é
@@ -129,7 +130,7 @@ class HistoricoScreen extends ConsumerWidget {
   }
 }
 
-class _Mes extends StatelessWidget {
+class _Mes extends ConsumerWidget {
   const _Mes({
     required this.mes,
     required this.entradas,
@@ -141,7 +142,7 @@ class _Mes extends StatelessWidget {
   final Map<String, String> nomePorTrabalho;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
@@ -207,65 +208,119 @@ class _Mes extends StatelessWidget {
             // dizia que o segundo valor é o imposto separado. É a tela que a
             // pessoa abre pra conferir o próprio dinheiro.
             for (final Entrada e in ordenadas)
-              Semantics(
-                label:
-                    '${dataPorExtenso(e.at)}'
-                    '${_nome(e) == null ? '' : ', ${_nome(e)}'}: '
-                    'recebeu ${moneyBRL(e.valor)}, '
-                    'separou ${moneyBRL(e.separado)} de imposto.',
-                child: ExcludeSemantics(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: Space.x1),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            '${dataCurta(e.at)}'
-                            '${_nome(e) == null ? '' : ' · ${_nome(e)}'}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: Space.x2),
-                        // Sem isto a linha estoura 305px em fonte 2.0 num
-                        // celular de 320dp — e o que sai da tela é sempre o
-                        // número, porque o número mora à direita de uma Row.
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerRight,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text(
-                                  moneyBRL(e.valor),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontFeatures: AppType.tnum,
-                                  ),
-                                ),
-                                Text(
-                                  ' · ${moneyBRL(e.separado)}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: d.reserva,
-                                    fontFeatures: AppType.tnum,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              _linhaEntrada(context, ref, e, theme, cs, d),
           ],
         ),
       ),
     );
+  }
+
+  /// Uma linha do histórico. A avulsa (sem trabalho) vira tocável: um ícone de
+  /// elo e o toque abrem "ligar a um trabalho", respondendo, retroativamente, o
+  /// "de quem foi isso?". A ligada é leitura pura, como sempre.
+  Widget _linhaEntrada(
+    BuildContext context,
+    WidgetRef ref,
+    Entrada e,
+    ThemeData theme,
+    ColorScheme cs,
+    DivisaoColors d,
+  ) {
+    final String? nome = _nome(e);
+    final bool avulsa = nome == null;
+
+    final Widget conteudo = Padding(
+      padding: const EdgeInsets.symmetric(vertical: Space.x1),
+      child: Row(
+        children: <Widget>[
+          if (avulsa) ...<Widget>[
+            Icon(Icons.add_link, size: 16, color: cs.onSurfaceVariant),
+            const SizedBox(width: Space.x2),
+          ],
+          Expanded(
+            child: Text(
+              '${dataCurta(e.at)}${avulsa ? '' : ' · $nome'}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: Space.x2),
+          // Sem isto a linha estoura 305px em fonte 2.0 num celular de 320dp — e
+          // o que sai da tela é sempre o número, porque ele mora à direita.
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    moneyBRL(e.valor),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
+                  Text(
+                    ' · ${moneyBRL(e.separado)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: d.reserva,
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final String fala =
+        '${dataPorExtenso(e.at)}${avulsa ? '' : ', $nome'}: '
+        'recebeu ${moneyBRL(e.valor)}, '
+        'separou ${moneyBRL(e.separado)} de imposto.';
+
+    if (!avulsa) {
+      return Semantics(
+        label: fala,
+        child: ExcludeSemantics(child: conteudo),
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: '$fala Avulso.',
+      hint: 'ligar a um trabalho',
+      onTap: () => _ligar(context, ref, e),
+      child: ExcludeSemantics(
+        child: InkWell(
+          onTap: () => _ligar(context, ref, e),
+          borderRadius: const BorderRadius.all(Radii.sm),
+          child: conteudo,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _ligar(BuildContext context, WidgetRef ref, Entrada e) async {
+    final Trabalho? t = await escolherOuCriarTrabalho(
+      context: context,
+      ref: ref,
+      areaId: e.areaId ?? '',
+      titulo: 'Ligar a um trabalho',
+      subtitulo: 'De quem foi esse pagamento de ${moneyBRL(e.valor)}?',
+      confirmar: 'Ligar',
+      hintText: 'Ex.: Augusto',
+    );
+    if (t == null || !context.mounted) return;
+    await ref.read(entradasProvider.notifier).setTrabalho(e, t.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text('Ligado a "${t.nome}".')));
   }
 
   String? _nome(Entrada e) {

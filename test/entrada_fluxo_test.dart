@@ -153,4 +153,40 @@ void main() {
     final int separado = entradas.fold(0, (int s, Entrada e) => s + e.separado);
     expect(separado, kDasMensalMei.round());
   });
+
+  testWidgets(
+    'escolher um trabalho existente liga sem criar outro e traz o combinado',
+    (WidgetTester tester) async {
+      // O furo que o dono sentiu: na entrada avulsa dava pra redigitar, não pra
+      // ESCOLHER. Agora o "Augusto" que já existe aparece — e escolhê-lo liga a
+      // entrada a ele (sem criar um segundo) e traz o valor combinado.
+      final Trabalho augusto = Trabalho(
+        id: 't1',
+        areaId: area.id,
+        nome: 'Augusto',
+        criadoEm: DateTime(2026, 1, 1),
+        valorCombinado: 400,
+      );
+      final ProviderContainer container = await abrirApp(
+        tester,
+        trabalhos: <Trabalho>[augusto],
+      );
+      await irPraEntrada(tester);
+
+      // Digitar abre o autocompletar; a opção "Augusto" está lá pra escolher.
+      await tester.enterText(find.byType(TextField).at(1), 'Aug');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Augusto').last);
+      await tester.pumpAndSettle();
+
+      await guardar(tester);
+
+      // Não criou um segundo Augusto, e a entrada ficou ligada a ele.
+      expect(container.read(trabalhosProvider), hasLength(1));
+      final List<Entrada> entradas = container.read(entradasProvider);
+      expect(entradas.single.trabalhoId, 't1');
+      // O valor combinado veio junto — não precisou digitar.
+      expect(entradas.single.valor, 400);
+    },
+  );
 }

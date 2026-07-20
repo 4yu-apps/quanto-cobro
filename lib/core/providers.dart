@@ -255,6 +255,23 @@ class EntradasNotifier extends Notifier<List<Entrada>> {
     state = ref.read(entradaRepositoryProvider).loadAll();
   }
 
+  /// Liga uma entrada avulsa a um trabalho, depois do fato (histórico). Localiza
+  /// pela marca de tempo + valor (a `at` tem precisão de microssegundo, é única
+  /// na prática) e só toca numa entrada que ainda estava avulsa.
+  Future<void> setTrabalho(Entrada entrada, String trabalhoId) async {
+    final List<Entrada> all = List<Entrada>.of(state);
+    final int i = all.indexWhere(
+      (Entrada e) =>
+          e.at == entrada.at &&
+          e.valor == entrada.valor &&
+          e.trabalhoId == null,
+    );
+    if (i < 0) return;
+    all[i] = all[i].copyWith(trabalhoId: trabalhoId);
+    await ref.read(entradaRepositoryProvider).replaceAll(all);
+    state = all;
+  }
+
   /// Remove uma entrada (Desfazer / swipe).
   Future<void> remove(Entrada entrada) async {
     final List<Entrada> all = List<Entrada>.of(state)

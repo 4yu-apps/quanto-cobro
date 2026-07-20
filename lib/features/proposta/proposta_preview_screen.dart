@@ -50,6 +50,10 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
   late final DateTime _emitidaEm = DateTime.now();
   bool _gerando = false;
 
+  /// Já virou trabalho nesta sessão — trava a segunda oferta (o botão manual e a
+  /// oferta pós-PDF não podem perguntar duas vezes).
+  bool _trabalhoSalvo = false;
+
   Future<void> _enviar() async {
     if (!ref.read(proProvider)) {
       await _paredePro();
@@ -147,11 +151,10 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
     return '${limpo.length > 60 ? limpo.substring(0, 60).trim() : limpo}.pdf';
   }
 
-  /// O nascimento do trabalho (07 §C): a proposta que saiu vira algo que a
-  /// pessoa acompanha, sem redigitar nada. Só é oferecido quando ela ainda não
-  /// veio de um trabalho.
+  /// A oferta pós-PDF (07 §C): a proposta que saiu vira algo que a pessoa
+  /// acompanha. Pergunta antes — o gesto foi "enviar", não "salvar".
   Future<void> _oferecerSalvarComoTrabalho() async {
-    if (widget.trabalhoId != null) return;
+    if (widget.trabalhoId != null || _trabalhoSalvo) return;
 
     final bool? salvar = await showDialog<bool>(
       context: context,
@@ -170,8 +173,17 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
         ],
       ),
     );
-    if (salvar != true || !mounted) return;
+    if (salvar != true) return;
+    await _salvarComoTrabalho();
+  }
 
+  /// O nascimento do trabalho, sem redigitar nada. Fica FORA do paywall: salvar
+  /// o próprio cliente é o dado da pessoa, não recurso premium — prender isso
+  /// atrás de assinatura é o erro que o app jura não cometer (ver
+  /// historico_screen.dart). O botão manual chama isto direto; a oferta pós-PDF
+  /// passa pelo diálogo antes.
+  Future<void> _salvarComoTrabalho() async {
+    if (_trabalhoSalvo) return;
     final Trabalho trabalho = Trabalho(
       id: 'tr_${DateTime.now().microsecondsSinceEpoch}',
       areaId: ref.read(areasProvider).activeId ?? '',
@@ -185,6 +197,9 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
     );
     await ref.read(trabalhosProvider.notifier).save(trabalho);
     if (!mounted) return;
+    setState(() => _trabalhoSalvo = true);
+    Haptics.commit();
+    announce(context, '"${trabalho.nome}" está nos seus trabalhos.');
 
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -266,6 +281,17 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
                   : const Icon(Icons.ios_share),
               label: Text(_gerando ? 'Gerando…' : 'Enviar / Baixar PDF'),
             ),
+            // Salvar como trabalho NÃO é Pro: é o cliente da própria pessoa.
+            // Fora do paywall e antes do PDF — quem só quer guardar o freela
+            // consegue sem pagar nem enviar nada.
+            if (widget.trabalhoId == null && !_trabalhoSalvo) ...<Widget>[
+              const SizedBox(height: Space.x2),
+              TextButton.icon(
+                onPressed: _gerando ? null : _salvarComoTrabalho,
+                icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                label: const Text('Salvar como trabalho'),
+              ),
+            ],
             if (!isPro) ...<Widget>[
               const SizedBox(height: Space.x2),
               Text(

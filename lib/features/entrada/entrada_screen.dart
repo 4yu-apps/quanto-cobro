@@ -23,6 +23,7 @@ import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
+import '../../core/ui/trabalho_field.dart';
 import '../../core/ui/vitrine_card.dart';
 import 'entrada_bar.dart';
 import '../../core/ui/breakpoints.dart';
@@ -288,19 +289,28 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
             ),
             const SizedBox(height: Space.x4),
 
-            // O campo que faz o trabalho nascer. Opcional de propósito: quem
-            // recebeu algo avulso não precisa inventar um cliente pra registrar.
-            if (_trabalho == null)
-              TextField(
+            // O campo que amarra o pagamento a um trabalho. Deixa ESCOLHER um
+            // existente (mata o "de quem foi isso?" e o risco de dois Augusto)
+            // ou digitar um nome novo, que nasce na hora do salvar. Opcional: o
+            // avulso registra sem inventar cliente. O gate é `trabalhoId`, não
+            // `_trabalho` — senão escolher um esconderia o próprio campo.
+            if (widget.trabalhoId == null)
+              TrabalhoField(
                 controller: _deQuem,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'De quem? (opcional)',
-                  hintText: 'Ex.: Augusto',
-                  helperText:
-                      'Se for a primeira vez, eu crio o trabalho pra você.',
-                ),
-                onChanged: (_) => setState(() {}),
+                areaId: area?.id ?? '',
+                hintText: 'Ex.: Augusto',
+                helperText:
+                    'Se for a primeira vez, eu crio o trabalho pra você.',
+                onTrabalhoSelected: (Trabalho? t) {
+                  setState(() => _trabalho = t);
+                  // Pré-preenche o combinado ao escolher — mas nunca por cima do
+                  // que a pessoa já digitou.
+                  if (t != null &&
+                      t.valorCombinado > 0 &&
+                      _valor.text.trim().isEmpty) {
+                    _valor.text = moneyFieldText(t.valorCombinado);
+                  }
+                },
               ),
 
             const SizedBox(height: Space.x3),
@@ -449,6 +459,9 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                                       _valor.clear();
                                       if (widget.trabalhoId == null) {
                                         _deQuem.clear();
+                                        // A próxima entrada começa avulsa de
+                                        // novo — não herda o trabalho da última.
+                                        _trabalho = null;
                                       }
                                       _saved = false;
                                       _cofreAntes = null;
