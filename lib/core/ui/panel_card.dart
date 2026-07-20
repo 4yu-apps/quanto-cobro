@@ -83,17 +83,18 @@ class _PanelPainter extends CustomPainter {
       canvas.drawRRect(
         rrect,
         Paint()
-          ..shader = RadialGradient(
-            colors: <Color>[
-              accent!.withValues(alpha: 0.08),
-              accent!.withValues(alpha: 0),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width * 0.12, 0),
-              radius: size.width * 0.9,
-            ),
-          ),
+          ..shader =
+              RadialGradient(
+                colors: <Color>[
+                  accent!.withValues(alpha: 0.08),
+                  accent!.withValues(alpha: 0),
+                ],
+              ).createShader(
+                Rect.fromCircle(
+                  center: Offset(size.width * 0.12, 0),
+                  radius: size.width * 0.9,
+                ),
+              ),
       );
     }
 

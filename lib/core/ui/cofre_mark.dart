@@ -93,7 +93,13 @@ class CofreMarkPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
       ..color = ouro;
-    canvas.drawArc(ringRect, _rad(-100), _rad(55 * ring.clamp(0, 1)), false, ouroPaint);
+    canvas.drawArc(
+      ringRect,
+      _rad(-100),
+      _rad(55 * ring.clamp(0, 1)),
+      false,
+      ouroPaint,
+    );
 
     // Arco ESMERALDA ("é seu"): 2:30 dando a volta até 10:30, sweep 260°.
     final Paint esmPaint = Paint()
@@ -101,7 +107,13 @@ class CofreMarkPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
       ..color = esmeralda;
-    canvas.drawArc(ringRect, _rad(-12), _rad(260 * ring.clamp(0, 1)), false, esmPaint);
+    canvas.drawArc(
+      ringRect,
+      _rad(-12),
+      _rad(260 * ring.clamp(0, 1)),
+      false,
+      esmPaint,
+    );
 
     // Núcleo "R$": nasce depois do anel (opacity + innerScale).
     final double coreT = core.clamp(0, 1);
@@ -131,7 +143,9 @@ class CofreMarkPainter extends CustomPainter {
     final double sheenT = sheen.clamp(0, 1);
     if (sheenT > 0.001 && sheenT < 0.999) {
       canvas.save();
-      canvas.clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: r + stroke / 2)));
+      canvas.clipPath(
+        Path()..addOval(Rect.fromCircle(center: c, radius: r + stroke / 2)),
+      );
       final double x = -30 + 160 * sheenT; // -0.3w → 1.3w
       final Rect band = Rect.fromLTWH(x, -10, 26, 120);
       final Paint sheenPaint = Paint()

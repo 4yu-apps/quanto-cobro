@@ -23,8 +23,9 @@ void main() {
     expect(effectiveTextScale(0.5, 0.90), 0.85); // piso
   });
   test('4 níveis, valores corretos', () {
-    expect(kTextScaleLevels.map((TextScaleLevel l) => l.value).toList(), <
-      double
-    >[0.90, 1.00, 1.15, 1.30]);
+    expect(
+      kTextScaleLevels.map((TextScaleLevel l) => l.value).toList(),
+      <double>[0.90, 1.00, 1.15, 1.30],
+    );
   });
 }

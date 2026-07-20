@@ -10,11 +10,12 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app/routes.dart';
 import '../../core/config/app_config.dart';
-import '../../core/data/profile_repository.dart';
+import '../../core/data/area_repository.dart';
 import '../../core/model/marca.dart';
-import '../../core/model/perfil.dart';
-import '../../core/model/projeto.dart';
-import '../../core/model/reserva_entry.dart';
+import '../../core/model/regime.dart';
+import '../../core/model/area.dart';
+import '../../core/model/trabalho.dart';
+import '../../core/model/entrada.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
@@ -37,10 +38,9 @@ class ConfigScreen extends ConsumerWidget {
     final bool isPro = ref.watch(proProvider);
     final bool telemetria = ref.watch(telemetryProvider);
     final bool reduzirTransp = ref.watch(reduceTransparencyProvider);
-    final bool lembreteMensal = ref.watch(reminderMensalProvider);
     final double textScale = ref.watch(textScaleProvider);
     final Marca marca = ref.watch(marcaProvider);
-    final ProfilesData trabalhos = ref.watch(profilesProvider);
+    final AreasData areas = ref.watch(areasProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
@@ -178,16 +178,16 @@ class ConfigScreen extends ConsumerWidget {
             color: theme.colorScheme.surfaceContainer,
             child: Column(
               children: <Widget>[
-                SwitchListTile(
-                  value: lembreteMensal,
-                  onChanged: (bool v) {
-                    Haptics.select();
-                    ref.read(reminderMensalProvider.notifier).set(v);
-                  },
-                  title: const Text('Lembrete mensal'),
-                  subtitle: const Text(
-                    'Um aviso no início do app quando um projeto recorrente ainda não registrou recebimento no ciclo.',
+                // O regime é da PESSOA, e é daqui que ele se ajusta: duas
+                // áreas não geram dois DAS pro mesmo CNPJ.
+                ListTile(
+                  leading: const Icon(Icons.account_balance_outlined),
+                  title: const Text('Meu regime'),
+                  subtitle: Text(
+                    '${Regime.of(ref.watch(regimeProvider)).label} — define quanto separar de cada pagamento',
                   ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _escolherRegime(context, ref),
                 ),
                 const Divider(height: 1, indent: Space.x4),
                 // A marca vive aqui, mas quase ninguém chega por aqui: ela é
@@ -211,12 +211,12 @@ class ConfigScreen extends ConsumerWidget {
                   leading: const Icon(Icons.tune),
                   title: const Text('Meus preços'),
                   subtitle: Text(
-                    trabalhos.perfis.length <= 1
+                    areas.areas.length <= 1
                         ? 'O cálculo que define quanto você cobra'
-                        : '${trabalhos.perfis.length} preços — o ativo é "${trabalhos.active?.nome ?? ''}"',
+                        : '${areas.areas.length} áreas — a ativa é "${areas.active?.nome ?? ''}"',
                   ),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.perfis),
+                  onTap: () => context.push(Routes.areas),
                 ),
               ],
             ),
@@ -395,7 +395,7 @@ class ConfigScreen extends ConsumerWidget {
   /// Importa. Caminho principal = escolher o arquivo .json; fallback = colar
   /// texto (troca entre aparelhos por WhatsApp/e-mail).
   Future<void> _importar(BuildContext context, WidgetRef ref) async {
-    final bool temCalculoAtual = ref.read(profileProvider) is ProfileReady;
+    final bool temCalculoAtual = ref.read(areaAtivaProvider) is AreaPronta;
     final _ImportChoice? choice = await showModalBottomSheet<_ImportChoice>(
       context: context,
       showDragHandle: true,
@@ -520,8 +520,8 @@ class ConfigScreen extends ConsumerWidget {
   }) async {
     try {
       await ref.read(backupServiceProvider).importJson(texto);
-      ref.invalidate(profilesProvider);
-      ref.invalidate(reservaHistoryProvider);
+      ref.invalidate(areasProvider);
+      ref.invalidate(entradasProvider);
       messenger
         ..clearSnackBars()
         ..showSnackBar(const SnackBar(content: Text('Backup restaurado')));
@@ -572,17 +572,15 @@ class ConfigScreen extends ConsumerWidget {
     if (ok != true) return;
 
     // Guarda em memória pro Desfazer (substitui a 2ª confirmação com elegância).
-    final ProfilesData antigos = ref.read(profilesProvider);
-    final List<ReservaEntry> historicoAntigo = ref.read(reservaHistoryProvider);
-    final List<Projeto> projetosAntigos = ref.read(projetosProvider);
+    final AreasData antigos = ref.read(areasProvider);
+    final List<Entrada> historicoAntigo = ref.read(entradasProvider);
+    final List<Trabalho> projetosAntigos = ref.read(trabalhosProvider);
     final Marca marcaAntiga = ref.read(marcaProvider);
     // Captura os notifiers ANTES do snackbar: o Desfazer pode ser tocado depois
     // da tela morrer, e ref pós-dispose crasha.
-    final ProfilesNotifier profilesN = ref.read(profilesProvider.notifier);
-    final ReservaHistoryNotifier historyN = ref.read(
-      reservaHistoryProvider.notifier,
-    );
-    final ProjetosNotifier projetosN = ref.read(projetosProvider.notifier);
+    final AreasNotifier profilesN = ref.read(areasProvider.notifier);
+    final EntradasNotifier historyN = ref.read(entradasProvider.notifier);
+    final TrabalhosNotifier projetosN = ref.read(trabalhosProvider.notifier);
     final MarcaNotifier marcaN = ref.read(marcaProvider.notifier);
 
     Haptics.commit();
@@ -599,16 +597,16 @@ class ConfigScreen extends ConsumerWidget {
           action: SnackBarAction(
             label: 'Desfazer',
             onPressed: () async {
-              for (final Perfil p in antigos.perfis) {
+              for (final Area p in antigos.areas) {
                 await profilesN.saveAndActivate(p);
               }
               if (antigos.activeId != null) {
                 await profilesN.select(antigos.activeId!);
               }
-              for (final ReservaEntry e in historicoAntigo.reversed) {
+              for (final Entrada e in historicoAntigo.reversed) {
                 await historyN.restore(e);
               }
-              for (final Projeto p in projetosAntigos) {
+              for (final Trabalho p in projetosAntigos) {
                 await projetosN.save(p);
               }
               if (!marcaAntiga.vazia) await marcaN.save(marcaAntiga);
@@ -616,5 +614,56 @@ class ConfigScreen extends ConsumerWidget {
           ),
         ),
       );
+  }
+
+  /// Trocar o regime é raro e pesa: uma folha com as opções e a explicação de
+  /// cada uma, no mesmo texto que a calculadora usa.
+  Future<void> _escolherRegime(BuildContext context, WidgetRef ref) async {
+    final RegimeId atual = ref.read(regimeProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.x6,
+                0,
+                Space.x6,
+                Space.x2,
+              ),
+              child: Text(
+                'Como você trabalha?',
+                style: Theme.of(sheet).textTheme.titleLarge,
+              ),
+            ),
+            RadioGroup<RegimeId>(
+              groupValue: atual,
+              onChanged: (RegimeId? v) {
+                if (v == null) return;
+                Haptics.select();
+                ref.read(regimeProvider.notifier).set(v);
+                Navigator.pop(sheet);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (final Regime r in Regime.all.values)
+                    RadioListTile<RegimeId>(
+                      value: r.id,
+                      title: Text(r.label),
+                      subtitle: Text(r.sub),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Space.x2),
+          ],
+        ),
+      ),
+    );
   }
 }

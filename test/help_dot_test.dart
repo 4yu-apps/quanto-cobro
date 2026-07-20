@@ -10,7 +10,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark,
-        home: const Scaffold(body: Center(child: HelpDot(verbeteId: 'regime'))),
+        home: const Scaffold(
+          body: Center(child: HelpDot(verbeteId: 'regime')),
+        ),
       ),
     );
 
@@ -32,7 +34,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark,
-        home: const Scaffold(body: Center(child: HelpDot(verbeteId: 'leao'))),
+        home: const Scaffold(
+          body: Center(child: HelpDot(verbeteId: 'leao')),
+        ),
       ),
     );
 

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../model/perfil.dart';
+import '../model/area.dart';
 import '../model/regime.dart';
 import 'tax_tables.dart';
 
@@ -72,7 +72,11 @@ class ValorHoraResult {
   final bool acimaTetoMei;
 }
 
-ValorHoraResult computeValorHora(Perfil p) {
+/// O valor-hora de uma [Area], no [regime] da PESSOA.
+///
+/// O regime entra por parâmetro (e não dentro da área) porque ele é de quem
+/// trabalha, não do tipo de trabalho: duas áreas não geram dois DAS.
+ValorHoraResult computeValorHora(Area p, RegimeId regime) {
   final double provisao = p.provisaoOn ? p.provisaoEfetiva : 0;
   final double custos = p.custosTotal;
   final double base = p.renda + custos + provisao;
@@ -82,12 +86,12 @@ ValorHoraResult computeValorHora(Perfil p) {
   // dão erro < 0,3%).
   double faturamento = base;
   for (int i = 0; i < 8; i++) {
-    faturamento = base + impostoMensal(p.regime, faturamento);
+    faturamento = base + impostoMensal(regime, faturamento);
   }
   final double imposto = faturamento - base;
   final double rate = faturamento > 0 ? imposto / faturamento : 0;
   final double valorHora = faturamento / math.max(1, p.horas);
-  final bool mei = p.regime == RegimeId.mei;
+  final bool mei = regime == RegimeId.mei;
 
   return ValorHoraResult(
     rate: rate,
@@ -120,7 +124,7 @@ class Divisao {
   final double base;
 }
 
-Divisao divisaoFromProfile(Perfil p, ValorHoraResult c) => Divisao(
+Divisao divisaoFromArea(Area p, ValorHoraResult c) => Divisao(
   lucro: p.renda + c.provisao,
   reserva: c.imposto,
   custo: c.custos,
@@ -133,7 +137,7 @@ Divisao divisaoFromProfile(Perfil p, ValorHoraResult c) => Divisao(
 class ReservaResult {
   const ReservaResult({
     required this.rate,
-    required this.reserva,
+    required this.separado,
     required this.sobra,
     required this.pct,
     required this.isMei,
@@ -142,7 +146,9 @@ class ReservaResult {
   });
 
   final double rate;
-  final int reserva;
+
+  /// Quanto separar deste pagamento pro imposto.
+  final int separado;
   final double sobra;
   final int pct;
   final bool isMei;
@@ -175,11 +181,11 @@ ReservaResult computeReserva(
 }) {
   if (regime == RegimeId.mei) {
     final double falta = math.max(0, kDasMensalMei - dasJaSeparado);
-    final int reserva = math.min(amount, falta).round();
+    final int separado = math.min(amount, falta).round();
     return ReservaResult(
-      rate: amount > 0 ? reserva / amount : 0,
-      reserva: reserva,
-      sobra: amount - reserva,
+      rate: amount > 0 ? separado / amount : 0,
+      separado: separado,
+      sobra: amount - separado,
       pct: 0,
       isMei: true,
       dasMensal: kDasMensalMei,
@@ -190,11 +196,11 @@ ReservaResult computeReserva(
     0,
     1,
   );
-  final int reserva = (amount * rate).round();
+  final int separado = (amount * rate).round();
   return ReservaResult(
     rate: rate,
-    reserva: reserva,
-    sobra: amount - reserva,
+    separado: separado,
+    sobra: amount - separado,
     pct: (rate * 100).round(),
     isMei: false,
     dasMensal: null,

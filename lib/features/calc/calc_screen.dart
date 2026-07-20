@@ -6,7 +6,7 @@ import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
 import '../../core/model/custo.dart';
-import '../../core/model/perfil.dart';
+import '../../core/model/area.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/telemetry/eventos.dart';
@@ -24,11 +24,11 @@ import '../../core/ui/money_field.dart';
 /// cobrar. Nenhuma pergunta pode presumir conhecimento (nada de "horas
 /// faturáveis" ou "provisionar"). O passo 2 pergunta a ROTINA e o app faz a conta.
 class CalcScreen extends ConsumerStatefulWidget {
-  const CalcScreen({super.key, this.novoTrabalho, this.initialDraft});
+  const CalcScreen({super.key, this.novaArea, this.initialDraft});
 
-  /// Quando presente, cria um NOVO perfil com esse nome (em vez de editar o ativo).
-  final String? novoTrabalho;
-  final Perfil? initialDraft;
+  /// Quando presente, cria uma ÁREA nova com esse nome (em vez de editar a ativa).
+  final String? novaArea;
+  final Area? initialDraft;
 
   @override
   ConsumerState<CalcScreen> createState() => _CalcScreenState();
@@ -37,7 +37,7 @@ class CalcScreen extends ConsumerStatefulWidget {
 class _CalcScreenState extends ConsumerState<CalcScreen> {
   static const int _lastStep = 4;
 
-  late Perfil _draft;
+  late Area _draft;
   int _step = 0;
   int _prevStep = 0;
   bool _triedContinue = false;
@@ -53,32 +53,25 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   @override
   void initState() {
     super.initState();
-    final ProfileState st = ref.read(profileProvider);
-    final String? novo = widget.novoTrabalho;
+    final AreaState st = ref.read(areaAtivaProvider);
+    final String? novo = widget.novaArea;
     if (widget.initialDraft != null) {
       _draft = widget.initialDraft!;
     } else if (novo != null) {
       final String id = DateTime.now().millisecondsSinceEpoch.toString();
-      if (st is ProfileReady) {
-        _draft = st.perfil.copyWith(id: id, nome: novo);
+      if (st is AreaPronta) {
+        _draft = st.area.copyWith(id: id, nome: novo);
       } else {
-        final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
-        _draft = Perfil.padrao(
-          id: id,
-          nome: novo,
-        ).copyWith(regime: intl ? RegimeId.intl : RegimeId.mei);
+        _draft = Area.padrao(id: id, nome: novo);
       }
-    } else if (st is ProfileReady) {
-      _draft = st.perfil;
+    } else if (st is AreaPronta) {
+      _draft = st.area;
     } else {
-      final bool intl = ref.read(settingsRepositoryProvider).modo() == 'intl';
-      _draft = Perfil.padrao().copyWith(
-        regime: intl ? RegimeId.intl : RegimeId.mei,
-      );
+      _draft = Area.padrao();
     }
     _dias = _draft.diasSemana ?? 5;
     _horasDia = _draft.horasDia ?? 6;
-    // Perfil legado (sem rotina) mas com horas salvo → abre em "digitar na mão".
+    // Area legado (sem rotina) mas com horas salvo → abre em "digitar na mão".
     _horasManual = _draft.diasSemana == null;
     _renda.text = _draft.renda.round().toString();
 
@@ -326,7 +319,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (widget.novoTrabalho != null) ...<Widget>[
+        if (widget.novaArea != null) ...<Widget>[
           Container(
             padding: const EdgeInsets.all(Space.x3),
             decoration: BoxDecoration(
@@ -368,9 +361,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _title('Quanto você trabalha por semana?'),
-        _subtitle(
-          'Me conta sua rotina que eu faço a conta pra você.',
-        ),
+        _subtitle('Me conta sua rotina que eu faço a conta pra você.'),
         const SizedBox(height: Space.x6),
         _stepper(
           label: 'Dias por semana',
@@ -460,20 +451,21 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   }) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    Widget btn(IconData icon, bool enabled, VoidCallback onTap) => IconButton.filledTonal(
-      onPressed: enabled
-          ? () {
-              Haptics.select();
-              onTap();
-            }
-          : null,
-      icon: Icon(icon),
-      iconSize: 24,
-      style: IconButton.styleFrom(
-        minimumSize: const Size(52, 52),
-        backgroundColor: cs.surfaceContainerHigh,
-      ),
-    );
+    Widget btn(IconData icon, bool enabled, VoidCallback onTap) =>
+        IconButton.filledTonal(
+          onPressed: enabled
+              ? () {
+                  Haptics.select();
+                  onTap();
+                }
+              : null,
+          icon: Icon(icon),
+          iconSize: 24,
+          style: IconButton.styleFrom(
+            minimumSize: const Size(52, 52),
+            backgroundColor: cs.surfaceContainerHigh,
+          ),
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -493,11 +485,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           child: ExcludeSemantics(
             child: Row(
               children: <Widget>[
-                btn(
-                  Icons.remove,
-                  value > min,
-                  () => onChanged(value - 1),
-                ),
+                btn(Icons.remove, value > min, () => onChanged(value - 1)),
                 Expanded(
                   child: Center(
                     child: Text(
@@ -506,11 +494,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                     ),
                   ),
                 ),
-                btn(
-                  Icons.add,
-                  value < max,
-                  () => onChanged(value + 1),
-                ),
+                btn(Icons.add, value < max, () => onChanged(value + 1)),
               ],
             ),
           ),
@@ -538,7 +522,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Suas horas por mês', style: Theme.of(sheet).textTheme.titleLarge),
+            Text(
+              'Suas horas por mês',
+              style: Theme.of(sheet).textTheme.titleLarge,
+            ),
             const SizedBox(height: Space.x2),
             const Text('Se você já calculou isso antes, é só colocar aqui.'),
             const SizedBox(height: Space.x4),
@@ -552,8 +539,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: () =>
-                    Navigator.pop(sheet, _digits(controller.text)),
+                onPressed: () => Navigator.pop(sheet, _digits(controller.text)),
                 child: const Text('Usar este número'),
               ),
             ),
@@ -566,7 +552,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     setState(() {
       _horasManual = true;
       // Número na mão: esquece a rotina (o horas passa a ser a fonte da verdade).
-      _draft = Perfil(
+      _draft = Area(
         id: _draft.id,
         nome: _draft.nome,
         renda: _draft.renda,
@@ -576,7 +562,6 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         provisaoCustom: _draft.provisaoCustom,
         diasSemana: null,
         horasDia: null,
-        regime: _draft.regime,
         custos: _draft.custos,
       );
     });
@@ -610,10 +595,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               for (final Custo c in custos)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    Icons.check_circle_outline,
-                    color: cs.primary,
-                  ),
+                  leading: Icon(Icons.check_circle_outline, color: cs.primary),
                   title: Text(c.label),
                   subtitle: Text(
                     'Toque pra editar o valor',
@@ -865,7 +847,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   }
 
   Widget _regimeOption(Regime r) {
-    final bool selected = _draft.regime == r.id;
+    final bool selected = ref.watch(regimeProvider) == r.id;
     final ThemeData theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x2),
@@ -892,7 +874,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                 borderRadius: const BorderRadius.all(Radii.md),
                 onTap: () {
                   Haptics.select();
-                  setState(() => _draft = _draft.copyWith(regime: r.id));
+                  // O regime é da PESSOA, não desta área: salvar aqui vale
+                  // pro app inteiro, e é o que impede duas áreas gerarem dois
+                  // DAS pro mesmo CNPJ.
+                  ref.read(regimeProvider.notifier).set(r.id);
                   announce(context, '${r.label} selecionado.');
                 },
                 child: Padding(
@@ -1010,7 +995,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Quanto guardar por mês', style: Theme.of(sheet).textTheme.titleLarge),
+            Text(
+              'Quanto guardar por mês',
+              style: Theme.of(sheet).textTheme.titleLarge,
+            ),
             const SizedBox(height: Space.x2),
             const Text(
               'Uma conta boa: 1 mês do seu salário por ano, dividido em 12. Mas quem manda é você.',

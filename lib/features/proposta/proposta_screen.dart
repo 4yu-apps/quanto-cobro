@@ -99,7 +99,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
       MaterialPageRoute<void>(
         builder: (_) => PropostaPreviewScreen(
           proposta: _proposta,
-          projetoId: widget.args.projetoId,
+          trabalhoId: widget.args.trabalhoId,
         ),
       ),
     );

@@ -5,14 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
+import '../../core/common/datas.dart';
 import '../../core/common/money.dart';
 import '../../core/config/app_config.dart';
-import '../../core/data/profile_repository.dart';
-import '../../core/model/perfil.dart';
-import '../../core/model/projeto.dart';
+import '../../core/data/area_repository.dart';
+import '../../core/data/entrada_repository.dart';
+import '../../core/model/area.dart';
+import '../../core/model/entrada.dart';
 import '../../core/model/regime.dart';
-import '../../core/model/reserva_entry.dart';
-import '../../core/projetos/agenda.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
@@ -24,16 +24,24 @@ import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/hero_value_card.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/tool_action_card.dart';
-import '../perfis/trabalho_switcher.dart';
 
-/// Painel (hub). Três estados (Blueprint §5.9). A virada validada dá à Divisão
-/// e aos tools recorrentes o peso de protagonistas (UI-SPEC §2.1).
+/// **Início** — o hub, e o objetivo nº 1 do app: responder *"quanto custa a
+/// minha hora?"*.
+///
+/// O que saiu daqui em 19/07/2026, e por quê:
+/// - **o nudge mensal** ("já te pagou?") — o gatilho de voltar ao app é o
+///   dinheiro cair, não o app cutucar;
+/// - **o lembrete de vencimento do DAS** e o "já paguei o imposto" — o dono foi
+///   explícito: isto não é um app de marcar imposto pago.
+///
+/// O que entrou: o **card do mês**, que era a aba "Guardado". É o mesmo balde,
+/// num zoom menor — não precisava de um slot de aba pra existir.
 class PainelScreen extends ConsumerWidget {
   const PainelScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ProfileState state = ref.watch(profileProvider);
+    final AreaState state = ref.watch(areaAtivaProvider);
     return Scaffold(
       appBar: AppBar(
         title: Builder(
@@ -45,20 +53,13 @@ class PainelScreen extends ConsumerWidget {
             ),
           ),
         ),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Configurações',
-            onPressed: () => context.push(Routes.config),
-          ),
-        ],
       ),
       body: switch (state) {
-        ProfileEmpty() => EmptyStateHero(
+        AreaVazia() => EmptyStateHero(
           onComecar: () => context.push(Routes.calc),
         ),
-        ProfileError(message: final String m) => _ErrorView(message: m),
-        ProfileReady(perfil: final Perfil p) => _PainelBody(perfil: p),
+        AreaErro(message: final String m) => _ErrorView(message: m),
+        AreaPronta(area: final Area a) => _Corpo(area: a),
       },
     );
   }
@@ -91,7 +92,7 @@ class _ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: Space.x2),
             Text(
-              'Seus dados podem ter se perdido. Vamos refazer, é rápido.',
+              message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -107,91 +108,29 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-/// Se o nudge mensal deve aparecer: lembrete LIGADO, trabalho é recorrente
-/// ("mensal") e nada foi registrado ainda este mês. Extraída pura (sem
-/// `DateTime.now()`, sem `ref`) pra ser testável direto.
-///
-/// Este é o nudge de QUEM AINDA NÃO TEM PROJETOS — o comportamento v0.5, que
-/// olha o `tipoContrato` do preset. Quem já cadastrou projetos recebe o nudge
-/// preciso, por-projeto (`projetosParaCutucar`): dizer "seu trabalho mensal já
-/// te pagou?" pra quem tem cinco clientes não ajuda a agir.
-bool shouldNudge({
-  required bool enabled,
-  required TipoContrato tipo,
-  required double brutoDoMes,
-}) {
-  return enabled && tipo == TipoContrato.mensal && brutoDoMes == 0;
-}
+class _Corpo extends ConsumerWidget {
+  const _Corpo({required this.area});
 
-class _PainelBody extends ConsumerStatefulWidget {
-  const _PainelBody({required this.perfil});
-
-  final Perfil perfil;
+  final Area area;
 
   @override
-  ConsumerState<_PainelBody> createState() => _PainelBodyState();
-}
-
-class _PainelBodyState extends ConsumerState<_PainelBody> {
-  // Dispensar o nudge mensal vale só pra esta sessão do app (não persiste).
-  bool _nudgeMensalDispensado = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final Perfil perfil = widget.perfil;
+  Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
-    final ValorHoraResult r = computeValorHora(perfil);
-    final Divisao div = divisaoFromProfile(perfil, r);
-    final String regimeTag = Regime.of(perfil.regime).tag;
+    final RegimeId regime = ref.watch(regimeProvider);
+    final ValorHoraResult r = computeValorHora(area, regime);
+    final Divisao div = divisaoFromArea(area, r);
     final bool stale = tabelasDefasadas(DateTime.now());
     final DateTime now = DateTime.now();
-    final ProfilesData trabalhos = ref.watch(profilesProvider);
-    final List<ReservaEntry> historico = ref.watch(reservaHistoryProvider);
-    final int guardadoMes = historico
-        .where(
-          (ReservaEntry e) =>
-              e.at.year == now.year &&
-              e.at.month == now.month &&
-              (e.perfilId == perfil.id ||
-                  (e.perfilId == null && trabalhos.perfis.length == 1)),
-        )
-        .fold<int>(0, (int s, ReservaEntry e) => s + e.reserva);
-    final bool leaoPago = ref.watch(leaoPagoProvider);
-    final bool lembrarDas =
-        perfil.regime == RegimeId.mei &&
-        now.day <= kDasVencimentoDia &&
-        !leaoPago;
-    final String impostoTexto = perfil.regime == RegimeId.mei
-        ? 'Seu DAS: ${moneyBRLCents(r.dasMensal!)}/mês, já dentro da conta. De cada pagamento, o resto é seu.'
-        : 'Separe ~${r.reservaPct}% de cada pagamento (sua faixa real, regime: $regimeTag).';
 
-    final bool reminderMensalOn = ref.watch(reminderMensalProvider);
-    final double brutoMesTrabalho = ref
-        .read(reservaHistoryRepositoryProvider)
-        .brutoDoMes(now, perfilId: perfil.id);
+    final AreasData areas = ref.watch(areasProvider);
+    final List<Entrada> entradas = ref.watch(entradasProvider);
+    final double entrou = entrouNoMes(entradas, now);
+    final int separado = separadoNoMes(entradas, now);
 
-    // O nudge por-projeto (07 §B.4) substitui o do preset assim que existe um
-    // projeto recorrente: ele sabe o NOME de quem deve pagar e o ciclo certo
-    // (o trimestral cutuca a cada 3 meses, não todo mês).
-    final List<Projeto> cutucar = ref.watch(projetosProvider);
-    final List<Projeto> devendo = reminderMensalOn
-        ? projetosParaCutucar(cutucar, historico, now)
-        : const <Projeto>[];
-    final bool temProjetosRecorrentes = cutucar.any(
-      (Projeto p) => p.recorrente,
-    );
-
-    final bool mostrarNudgeProjeto =
-        !_nudgeMensalDispensado && devendo.isNotEmpty;
-    final bool mostrarNudgeMensal =
-        !_nudgeMensalDispensado &&
-        !temProjetosRecorrentes &&
-        shouldNudge(
-          enabled: reminderMensalOn,
-          tipo: perfil.tipoContrato,
-          brutoDoMes: brutoMesTrabalho,
-        );
+    final String impostoTexto = regime == RegimeId.mei
+        ? 'Seu imposto: ${moneyBRLCents(r.dasMensal!)}/mês, já dentro da conta. De cada pagamento, o resto é seu.'
+        : 'Separe ~${r.reservaPct}% de cada pagamento (sua faixa real, ${Regime.of(regime).tag}).';
 
     return _ambientWash(
       context,
@@ -208,87 +147,19 @@ class _PainelBodyState extends ConsumerState<_PainelBody> {
             child: HeroValueCard(
               valorHora: r.valorHora,
               subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
-              perfilNome: perfil.nome,
-              onPerfilTap: () => showTrabalhoSwitcher(context, ref),
+              // O chip da área só aparece pra quem tem mais de uma — pro resto,
+              // a palavra "área" não existe no app.
+              perfilNome: areas.hierarquiaVisivel ? area.nome : null,
+              onPerfilTap: areas.hierarquiaVisivel
+                  ? () => context.push(Routes.areas)
+                  : null,
               onVerComoCheguei: () => context.push(Routes.detalhe),
               staleAno: stale ? kTabelasAno : null,
             ),
           ),
           const SizedBox(height: Space.x6),
 
-          if (mostrarNudgeProjeto) ...<Widget>[
-            _Nudge(
-              corpo: devendo.length == 1
-                  ? 'O "${devendo.first.nome}" (${devendo.first.recorrenciaLabel.toLowerCase()}) já te pagou? Registra pra manter sua reserva em dia.'
-                  : '${devendo.length} projetos ainda não registraram recebimento este mês. Registra pra manter sua reserva em dia.',
-              rotuloAcao: 'Registrar agora',
-              onAcao: () => devendo.length == 1
-                  // Um projeto só: vai direto pra Reserva DELE, já preenchida —
-                  // não faz sentido mandar a pessoa procurar na lista o que o
-                  // aviso acabou de nomear.
-                  ? context.push(Routes.reserva, extra: devendo.first.id)
-                  : context.go(Routes.projetos),
-              onDispensar: () => setState(() => _nudgeMensalDispensado = true),
-            ),
-            const SizedBox(height: Space.x4),
-          ] else if (mostrarNudgeMensal) ...<Widget>[
-            _Nudge(
-              corpo:
-                  'Já recebeu algo por "${perfil.nome}" este mês? Registra pra manter sua reserva em dia.',
-              rotuloAcao: 'Registrar agora',
-              onAcao: () => context.push(Routes.reserva),
-              onDispensar: () => setState(() => _nudgeMensalDispensado = true),
-            ),
-            const SizedBox(height: Space.x4),
-          ],
-
-          if (lembrarDas) ...<Widget>[
-            Semantics(
-              liveRegion: true,
-              child: Card(
-                color: theme.colorScheme.secondaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(Space.x4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'O DAS de ${_mesNome(now)} vence dia $kDasVencimentoDia',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: Space.x1),
-                      Text(
-                        '${moneyBRLCents(r.dasMensal!)} — ${guardadoMes >= r.dasMensal! ? 'você já separou o DAS.' : 'ainda não separou nada.'}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: Space.x2),
-                      Wrap(
-                        spacing: Space.x2,
-                        children: <Widget>[
-                          TextButton(
-                            onPressed: () =>
-                                ref.read(leaoPagoProvider.notifier).set(true),
-                            child: const Text('Já paguei'),
-                          ),
-                          TextButton(
-                            onPressed: () => context.push(Routes.reserva),
-                            child: const Text('Separar agora'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: Space.x4),
-          ],
-
-          // Os dois tools recorrentes, protagonistas (a virada) — peso >= herói.
+          // As duas ações recorrentes.
           StaggerIn(
             index: 1,
             child: IntrinsicHeight(
@@ -301,7 +172,7 @@ class _PainelBodyState extends ConsumerState<_PainelBody> {
                       title: 'Recebi um pagamento',
                       subtitle: 'separa o imposto na hora',
                       accent: d.reserva,
-                      onTap: () => context.push(Routes.reserva),
+                      onTap: () => context.push(Routes.entrada),
                     ),
                   ),
                   const SizedBox(width: Space.x3),
@@ -320,8 +191,17 @@ class _PainelBodyState extends ConsumerState<_PainelBody> {
           ),
           const SizedBox(height: Space.x6),
 
+          // O card do mês — o que era a aba "Guardado", agora no zoom certo.
+          if (entrou > 0) ...<Widget>[
+            StaggerIn(
+              index: 2,
+              child: _CardDoMes(entrou: entrou, separado: separado, mes: now),
+            ),
+            const SizedBox(height: Space.x6),
+          ],
+
           StaggerIn(
-            index: 2,
+            index: 3,
             child: PanelCard(
               padding: const EdgeInsets.all(Space.x5),
               child: Column(
@@ -346,68 +226,16 @@ class _PainelBodyState extends ConsumerState<_PainelBody> {
                       Icon(Icons.lock_outline, size: 16, color: d.reserva),
                       const SizedBox(width: Space.x2),
                       Expanded(
-                        child: Text.rich(
-                          TextSpan(
-                            children: <InlineSpan>[
-                              const TextSpan(text: ''),
-                              TextSpan(
-                                text: impostoTexto,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: d.reserva,
-                                  fontFeatures: AppType.tnum,
-                                ),
-                              ),
-                            ],
-                          ),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                        child: Text(
+                          impostoTexto,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: d.reserva,
+                            fontFeatures: AppType.tnum,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  if (guardadoMes > 0) ...<Widget>[
-                    const SizedBox(height: Space.x3),
-                    Semantics(
-                      button: true,
-                      label:
-                          'Você já guardou ${moneyBRL(guardadoMes)} este mês. Ver histórico.',
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: InkWell(
-                          // Troca de aba (não empilha 2ª cópia do Histórico).
-                          onTap: () => context.go(Routes.historico),
-                          borderRadius: const BorderRadius.all(Radii.sm),
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 48),
-                            child: Row(
-                              children: <Widget>[
-                                Icon(
-                                  Icons.savings_outlined,
-                                  size: 16,
-                                  color: d.reserva,
-                                ),
-                                const SizedBox(width: Space.x2),
-                                Expanded(
-                                  child: Text(
-                                    'Você já guardou ${moneyBRL(guardadoMes)} este mês',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: Space.x2),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -436,76 +264,80 @@ class _PainelBodyState extends ConsumerState<_PainelBody> {
   }
 }
 
-/// O cartão de cutucada. Um só componente pros dois nudges (por-projeto e o de
-/// preset) — eles têm o mesmo peso visual e o mesmo contrato: uma frase, uma
-/// ação, e um X que cala a coisa nesta sessão.
-class _Nudge extends StatelessWidget {
-  const _Nudge({
-    required this.corpo,
-    required this.rotuloAcao,
-    required this.onAcao,
-    required this.onDispensar,
+/// "Este mês entrou X · separou Y". Toca e abre o histórico completo.
+class _CardDoMes extends StatelessWidget {
+  const _CardDoMes({
+    required this.entrou,
+    required this.separado,
+    required this.mes,
   });
 
-  final String corpo;
-  final String rotuloAcao;
-  final VoidCallback onAcao;
-  final VoidCallback onDispensar;
+  final double entrou;
+  final int separado;
+  final DateTime mes;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final DivisaoColors d = theme.extension<DivisaoColors>()!;
+
     return Semantics(
-      liveRegion: true,
-      child: Card(
-        color: theme.colorScheme.secondaryContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(Space.x4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
+      button: true,
+      label:
+          'Em ${mesAno(mes)} entraram ${moneyBRL(entrou)}, e você separou '
+          '${moneyBRL(separado)} de imposto. Ver o histórico.',
+      child: ExcludeSemantics(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: () => context.push(Routes.historico),
+            borderRadius: const BorderRadius.all(Radii.lg),
+            child: PanelCard(
+              padding: const EdgeInsets.all(Space.x5),
+              accent: d.reserva,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      'Novo mês começou',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                  ),
-                  Semantics(
-                    button: true,
-                    label: 'Dispensar aviso',
-                    child: InkWell(
-                      onTap: onDispensar,
-                      borderRadius: const BorderRadius.all(Radii.sm),
-                      child: Padding(
-                        padding: const EdgeInsets.all(Space.x1),
-                        child: Icon(
-                          Icons.close,
-                          size: 18,
-                          color: theme.colorScheme.onSecondaryContainer,
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          'ESTE MÊS',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Space.x1),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      moneyBRL(entrou),
+                      maxLines: 1,
+                      style: AppType.valueXl.copyWith(color: d.lucro),
+                    ),
+                  ),
+                  const SizedBox(height: Space.x1),
+                  Text(
+                    'e você separou ${moneyBRL(separado)} de imposto',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: d.reserva,
+                      fontFeatures: AppType.tnum,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: Space.x1),
-              Text(
-                corpo,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-              ),
-              const SizedBox(height: Space.x2),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(onPressed: onAcao, child: Text(rotuloAcao)),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -544,22 +376,4 @@ Widget _ambientWash(BuildContext context, Widget child) {
       ),
     ),
   );
-}
-
-String _mesNome(DateTime date) {
-  const List<String> nomes = <String>[
-    'janeiro',
-    'fevereiro',
-    'março',
-    'abril',
-    'maio',
-    'junho',
-    'julho',
-    'agosto',
-    'setembro',
-    'outubro',
-    'novembro',
-    'dezembro',
-  ];
-  return nomes[date.month - 1];
 }

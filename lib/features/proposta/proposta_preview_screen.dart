@@ -10,7 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../app/routes.dart';
 import '../../core/model/marca.dart';
-import '../../core/model/projeto.dart';
+import '../../core/model/trabalho.dart';
 import '../../core/model/proposta.dart';
 import '../../core/proposta/proposta_pdf.dart';
 import '../../core/providers.dart';
@@ -31,14 +31,14 @@ class PropostaPreviewScreen extends ConsumerStatefulWidget {
   const PropostaPreviewScreen({
     super.key,
     required this.proposta,
-    this.projetoId,
+    this.trabalhoId,
   });
 
   final Proposta proposta;
 
-  /// Quando a proposta nasceu de um projeto, não faz sentido oferecer
-  /// "salvar como projeto" de novo.
-  final String? projetoId;
+  /// Quando a proposta nasceu de um trabalho, não faz sentido oferecer
+  /// "salvar como trabalho" de novo.
+  final String? trabalhoId;
 
   @override
   ConsumerState<PropostaPreviewScreen> createState() =>
@@ -118,7 +118,7 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
 
       if (!mounted) return;
       announce(context, 'Pronto. Isso tem cara de profissional.');
-      await _oferecerSalvarComoProjeto();
+      await _oferecerSalvarComoTrabalho();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -146,17 +146,17 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
     return '${limpo.length > 60 ? limpo.substring(0, 60).trim() : limpo}.pdf';
   }
 
-  /// O nascimento do projeto (07 §C): a proposta que saiu vira algo que a
+  /// O nascimento do trabalho (07 §C): a proposta que saiu vira algo que a
   /// pessoa acompanha, sem redigitar nada. Só é oferecido quando ela ainda não
-  /// veio de um projeto.
-  Future<void> _oferecerSalvarComoProjeto() async {
-    if (widget.projetoId != null) return;
+  /// veio de um trabalho.
+  Future<void> _oferecerSalvarComoTrabalho() async {
+    if (widget.trabalhoId != null) return;
 
     final bool? salvar = await showDialog<bool>(
       context: context,
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Proposta enviada'),
-        content: const Text('Quer acompanhar como projeto?'),
+        content: const Text('Quer acompanhar como trabalho?'),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(c, false),
@@ -164,42 +164,36 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Salvar como projeto'),
+            child: const Text('Salvar como trabalho'),
           ),
         ],
       ),
     );
     if (salvar != true || !mounted) return;
 
-    final Projeto projeto = Projeto(
-      id: 'pj_${DateTime.now().microsecondsSinceEpoch}',
-      nome: widget.proposta.servico.trim().isEmpty
-          ? 'Novo projeto'
-          : widget.proposta.servico.trim(),
-      cliente: widget.proposta.cliente.trim().isEmpty
-          ? null
-          : widget.proposta.cliente.trim(),
-      valor: widget.proposta.valor,
-      recorrencia: Recorrencia.avulso,
-      // Proposta enviada ≠ trabalho fechado. Ele nasce em Orçamento e só vira
-      // Ativo quando o cliente aceita (ou quando o primeiro "Recebi" prova
-      // que aceitou).
-      status: ProjetoStatus.orcamento,
+    final Trabalho trabalho = Trabalho(
+      id: 'tr_${DateTime.now().microsecondsSinceEpoch}',
+      areaId: ref.read(areasProvider).activeId ?? '',
+      nome: widget.proposta.cliente.trim().isNotEmpty
+          ? widget.proposta.cliente.trim()
+          : (widget.proposta.servico.trim().isEmpty
+                ? 'Novo trabalho'
+                : widget.proposta.servico.trim()),
       criadoEm: DateTime.now(),
-      perfilId: ref.read(profilesProvider).activeId,
+      valorCombinado: widget.proposta.valor,
     );
-    await ref.read(projetosProvider.notifier).save(projeto);
+    await ref.read(trabalhosProvider.notifier).save(trabalho);
     if (!mounted) return;
 
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
-          content: Text('"${projeto.nome}" está nos seus projetos'),
+          content: Text('"${trabalho.nome}" está nos seus trabalhos'),
           action: SnackBarAction(
             label: 'Ver',
             onPressed: () =>
-                context.push(Routes.projetoDetalhe, extra: projeto.id),
+                context.push(Routes.trabalhoDetalhe, extra: trabalho.id),
           ),
         ),
       );

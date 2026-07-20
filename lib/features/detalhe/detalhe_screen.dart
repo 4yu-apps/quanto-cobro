@@ -6,7 +6,7 @@ import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
 import '../../core/model/custo.dart';
-import '../../core/model/perfil.dart';
+import '../../core/model/area.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
@@ -18,19 +18,19 @@ import '../../core/ui/money_field.dart';
 
 /// Detalhamento ("como cheguei aqui", Blueprint §5.4): a conta linha a linha,
 /// custo a custo, com renda e horas editáveis inline e recálculo ao vivo.
-/// Aceita o perfil via rota (extra) — assim o Resultado mostra a conta CERTA
+/// Aceita o area via rota (extra) — assim o Resultado mostra a conta CERTA
 /// mesmo antes de salvar (confiança é a função desta tela).
 class DetalheScreen extends ConsumerStatefulWidget {
-  const DetalheScreen({super.key, this.perfil});
+  const DetalheScreen({super.key, this.area});
 
-  final Perfil? perfil;
+  final Area? area;
 
   @override
   ConsumerState<DetalheScreen> createState() => _DetalheScreenState();
 }
 
 class _DetalheScreenState extends ConsumerState<DetalheScreen> {
-  Perfil? _perfil;
+  Area? _area;
   bool _dirty = false;
   final TextEditingController _renda = TextEditingController();
   final TextEditingController _horas = TextEditingController();
@@ -38,15 +38,15 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
   @override
   void initState() {
     super.initState();
-    // Prioridade: perfil vindo da rota (draft do Resultado) > perfil salvo.
-    final Perfil? fromRoute = widget.perfil;
+    // Prioridade: area vindo da rota (draft do Resultado) > area salvo.
+    final Area? fromRoute = widget.area;
     if (fromRoute != null) {
-      _perfil = fromRoute;
+      _area = fromRoute;
     } else {
-      final ProfileState st = ref.read(profileProvider);
-      if (st is ProfileReady) _perfil = st.perfil;
+      final AreaState st = ref.read(areaAtivaProvider);
+      if (st is AreaPronta) _area = st.area;
     }
-    final Perfil? p = _perfil;
+    final Area? p = _area;
     if (p != null) {
       _renda.text = p.renda.round().toString();
       _horas.text = p.horas.toString();
@@ -63,14 +63,14 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
   int _digits(String s) =>
       int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
 
-  void _edit(Perfil novo) => setState(() {
-    _perfil = novo;
+  void _edit(Area novo) => setState(() {
+    _area = novo;
     _dirty = true;
   });
 
   @override
   Widget build(BuildContext context) {
-    final Perfil? p = _perfil;
+    final Area? p = _area;
     return Scaffold(
       appBar: AppBar(title: const Text('Como cheguei nesse número')),
       body: p == null
@@ -90,13 +90,13 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                 ),
               ),
             )
-          : _body(context, p),
+          : _body(context, p, ref.watch(regimeProvider)),
     );
   }
 
-  Widget _body(BuildContext context, Perfil p) {
+  Widget _body(BuildContext context, Area p, RegimeId regime) {
     final ThemeData theme = Theme.of(context);
-    final ValorHoraResult r = computeValorHora(p);
+    final ValorHoraResult r = computeValorHora(p, regime);
     return ListView(
       padding: const EdgeInsets.all(Space.x4),
       children: <Widget>[
@@ -135,11 +135,13 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           spacing: Space.x2,
           runSpacing: Space.x2,
           children: <Widget>[
-            for (final Regime regime in Regime.all.values)
+            for (final Regime opcao in Regime.all.values)
               ChoiceChip(
-                label: Text(regime.tag),
-                selected: p.regime == regime.id,
-                onSelected: (_) => _edit(p.copyWith(regime: regime.id)),
+                label: Text(opcao.tag),
+                selected: regime == opcao.id,
+                // O regime é da PESSOA: mudar aqui vale pro app inteiro.
+                onSelected: (_) =>
+                    ref.read(regimeProvider.notifier).set(opcao.id),
               ),
           ],
         ),
@@ -173,12 +175,12 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                 ),
                 _linha(
                   context,
-                  p.regime == RegimeId.mei
+                  regime == RegimeId.mei
                       ? '+ DAS (fixo do MEI)'
                       : '+ Imposto estimado (~${r.reservaPct}% efetivo)',
                   moneyBRL(r.imposto),
                 ),
-                if (p.regime == RegimeId.simples)
+                if (regime == RegimeId.simples)
                   Padding(
                     padding: const EdgeInsets.only(top: Space.x2),
                     child: Text(
@@ -211,8 +213,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                           style: AppType.valueLg.copyWith(
                             color: theme.colorScheme.primary,
                           ),
-                          semanticLabel:
-                              'Valor-hora: ${moneyBRL(r.valorHora)}',
+                          semanticLabel: 'Valor-hora: ${moneyBRL(r.valorHora)}',
                         ),
                       ),
                     ),
@@ -237,7 +238,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
               ? null
               : () async {
                   Haptics.commit();
-                  await ref.read(profilesProvider.notifier).saveAndActivate(p);
+                  await ref.read(areasProvider.notifier).saveAndActivate(p);
                   if (context.mounted) {
                     setState(() => _dirty = false);
                     if (context.canPop()) context.pop();
@@ -314,7 +315,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     );
   }
 
-  Future<void> _editarCusto(Perfil perfil, Custo custo) async {
+  Future<void> _editarCusto(Area area, Custo custo) async {
     final TextEditingController controller = TextEditingController(
       text: custo.valor.round().toString(),
     );
@@ -359,9 +360,9 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
     if (valor == null || !mounted) return;
     _edit(
-      perfil.copyWith(
+      area.copyWith(
         custos: <Custo>[
-          for (final Custo item in perfil.custos)
+          for (final Custo item in area.custos)
             item.id == custo.id
                 ? Custo(id: item.id, label: item.label, valor: valor)
                 : item,
@@ -370,9 +371,9 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     );
   }
 
-  Future<void> _editarProvisao(Perfil perfil) async {
+  Future<void> _editarProvisao(Area area) async {
     final TextEditingController controller = TextEditingController(
-      text: perfil.provisaoEfetiva.round().toString(),
+      text: area.provisaoEfetiva.round().toString(),
     );
     final double? valor = await showModalBottomSheet<double>(
       context: context,
@@ -416,6 +417,6 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     );
     Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
     if (valor == null || !mounted) return;
-    _edit(perfil.copyWith(provisao: valor, provisaoCustom: true));
+    _edit(area.copyWith(provisao: valor, provisaoCustom: true));
   }
 }

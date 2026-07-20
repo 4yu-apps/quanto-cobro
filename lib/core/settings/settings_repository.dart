@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/regime.dart';
+
 /// Settings locais (tema, etc.). O ESCURO é o padrão (Design System §3).
 class SettingsRepository {
   SettingsRepository(this._prefs);
@@ -33,6 +35,28 @@ class SettingsRepository {
   String modo() => _prefs.getString(_kModo) ?? 'br';
   Future<void> setModo(String value) => _prefs.setString(_kModo, value);
 
+  // Regime tributário — da PESSOA, não da área de trabalho.
+  //
+  // Morava no perfil/área até 19/07/2026, e ali produzia número ERRADO: duas
+  // áreas geravam dois DAS pro mesmo CNPJ, enquanto o próprio app dizia em
+  // texto que "o imposto do mês é um só". Ninguém é MEI só às terças.
+  static const String _kRegime = 'regime';
+
+  RegimeId regime() {
+    final String? salvo = _prefs.getString(_kRegime);
+    if (salvo != null) {
+      for (final RegimeId r in RegimeId.values) {
+        if (r.name == salvo) return r;
+      }
+    }
+    // Sem escolha ainda: quem marcou "recebo de fora" no onboarding começa em
+    // internacional; o resto começa em MEI, o regime mais comum do público.
+    return modo() == 'intl' ? RegimeId.intl : RegimeId.mei;
+  }
+
+  Future<void> setRegime(RegimeId value) =>
+      _prefs.setString(_kRegime, value.name);
+
   // Telemetria (analytics/crash) — opt-in de verdade (LGPD + promessa do onboarding
   // "sem enviar seus dados"). Default DESLIGADO; liga só se o usuário aceitar em Config.
   static const String _kTelemetry = 'telemetry_enabled';
@@ -50,57 +74,4 @@ class SettingsRepository {
   static const String _kTextScale = 'text_scale';
   double textScale() => _prefs.getDouble(_kTextScale) ?? 1.0;
   Future<void> setTextScale(double v) => _prefs.setDouble(_kTextScale, v);
-
-  // Reserva: uma troca pontual de regime fica nesta sessão de trabalho, mas é
-  // ignorada automaticamente se o regime-base do trabalho mudar.
-  static const String _kReservaRegimes = 'reserva_regimes';
-
-  String? reservaRegime(String trabalhoId, String regimeBase) {
-    return (_prefs.getStringList(_kReservaRegimes) ?? <String>[])
-        .cast<String>()
-        .where((String item) => item.startsWith('$trabalhoId|$regimeBase|'))
-        .map((String item) => item.split('|').last)
-        .firstOrNull;
-  }
-
-  Future<void> setReservaRegime(
-    String trabalhoId,
-    String regimeBase,
-    String regime,
-  ) {
-    final List<String> items =
-        (_prefs.getStringList(_kReservaRegimes) ?? <String>[])
-            .where((String item) => !item.startsWith('$trabalhoId|'))
-            .toList();
-    items.add('$trabalhoId|$regimeBase|$regime');
-    return _prefs.setStringList(_kReservaRegimes, items);
-  }
-
-  // Lembrete mensal: avisa no Painel quando um trabalho "mensal" ainda não
-  // teve renda registrada no mês. Default LIGADO (é o comportamento seguro
-  // pra quem depende de renda recorrente não esquecer de registrar).
-  static const String _kReminderMensal = 'reminder_mensal';
-  bool reminderMensal() => _prefs.getBool(_kReminderMensal) ?? true;
-  Future<void> setReminderMensal(bool v) =>
-      _prefs.setBool(_kReminderMensal, v);
-
-  // "Já paguei o imposto deste mês" — quitação mensal do loop da reserva (P1-7).
-  // Guardado como lista de meses 'yyyy-MM'.
-  static const String _kLeaoPago = 'leao_pago_meses';
-  static String _mesKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}';
-
-  bool leaoPago(DateTime mes) =>
-      (_prefs.getStringList(_kLeaoPago) ?? <String>[]).contains(_mesKey(mes));
-
-  Future<void> setLeaoPago(DateTime mes, bool pago) {
-    final Set<String> meses = (_prefs.getStringList(_kLeaoPago) ?? <String>[])
-        .toSet();
-    if (pago) {
-      meses.add(_mesKey(mes));
-    } else {
-      meses.remove(_mesKey(mes));
-    }
-    return _prefs.setStringList(_kLeaoPago, meses.toList()..sort());
-  }
 }

@@ -13,7 +13,13 @@
 enum RegimeId { mei, cpf, simples, intl, carneLeao }
 
 /// Como o imposto do regime é calculado.
-enum TaxKind { fixoMensal, progressivo, faixasSimples, flat, progressivoSemInss }
+enum TaxKind {
+  fixoMensal,
+  progressivo,
+  faixasSimples,
+  flat,
+  progressivoSemInss,
+}
 
 class Regime {
   const Regime({
@@ -34,35 +40,40 @@ class Regime {
     RegimeId.mei: Regime(
       id: RegimeId.mei,
       label: 'Sou MEI',
-      sub: 'Você abriu MEI: paga o DAS (boleto fixo mensal), não uma % do que fatura.',
+      sub:
+          'Você abriu MEI: paga o DAS (boleto fixo mensal), não uma % do que fatura.',
       kind: TaxKind.fixoMensal,
       tag: 'MEI',
     ),
     RegimeId.cpf: Regime(
       id: RegimeId.cpf,
       label: 'Autônomo (CPF)',
-      sub: 'Você trabalha por conta, sem abrir empresa. Imposto pela sua faixa de renda + INSS.',
+      sub:
+          'Você trabalha por conta, sem abrir empresa. Imposto pela sua faixa de renda + INSS.',
       kind: TaxKind.progressivo,
       tag: 'Autônomo',
     ),
     RegimeId.simples: Regime(
       id: RegimeId.simples,
       label: 'Tenho empresa no Simples',
-      sub: 'Você tem empresa no Simples Nacional. Alíquota efetiva pela sua faixa.',
+      sub:
+          'Você tem empresa no Simples Nacional. Alíquota efetiva pela sua faixa.',
       kind: TaxKind.faixasSimples,
       tag: 'Simples',
     ),
     RegimeId.intl: Regime(
       id: RegimeId.intl,
       label: 'Não sei / cliente no exterior',
-      sub: 'Não faz ideia, ou recebe de fora? Guarda uma reserva de segurança de 25% a 30%.',
+      sub:
+          'Não faz ideia, ou recebe de fora? Guarda uma reserva de segurança de 25% a 30%.',
       kind: TaxKind.flat,
       tag: 'Internacional',
     ),
     RegimeId.carneLeao: Regime(
       id: RegimeId.carneLeao,
       label: 'Recebo de fora, sei que sou CPF',
-      sub: 'Freelancer com cliente no exterior, como pessoa física. Paga só o IRPF pela sua faixa (carnê-leão) — sem INSS, porque não contribui como autônomo.',
+      sub:
+          'Freelancer com cliente no exterior, como pessoa física. Paga só o IRPF pela sua faixa (carnê-leão) — sem INSS, porque não contribui como autônomo.',
       kind: TaxKind.progressivoSemInss,
       tag: 'CPF exterior',
     ),

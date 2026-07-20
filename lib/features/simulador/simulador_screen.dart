@@ -69,15 +69,13 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
-    final ProfileState st = ref.watch(profileProvider);
-    final int alvoVH = st is ProfileReady
-        ? computeValorHora(st.perfil).valorHora
+    final AreaState st = ref.watch(areaAtivaProvider);
+    final RegimeId regime = ref.watch(regimeProvider);
+    final int alvoVH = st is AreaPronta
+        ? computeValorHora(st.area, regime).valorHora
         : 0;
-    final RegimeId regime = st is ProfileReady
-        ? st.perfil.regime
-        : RegimeId.mei;
-    final double? taxaEfetiva = st is ProfileReady
-        ? computeValorHora(st.perfil).rate
+    final double? taxaEfetiva = st is AreaPronta
+        ? computeValorHora(st.area, regime).rate
         : null;
 
     final int valor = _digits(_valor.text);

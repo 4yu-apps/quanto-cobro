@@ -71,7 +71,8 @@ class Materials extends ThemeExtension<Materials> {
       panelFillTop: Color.lerp(panelFillTop, other.panelFillTop, t)!,
       panelFillBottom: Color.lerp(panelFillBottom, other.panelFillBottom, t)!,
       glassFill: Color.lerp(glassFill, other.glassFill, t)!,
-      glassBlurSigma: (glassBlurSigma + (other.glassBlurSigma - glassBlurSigma) * t),
+      glassBlurSigma:
+          (glassBlurSigma + (other.glassBlurSigma - glassBlurSigma) * t),
       navHalo: Color.lerp(navHalo, other.navHalo, t)!,
     );
   }

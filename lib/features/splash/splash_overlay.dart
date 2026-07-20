@@ -21,11 +21,16 @@ class SplashOverlay extends StatefulWidget {
   State<SplashOverlay> createState() => _SplashOverlayState();
 }
 
-class _SplashOverlayState extends State<SplashOverlay> with TickerProviderStateMixin {
-  late final AnimationController _reveal =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
-  late final AnimationController _exit =
-      AnimationController(vsync: this, duration: Motion.base);
+class _SplashOverlayState extends State<SplashOverlay>
+    with TickerProviderStateMixin {
+  late final AnimationController _reveal = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  );
+  late final AnimationController _exit = AnimationController(
+    vsync: this,
+    duration: Motion.base,
+  );
   bool _hapticFired = false;
   bool _reduce = false;
   bool _started = false;
@@ -93,22 +98,32 @@ class _SplashOverlayState extends State<SplashOverlay> with TickerProviderStateM
             final double t = _reveal.value;
             final double exitT = _exit.value;
             final double aurora = _started
-                ? (_reduce ? 1 : _seg(t, 0.0, 0.24, curve: MotionCurves.emphasizedDecel))
+                ? (_reduce
+                      ? 1
+                      : _seg(t, 0.0, 0.24, curve: MotionCurves.emphasizedDecel))
                 : 0;
-            final double ring =
-                _reduce ? 1 : _seg(t, 0.14, 0.56, curve: MotionCurves.emphasizedDecel);
-            final double markIn =
-                _reduce ? 1 : _seg(t, 0.14, 0.30, curve: MotionCurves.standard);
-            final double core =
-                _reduce ? 1 : _seg(t, 0.44, 0.74, curve: MotionCurves.emphasizedDecel);
-            final double sheen =
-                _reduce ? 0 : _seg(t, 0.62, 0.90, curve: MotionCurves.standard);
-            final double word =
-                _reduce ? 1 : _seg(t, 0.66, 1.00, curve: MotionCurves.emphasizedDecel);
-            final double tag =
-                _reduce ? 1 : _seg(t, 0.75, 1.00, curve: MotionCurves.emphasizedDecel);
+            final double ring = _reduce
+                ? 1
+                : _seg(t, 0.14, 0.56, curve: MotionCurves.emphasizedDecel);
+            final double markIn = _reduce
+                ? 1
+                : _seg(t, 0.14, 0.30, curve: MotionCurves.standard);
+            final double core = _reduce
+                ? 1
+                : _seg(t, 0.44, 0.74, curve: MotionCurves.emphasizedDecel);
+            final double sheen = _reduce
+                ? 0
+                : _seg(t, 0.62, 0.90, curve: MotionCurves.standard);
+            final double word = _reduce
+                ? 1
+                : _seg(t, 0.66, 1.00, curve: MotionCurves.emphasizedDecel);
+            final double tag = _reduce
+                ? 1
+                : _seg(t, 0.75, 1.00, curve: MotionCurves.emphasizedDecel);
             final double markScale = _reduce ? 1.0 : (0.90 + 0.10 * ring);
-            final double overlayOpacity = _reduce ? word : 1.0; // reduce: fade tudo junto
+            final double overlayOpacity = _reduce
+                ? word
+                : 1.0; // reduce: fade tudo junto
 
             return Opacity(
               opacity: (1 - exitT) * overlayOpacity,
@@ -213,24 +228,34 @@ class _AuroraPainter extends CustomPainter {
     canvas.drawRect(
       rect,
       Paint()
-        ..shader = RadialGradient(
-          colors: <Color>[
-            const Color(0xFF57E5A9).withValues(alpha: 0.10 * t),
-            const Color(0xFF57E5A9).withValues(alpha: 0),
-          ],
-        ).createShader(
-            Rect.fromCircle(center: Offset(size.width * 0.2, size.height * 0.3), radius: raio)),
+        ..shader =
+            RadialGradient(
+              colors: <Color>[
+                const Color(0xFF57E5A9).withValues(alpha: 0.10 * t),
+                const Color(0xFF57E5A9).withValues(alpha: 0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.2, size.height * 0.3),
+                radius: raio,
+              ),
+            ),
     );
     canvas.drawRect(
       rect,
       Paint()
-        ..shader = RadialGradient(
-          colors: <Color>[
-            const Color(0xFFEFCE6F).withValues(alpha: 0.09 * t),
-            const Color(0xFFEFCE6F).withValues(alpha: 0),
-          ],
-        ).createShader(
-            Rect.fromCircle(center: Offset(size.width * 0.82, size.height * 0.72), radius: raio)),
+        ..shader =
+            RadialGradient(
+              colors: <Color>[
+                const Color(0xFFEFCE6F).withValues(alpha: 0.09 * t),
+                const Color(0xFFEFCE6F).withValues(alpha: 0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(size.width * 0.82, size.height * 0.72),
+                radius: raio,
+              ),
+            ),
     );
   }
 

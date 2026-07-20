@@ -8,13 +8,13 @@ import '../../core/model/proposta.dart';
 import '../../core/providers.dart';
 
 /// O que a rota da proposta recebe: o rascunho já preenchido e, quando ela
-/// nasceu de um projeto, de qual projeto veio (pra não oferecer "salvar como
-/// projeto" o que já É um projeto).
+/// nasceu de um trabalho, de qual trabalho veio (pra não oferecer "salvar como
+/// trabalho" o que já É um trabalho).
 class PropostaArgs {
-  const PropostaArgs({required this.inicial, this.projetoId});
+  const PropostaArgs({required this.inicial, this.trabalhoId});
 
   final Proposta inicial;
-  final String? projetoId;
+  final String? trabalhoId;
 }
 
 /// Porta de entrada única da proposta (07 §A.2). A proposta é uma AÇÃO, não
@@ -28,7 +28,7 @@ Future<void> abrirProposta(
   BuildContext context,
   WidgetRef ref, {
   required Proposta inicial,
-  String? projetoId,
+  String? trabalhoId,
 }) async {
   final Marca marca = ref.read(marcaProvider);
 
@@ -42,6 +42,6 @@ Future<void> abrirProposta(
 
   await context.push(
     Routes.proposta,
-    extra: PropostaArgs(inicial: inicial, projetoId: projetoId),
+    extra: PropostaArgs(inicial: inicial, trabalhoId: trabalhoId),
   );
 }

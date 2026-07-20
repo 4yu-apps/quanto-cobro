@@ -7,7 +7,7 @@ import '../../core/ads/ads.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
-import '../../core/model/perfil.dart';
+import '../../core/model/area.dart';
 import '../../core/model/proposta.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
@@ -35,9 +35,9 @@ import '../proposta/proposta_flow.dart';
 /// O Salvar vive numa barra fixa (nunca abaixo da dobra) e o haptic do clímax
 /// vibra no NASCIMENTO do número, não no tap do botão que trouxe até aqui.
 class ResultadoScreen extends ConsumerStatefulWidget {
-  const ResultadoScreen({super.key, this.perfil});
+  const ResultadoScreen({super.key, this.area});
 
-  final Perfil? perfil;
+  final Area? area;
 
   @override
   ConsumerState<ResultadoScreen> createState() => _ResultadoScreenState();
@@ -47,7 +47,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
   @override
   void initState() {
     super.initState();
-    final Perfil? p = widget.perfil;
+    final Area? p = widget.area;
     if (p == null) return;
     // O haptic pertence ao primeiro frame do resultado (MOTION-SPEC §1.1):
     // o corpo sente "nasceu" junto com os olhos, não 350ms antes.
@@ -55,7 +55,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
       if (!mounted) return;
       Haptics.resultBorn();
       // O aha chega junto pra quem ouve: anúncio após o count-up assentar.
-      final ValorHoraResult r = computeValorHora(p);
+      final ValorHoraResult r = computeValorHora(p, ref.read(regimeProvider));
       Future<void>.delayed(Motion.countUp, () {
         if (mounted) {
           announce(
@@ -69,7 +69,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Perfil? p = widget.perfil;
+    final Area? p = widget.area;
     if (p == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Seu resultado')),
@@ -98,8 +98,9 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
-    final ValorHoraResult r = computeValorHora(p);
-    final Divisao div = divisaoFromProfile(p, r);
+    final RegimeId regime = ref.watch(regimeProvider);
+    final ValorHoraResult r = computeValorHora(p, regime);
+    final Divisao div = divisaoFromArea(p, r);
     final bool custoMaiorQueMeta = p.custosTotal > p.renda;
     final bool stale = tabelasDefasadas(DateTime.now());
     final TextStyle heroStyle = AppType.valueHero.copyWith(color: cs.primary);
@@ -113,7 +114,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           onPressed: () async {
             Haptics.commit();
             announce(context, 'Trabalho salvo. Voltando pro painel.');
-            await ref.read(profilesProvider.notifier).saveAndActivate(p);
+            await ref.read(areasProvider.notifier).saveAndActivate(p);
             telemetry.evento(Evento.areaSalva);
             // Único corte seguro pra um intersticial (fim de tarefa). No-op até
             // ter SDK/chave — ver core/ads/ads.dart. Nunca entre calc→Resultado.
@@ -214,7 +215,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  _blocoImposto(context, r, d),
+                  _blocoImposto(context, r, d, regime),
                   const Divider(),
                   MergeSemantics(
                     child: _bloco(
@@ -379,15 +380,15 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
     BuildContext context,
     ValorHoraResult r,
     DivisaoColors d,
+    RegimeId regime,
   ) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    final Perfil p = widget.perfil!;
     final String pctFino = (r.rate * 100)
         .toStringAsFixed(1)
         .replaceAll('.', ',');
 
-    switch (p.regime) {
+    switch (regime) {
       case RegimeId.mei:
         return MergeSemantics(
           child: Column(

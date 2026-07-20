@@ -12,19 +12,19 @@ import '../../core/theme/tokens.dart';
 ///
 /// A camada VISUAL (cores, altura, motion) é intencionalmente idêntica ao que
 /// já existia — a trilha visual cuida de escala/estética. Aqui só nasce a voz.
-class ReservaBar extends StatelessWidget {
-  const ReservaBar({
+class EntradaBar extends StatelessWidget {
+  const EntradaBar({
     super.key,
-    required this.amount,
-    required this.reserva,
+    required this.total,
+    required this.separado,
     required this.sobra,
   });
 
   /// Quanto a pessoa recebeu (denominador da barra).
-  final num amount;
+  final num total;
 
   /// Quanto separar pro imposto.
-  final num reserva;
+  final num separado;
 
   /// Quanto sobra pra usar (o que a legenda mostra em "Pra usar").
   final num sobra;
@@ -32,9 +32,9 @@ class ReservaBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
-    final double fR = amount <= 0 ? 0 : reserva / amount;
+    final double fR = total <= 0 ? 0 : separado / total;
     final String semantica =
-        'Pra usar ${moneyBRL(sobra)}. Reserva ${moneyBRL(reserva)}.';
+        'Pra usar ${moneyBRL(sobra)}. Reserva ${moneyBRL(separado)}.';
 
     return Semantics(
       container: true,

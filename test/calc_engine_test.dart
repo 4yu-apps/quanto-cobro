@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantocobro/core/calc/calc_engine.dart';
 import 'package:quantocobro/core/calc/tax_tables.dart';
 import 'package:quantocobro/core/model/custo.dart';
-import 'package:quantocobro/core/model/perfil.dart';
+import 'package:quantocobro/core/model/area.dart';
 import 'package:quantocobro/core/model/regime.dart';
 
 void main() {
@@ -71,7 +71,7 @@ void main() {
 
   group('computeValorHora', () {
     test('MEI: DAS fixo somado (nunca 16% do faturamento) e alíquota ~1%', () {
-      final ValorHoraResult r = computeValorHora(Perfil.padrao());
+      final ValorHoraResult r = computeValorHora(Area.padrao(), RegimeId.mei);
       // base = 5000 + 850 custos + 416,67 provisão (renda/12) = 6266,67
       expect(r.base, closeTo(6266.67, 0.1));
       expect(r.imposto, closeTo(kDasMensalMei, 0.01));
@@ -84,15 +84,14 @@ void main() {
 
     test('MEI: meta alta estoura o teto e o motor avisa', () {
       final ValorHoraResult r = computeValorHora(
-        Perfil.padrao().copyWith(renda: 10000),
+        Area.padrao().copyWith(renda: 10000),
+        RegimeId.mei,
       );
       expect(r.acimaTetoMei, isTrue);
     });
 
     test('CPF: gross-up progressivo converge e cobra INSS + IRPF', () {
-      final ValorHoraResult r = computeValorHora(
-        Perfil.padrao().copyWith(regime: RegimeId.cpf),
-      );
+      final ValorHoraResult r = computeValorHora(Area.padrao(), RegimeId.cpf);
       // f = base + imposto(f) precisa fechar (ponto-fixo estável):
       expect(
         r.faturamento,
@@ -106,75 +105,67 @@ void main() {
 
     test('CPF renda baixa: redutor derruba a efetiva pra ~20% (só INSS)', () {
       final ValorHoraResult r = computeValorHora(
-        Perfil.padrao().copyWith(
-          regime: RegimeId.cpf,
-          renda: 2500,
-          custos: const <Custo>[],
-        ),
+        Area.padrao().copyWith(renda: 2500, custos: const <Custo>[]),
+        RegimeId.cpf,
       );
       expect(r.rate, closeTo(0.20, 0.02));
     });
 
     test('Simples: renda típica cai na 1ª faixa (6%), não em 12% flat', () {
       final ValorHoraResult r = computeValorHora(
-        Perfil.padrao().copyWith(regime: RegimeId.simples),
+        Area.padrao(),
+        RegimeId.simples,
       );
       expect(r.reservaPct, 6);
     });
 
     test('horas 0 não estoura (usa mínimo 1, sem divisão por zero)', () {
       final ValorHoraResult r = computeValorHora(
-        Perfil.padrao().copyWith(horas: 0),
+        Area.padrao().copyWith(horas: 0),
+        RegimeId.mei,
       );
       expect(r.valorHora, greaterThan(0));
     });
 
-    test(
-      'Carnê-leão puro: gross-up progressivo converge, sem INSS, e cobra '
-      'menos imposto total que o CPF autônomo no mesmo perfil',
-      () {
-        final Perfil base = Perfil.padrao();
-        final ValorHoraResult carneLeao = computeValorHora(
-          base.copyWith(regime: RegimeId.carneLeao),
-        );
-        final ValorHoraResult cpf = computeValorHora(
-          base.copyWith(regime: RegimeId.cpf),
-        );
+    test('Carnê-leão puro: gross-up progressivo converge, sem INSS, e cobra '
+        'menos imposto total que o CPF autônomo no mesmo perfil', () {
+      final Area base = Area.padrao();
+      final ValorHoraResult carneLeao = computeValorHora(
+        base,
+        RegimeId.carneLeao,
+      );
+      final ValorHoraResult cpf = computeValorHora(base, RegimeId.cpf);
 
-        // f = base + imposto(f) precisa fechar (ponto-fixo estável):
-        expect(
-          carneLeao.faturamento,
-          closeTo(
-            carneLeao.base + impostoCarneLeao(carneLeao.faturamento),
-            1.0,
-          ),
-        );
-        // Progressivo, mas sem o INSS: alíquota efetiva positiva e sensata.
-        expect(carneLeao.rate, greaterThan(0));
-        expect(carneLeao.rate, lessThan(0.30));
-        expect(carneLeao.dasMensal, isNull);
-        expect(carneLeao.acimaTetoMei, isFalse);
+      // f = base + imposto(f) precisa fechar (ponto-fixo estável):
+      expect(
+        carneLeao.faturamento,
+        closeTo(carneLeao.base + impostoCarneLeao(carneLeao.faturamento), 1.0),
+      );
+      // Progressivo, mas sem o INSS: alíquota efetiva positiva e sensata.
+      expect(carneLeao.rate, greaterThan(0));
+      expect(carneLeao.rate, lessThan(0.30));
+      expect(carneLeao.dasMensal, isNull);
+      expect(carneLeao.acimaTetoMei, isFalse);
 
-        // Mesmo perfil, mesmo faturamento-alvo de base: carnê-leão puro sai
-        // mais barato que CPF autônomo (que soma INSS por cima do IRPF).
-        expect(carneLeao.imposto, lessThan(cpf.imposto));
-        expect(carneLeao.rate, lessThan(cpf.rate));
-      },
-    );
+      // Mesmo perfil, mesmo faturamento-alvo de base: carnê-leão puro sai
+      // mais barato que CPF autônomo (que soma INSS por cima do IRPF).
+      expect(carneLeao.imposto, lessThan(cpf.imposto));
+      expect(carneLeao.rate, lessThan(cpf.rate));
+    });
   });
 
   group('computeReserva', () {
     test('MEI: reserva vira o DAS do mês, não % do pagamento', () {
       final ReservaResult r = computeReserva(2000, RegimeId.mei);
       expect(r.isMei, isTrue);
-      expect(r.reserva, kDasMensalMei.round());
+      expect(r.separado, kDasMensalMei.round());
       expect(r.sobra, closeTo(2000 - kDasMensalMei.round(), 0.01));
       expect(r.dasMensal, kDasMensalMei);
     });
 
     test('MEI: pagamento menor que o DAS não fica negativo', () {
       final ReservaResult r = computeReserva(50, RegimeId.mei);
-      expect(r.reserva, 50);
+      expect(r.separado, 50);
       expect(r.sobra, 0);
     });
 
@@ -184,7 +175,7 @@ void main() {
         RegimeId.cpf,
         taxaEfetiva: 0.20,
       );
-      expect(r.reserva, 400);
+      expect(r.separado, 400);
       expect(r.pct, 20);
       expect(r.isMei, isFalse);
     });
@@ -234,17 +225,23 @@ void main() {
     });
 
     test('nunca retorna zero (evita divisão por zero adiante)', () {
-      expect(horasFaturaveisPorRotina(diasSemana: 1, horasDia: 1), greaterThan(0));
+      expect(
+        horasFaturaveisPorRotina(diasSemana: 1, horasDia: 1),
+        greaterThan(0),
+      );
     });
   });
 
   group('regime carnê-leão puro', () {
-    test('Perfil com RegimeId.carneLeao sobrevive a um round-trip por JSON', () {
-      final Perfil p = Perfil.padrao().copyWith(regime: RegimeId.carneLeao);
-      final Perfil back = Perfil.fromJson(p.toJson());
-      expect(back.regime, RegimeId.carneLeao);
+    // O regime saiu da Área e virou ajuste da PESSOA (settings) — duas áreas
+    // não podem gerar dois DAS pro mesmo CNPJ. O round-trip que importa agora
+    // é o da Área sem ele.
+    test('Area sobrevive a um round-trip por JSON', () {
+      final Area p = Area.padrao().copyWith(renda: 7000, horas: 100);
+      final Area back = Area.fromJson(p.toJson());
       expect(back.renda, p.renda);
       expect(back.horas, p.horas);
+      expect(back.custos.length, p.custos.length);
     });
   });
 }
