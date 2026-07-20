@@ -23,12 +23,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _page = 0;
   String _modo = 'br';
 
-  /// Duas páginas, não três. A do meio era uma AULA sobre a Divisão dada a
-  /// quem ainda não tinha visto número nenhum — e a pergunta "Brasil x
-  /// exterior" saiu junto: ela é feita de novo, melhor e no contexto certo, no
-  /// passo do regime. Fazer a mesma pergunta duas vezes, a primeira antes de
-  /// entregar qualquer valor, é o retrato do app que cobra antes de dar.
-  static const int _last = 1;
+  /// Três páginas: a dor, a privacidade (+ modo), e o consentimento de
+  /// telemetria — nesta ordem. O consentimento é a ÚLTIMA tela de propósito:
+  /// pedir permissão de dado como primeira coisa que a pessoa vê seria o retrato
+  /// do app que cobra antes de dar. Depois de ela entender que é local-first e
+  /// que os números dela ficam no aparelho, o pedido faz sentido — e é honesto,
+  /// porque a telemetria é estabilidade anônima, não os dados dela.
+  static const int _last = 2;
 
   @override
   void dispose() {
@@ -40,6 +41,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await ref.read(settingsRepositoryProvider).setModo(_modo);
     await ref.read(settingsRepositoryProvider).setOnboardingDone();
     if (mounted) context.go(Routes.painel);
+  }
+
+  /// A escolha da última página. Grava o consentimento (que já liga/desliga a
+  /// coleta no lado nativo, via telemetryProvider) e fecha o onboarding. "Pular"
+  /// e sair sem escolher = fica desligado, o default seguro.
+  Future<void> _finishComConsent(bool aceitou) async {
+    await ref.read(telemetryProvider.notifier).set(aceitou);
+    if (mounted) {
+      announce(
+        context,
+        aceitou
+            ? 'Obrigado. Dá pra desligar quando quiser em Ajustes.'
+            : 'Sem problema. Nada será enviado.',
+      );
+    }
+    await _finish();
   }
 
   void _next() {
@@ -76,7 +93,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     'Página ${i + 1} de ${_last + 1}. ${_pageTitle(i)}',
                   );
                 },
-                children: <Widget>[_page1(theme), _page3(theme)],
+                children: <Widget>[
+                  _page1(theme),
+                  _page3(theme),
+                  _pageConsent(theme),
+                ],
               ),
             ),
             Row(
@@ -102,13 +123,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(Space.x6),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _next,
-                  child: Text(_page == _last ? 'Começar' : 'Continuar'),
-                ),
-              ),
+              child: _page == _last
+                  // Consentimento: confirmar é o caminho fácil (preenchido,
+                  // domina a largura); recusar é um texto à esquerda — discreto,
+                  // mas botão de VERDADE (48dp, alcançável por leitor de tela),
+                  // nunca texto morto. Assimetria de ênfase, não de acesso.
+                  ? Row(
+                      children: <Widget>[
+                        TextButton(
+                          onPressed: () => _finishComConsent(false),
+                          child: const Text('Agora não'),
+                        ),
+                        const SizedBox(width: Space.x2),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => _finishComConsent(true),
+                            child: const Text('Sim, pode ajudar'),
+                          ),
+                        ),
+                      ],
+                    )
+                  : SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _next,
+                        child: const Text('Continuar'),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -202,15 +243,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   String _pageTitle(int page) => switch (page) {
     0 => 'Pare de trabalhar de graça.',
-    _ => '100 por cento no seu aparelho.',
+    1 => '100 por cento no seu aparelho.',
+    _ => 'Me ajuda a melhorar?',
   };
 
   Widget _page3(ThemeData theme) => _pageBody(
     theme,
     icon: Icons.lock_outline,
     title: '100% no seu aparelho.',
+    // A promessa fala do que É da pessoa — e isso é verdade absoluta: renda,
+    // clientes e valores nunca saem do aparelho. Antes dizia "sem enviar dados
+    // pra ninguém", o que colidiria com o pedido de telemetria da tela seguinte;
+    // agora é preciso, e a próxima tela pede só estabilidade anônima, que é
+    // outra coisa.
     body:
-        'Sem cadastro, sem login, sem enviar seus dados pra ninguém. É só abrir e usar, mesmo offline.',
+        'Sem cadastro, sem login. Sua renda, seus clientes e seus valores ficam só aqui no aparelho — e funciona offline.',
     extra: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -229,6 +276,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               setState(() => _modo = s.first),
         ),
       ],
+    ),
+  );
+
+  /// A última tela: o pedido de consentimento. Honesto e específico — diz o que
+  /// vai e o que NUNCA vai, e que só acontece se a pessoa deixar (LGPD). As
+  /// ações vivem na barra inferior (ver build): confirmar preenchido, recusar
+  /// como texto.
+  Widget _pageConsent(ThemeData theme) => _pageBody(
+    theme,
+    icon: Icons.favorite_outline,
+    title: 'Me ajuda a melhorar?',
+    body:
+        'Quando o app trava ou dá erro, ele pode me avisar sozinho — só isso: '
+        'estabilidade e uso, de forma anônima. Seus números nunca entram nisso: '
+        'nem sua renda, nem seus clientes, nem seus valores. E só se você deixar.',
+    extra: Text(
+      'Dá pra ligar ou desligar quando quiser em Ajustes.',
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
     ),
   );
 }
