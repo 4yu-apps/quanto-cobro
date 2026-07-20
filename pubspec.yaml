@@ -3,7 +3,7 @@ description: "Quanto Cobro? - calculadora do freelancer BR (valor-hora, reserva 
 publish_to: 'none'
 
 # versionName+versionCode. Nome de EXIBIÇÃO fica em lib/core/config/app_config.dart.
-version: 0.6.0+8
+version: 0.7.0+9
 
 environment:
   sdk: ^3.12.2
