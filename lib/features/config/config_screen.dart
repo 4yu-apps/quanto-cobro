@@ -23,6 +23,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/text_scale.dart';
+import '../../core/ui/breakpoints.dart';
 
 enum _ImportChoice { arquivo, colar }
 
@@ -46,276 +47,280 @@ class ConfigScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações')),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          _secao(context, 'APARÊNCIA'),
-          SegmentedButton<ThemeMode>(
-            segments: const <ButtonSegment<ThemeMode>>[
-              ButtonSegment<ThemeMode>(
-                value: ThemeMode.dark,
-                label: Text('Escuro'),
-                icon: Icon(Icons.dark_mode),
-              ),
-              ButtonSegment<ThemeMode>(
-                value: ThemeMode.light,
-                label: Text('Claro'),
-                icon: Icon(Icons.light_mode),
-              ),
-              ButtonSegment<ThemeMode>(
-                value: ThemeMode.system,
-                label: Text('Sistema'),
-                icon: Icon(Icons.brightness_auto),
-              ),
-            ],
-            selected: <ThemeMode>{mode},
-            onSelectionChanged: (Set<ThemeMode> s) {
-              Haptics.select();
-              ref.read(themeModeProvider.notifier).set(s.first);
-            },
-          ),
-          const SizedBox(height: Space.x3),
-          Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: SwitchListTile(
-              value: reduzirTransp,
-              onChanged: (bool v) {
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            _secao(context, 'APARÊNCIA'),
+            SegmentedButton<ThemeMode>(
+              segments: const <ButtonSegment<ThemeMode>>[
+                ButtonSegment<ThemeMode>(
+                  value: ThemeMode.dark,
+                  label: Text('Escuro'),
+                  icon: Icon(Icons.dark_mode),
+                ),
+                ButtonSegment<ThemeMode>(
+                  value: ThemeMode.light,
+                  label: Text('Claro'),
+                  icon: Icon(Icons.light_mode),
+                ),
+                ButtonSegment<ThemeMode>(
+                  value: ThemeMode.system,
+                  label: Text('Sistema'),
+                  icon: Icon(Icons.brightness_auto),
+                ),
+              ],
+              selected: <ThemeMode>{mode},
+              onSelectionChanged: (Set<ThemeMode> s) {
                 Haptics.select();
-                ref.read(reduceTransparencyProvider.notifier).set(v);
+                ref.read(themeModeProvider.notifier).set(s.first);
               },
-              title: const Text('Reduzir transparência'),
-              subtitle: const Text(
-                'Deixa a barra de navegação sólida (melhor em aparelhos mais simples).',
+            ),
+            const SizedBox(height: Space.x3),
+            Card(
+              color: theme.colorScheme.surfaceContainer,
+              child: SwitchListTile(
+                value: reduzirTransp,
+                onChanged: (bool v) {
+                  Haptics.select();
+                  ref.read(reduceTransparencyProvider.notifier).set(v);
+                },
+                title: const Text('Reduzir transparência'),
+                subtitle: const Text(
+                  'Deixa a barra de navegação sólida (melhor em aparelhos mais simples).',
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: Space.x3),
-          Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    Space.x4,
-                    Space.x4,
-                    Space.x4,
-                    Space.x2,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Tamanho do texto',
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: Space.x2),
-                      Text('Prévia: R\$ 1.234/hora', style: AppType.valueMd),
-                    ],
-                  ),
-                ),
-                RadioGroup<double>(
-                  groupValue: textScale,
-                  onChanged: (double? v) {
-                    if (v == null) return;
-                    final TextScaleLevel level = kTextScaleLevels.firstWhere(
-                      (TextScaleLevel l) => l.value == v,
-                    );
-                    Haptics.select();
-                    ref.read(textScaleProvider.notifier).set(v);
-                    announce(context, 'Tamanho da fonte: ${level.label}');
-                  },
-                  child: Column(
-                    children: <Widget>[
-                      for (final TextScaleLevel level in kTextScaleLevels)
-                        RadioListTile<double>(
-                          value: level.value,
-                          title: Text(level.label),
+            const SizedBox(height: Space.x3),
+            Card(
+              color: theme.colorScheme.surfaceContainer,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Space.x4,
+                      Space.x4,
+                      Space.x4,
+                      Space.x2,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'Tamanho do texto',
+                          style: theme.textTheme.labelLarge,
                         ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    Space.x4,
-                    0,
-                    Space.x4,
-                    Space.x4,
-                  ),
-                  child: Text(
-                    'Isto ajusta sobre o tamanho de fonte do seu celular.',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                        const SizedBox(height: Space.x2),
+                        Text('Prévia: R\$ 1.234/hora', style: AppType.valueMd),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-
-          // Trabalhos e Histórico agora são ABAS (nav bar) — não duplicar aqui.
-          _secao(context, 'PRO'),
-          Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: ListTile(
-              leading: Icon(
-                isPro
-                    ? Icons.workspace_premium
-                    : Icons.workspace_premium_outlined,
+                  RadioGroup<double>(
+                    groupValue: textScale,
+                    onChanged: (double? v) {
+                      if (v == null) return;
+                      final TextScaleLevel level = kTextScaleLevels.firstWhere(
+                        (TextScaleLevel l) => l.value == v,
+                      );
+                      Haptics.select();
+                      ref.read(textScaleProvider.notifier).set(v);
+                      announce(context, 'Tamanho da fonte: ${level.label}');
+                    },
+                    child: Column(
+                      children: <Widget>[
+                        for (final TextScaleLevel level in kTextScaleLevels)
+                          RadioListTile<double>(
+                            value: level.value,
+                            title: Text(level.label),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Space.x4,
+                      0,
+                      Space.x4,
+                      Space.x4,
+                    ),
+                    child: Text(
+                      'Isto ajusta sobre o tamanho de fonte do seu celular.',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              title: Text(isPro ? 'Pro ativo' : 'Conhecer o Pro'),
-              trailing: isPro
-                  ? const Icon(Icons.check)
-                  : const Icon(Icons.chevron_right),
-              onTap: () => context.push(Routes.pro),
             ),
-          ),
-          const SizedBox(height: Space.x6),
+            const SizedBox(height: Space.x6),
 
-          _secao(context, 'GESTÃO'),
-          Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: Column(
-              children: <Widget>[
-                // O regime é da PESSOA, e é daqui que ele se ajusta: duas
-                // áreas não geram dois DAS pro mesmo CNPJ.
-                ListTile(
-                  leading: const Icon(Icons.account_balance_outlined),
-                  title: const Text('Meu regime'),
-                  subtitle: Text(
-                    '${Regime.of(ref.watch(regimeProvider)).label} — define quanto separar de cada pagamento',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _escolherRegime(context, ref),
+            // Trabalhos e Histórico agora são ABAS (nav bar) — não duplicar aqui.
+            _secao(context, 'PRO'),
+            Card(
+              color: theme.colorScheme.surfaceContainer,
+              child: ListTile(
+                leading: Icon(
+                  isPro
+                      ? Icons.workspace_premium
+                      : Icons.workspace_premium_outlined,
                 ),
-                const Divider(height: 1, indent: Space.x4),
-                // A marca vive aqui, mas quase ninguém chega por aqui: ela é
-                // pedida inline na 1ª proposta. Este é o lugar de VOLTAR nela.
-                ListTile(
-                  leading: const Icon(Icons.badge_outlined),
-                  title: const Text('Minha marca'),
-                  subtitle: Text(
-                    marca.pronta
-                        ? '${marca.nome} — aparece no topo das suas propostas'
-                        : 'Nome, logo e contato que vão nas suas propostas',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.marca),
-                ),
-                const Divider(height: 1, indent: Space.x4),
-                // Os presets de preço saíram do slot de aba (07 §B.2). Aqui é
-                // uma das duas casas novas deles — a outra é o switcher do
-                // chip do herói, no Painel.
-                ListTile(
-                  leading: const Icon(Icons.tune),
-                  title: const Text('Meus preços'),
-                  subtitle: Text(
-                    areas.areas.length <= 1
-                        ? 'O cálculo que define quanto você cobra'
-                        : '${areas.areas.length} áreas — a ativa é "${areas.active?.nome ?? ''}"',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.areas),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-
-          _secao(context, 'SEUS DADOS'),
-          Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.ios_share),
-                  title: const Text('Salvar um backup'),
-                  subtitle: const Text(
-                    'Gera um arquivo com seus cálculos e seu histórico pra você guardar onde quiser.',
-                  ),
-                  onTap: () => _exportar(context, ref),
-                ),
-                const Divider(height: 1, indent: Space.x4),
-                ListTile(
-                  leading: const Icon(Icons.download),
-                  title: const Text('Restaurar de um arquivo'),
-                  subtitle: const Text(
-                    'Escolha o arquivo de backup que você salvou antes.',
-                  ),
-                  onTap: () => _importar(context, ref),
-                ),
-                const Divider(height: 1, indent: Space.x4),
-                ListTile(
-                  leading: Icon(
-                    Icons.delete_outline,
-                    color: theme.colorScheme.error,
-                  ),
-                  title: Text(
-                    'Apagar meus dados',
-                    style: TextStyle(color: theme.colorScheme.error),
-                  ),
-                  onTap: () => _apagar(context, ref),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-
-          _secao(context, 'PRIVACIDADE'),
-          Card(
-            color: theme.colorScheme.surfaceContainer,
-            child: Column(
-              children: <Widget>[
-                SwitchListTile(
-                  value: telemetria,
-                  onChanged: (bool v) {
-                    Haptics.select();
-                    ref.read(telemetryProvider.notifier).set(v);
-                  },
-                  title: const Text('Ajudar a melhorar o app'),
-                  subtitle: const Text(
-                    'Envia só métricas anônimas de uso e estabilidade. Nunca sua renda.',
-                  ),
-                ),
-                const Divider(height: 1, indent: Space.x4),
-                ListTile(
-                  leading: const Icon(Icons.shield_outlined),
-                  title: const Text('Privacidade e Termos'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(Routes.legal),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-
-          _secao(context, 'SOBRE'),
-          Row(
-            children: <Widget>[
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: d.brand4yu,
-                  shape: BoxShape.circle,
-                ),
+                title: Text(isPro ? 'Pro ativo' : 'Conhecer o Pro'),
+                trailing: isPro
+                    ? const Icon(Icons.check)
+                    : const Icon(Icons.chevron_right),
+                onTap: () => context.push(Routes.pro),
               ),
-              const SizedBox(width: Space.x2),
-              Text(
-                'by ${AppConfig.parentBrand}',
-                style: theme.textTheme.labelMedium?.copyWith(color: d.brand4yu),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.x1),
-          Text(
-            '${AppConfig.appName} · versão 0.5.0 · ${AppConfig.contactEmail}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ),
-        ],
+            const SizedBox(height: Space.x6),
+
+            _secao(context, 'GESTÃO'),
+            Card(
+              color: theme.colorScheme.surfaceContainer,
+              child: Column(
+                children: <Widget>[
+                  // O regime é da PESSOA, e é daqui que ele se ajusta: duas
+                  // áreas não geram dois DAS pro mesmo CNPJ.
+                  ListTile(
+                    leading: const Icon(Icons.account_balance_outlined),
+                    title: const Text('Meu regime'),
+                    subtitle: Text(
+                      '${Regime.of(ref.watch(regimeProvider)).label} — define quanto separar de cada pagamento',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _escolherRegime(context, ref),
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
+                  // A marca vive aqui, mas quase ninguém chega por aqui: ela é
+                  // pedida inline na 1ª proposta. Este é o lugar de VOLTAR nela.
+                  ListTile(
+                    leading: const Icon(Icons.badge_outlined),
+                    title: const Text('Minha marca'),
+                    subtitle: Text(
+                      marca.pronta
+                          ? '${marca.nome} — aparece no topo das suas propostas'
+                          : 'Nome, logo e contato que vão nas suas propostas',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(Routes.marca),
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
+                  // Os presets de preço saíram do slot de aba (07 §B.2). Aqui é
+                  // uma das duas casas novas deles — a outra é o switcher do
+                  // chip do herói, no Painel.
+                  ListTile(
+                    leading: const Icon(Icons.tune),
+                    title: const Text('Meus preços'),
+                    subtitle: Text(
+                      areas.areas.length <= 1
+                          ? 'O cálculo que define quanto você cobra'
+                          : '${areas.areas.length} áreas — a ativa é "${areas.active?.nome ?? ''}"',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(Routes.areas),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Space.x6),
+
+            _secao(context, 'SEUS DADOS'),
+            Card(
+              color: theme.colorScheme.surfaceContainer,
+              child: Column(
+                children: <Widget>[
+                  ListTile(
+                    leading: const Icon(Icons.ios_share),
+                    title: const Text('Salvar um backup'),
+                    subtitle: const Text(
+                      'Gera um arquivo com seus cálculos e seu histórico pra você guardar onde quiser.',
+                    ),
+                    onTap: () => _exportar(context, ref),
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
+                  ListTile(
+                    leading: const Icon(Icons.download),
+                    title: const Text('Restaurar de um arquivo'),
+                    subtitle: const Text(
+                      'Escolha o arquivo de backup que você salvou antes.',
+                    ),
+                    onTap: () => _importar(context, ref),
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
+                  ListTile(
+                    leading: Icon(
+                      Icons.delete_outline,
+                      color: theme.colorScheme.error,
+                    ),
+                    title: Text(
+                      'Apagar meus dados',
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    onTap: () => _apagar(context, ref),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Space.x6),
+
+            _secao(context, 'PRIVACIDADE'),
+            Card(
+              color: theme.colorScheme.surfaceContainer,
+              child: Column(
+                children: <Widget>[
+                  SwitchListTile(
+                    value: telemetria,
+                    onChanged: (bool v) {
+                      Haptics.select();
+                      ref.read(telemetryProvider.notifier).set(v);
+                    },
+                    title: const Text('Ajudar a melhorar o app'),
+                    subtitle: const Text(
+                      'Envia só métricas anônimas de uso e estabilidade. Nunca sua renda.',
+                    ),
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
+                  ListTile(
+                    leading: const Icon(Icons.shield_outlined),
+                    title: const Text('Privacidade e Termos'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(Routes.legal),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Space.x6),
+
+            _secao(context, 'SOBRE'),
+            Row(
+              children: <Widget>[
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: d.brand4yu,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: Space.x2),
+                Text(
+                  'by ${AppConfig.parentBrand}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: d.brand4yu,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Space.x1),
+            Text(
+              '${AppConfig.appName} · versão 0.5.0 · ${AppConfig.contactEmail}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

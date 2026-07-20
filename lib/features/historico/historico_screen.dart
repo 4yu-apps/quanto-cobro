@@ -17,6 +17,7 @@ import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/panel_card.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// O histórico completo, mês a mês. **Deixou de ser aba** em 19/07/2026: era o
 /// mesmo balde do card do Início, só que num zoom maior — e um slot de aba é
@@ -56,45 +57,47 @@ class HistoricoScreen extends ConsumerWidget {
                 ),
               ],
       ),
-      body: todas.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.savings_outlined,
-                      size: 40,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: Space.x3),
-                    Text(
-                      'Nada registrado ainda. Quando um pagamento cair, ele '
-                      'aparece aqui — com o imposto já separado.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
+      body: ContentWidth(
+        child: todas.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.x6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.savings_outlined,
+                        size: 40,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(Space.x4),
-              children: <Widget>[
-                for (final DateTime mes in meses)
-                  _Mes(
-                    mes: mes,
-                    entradas: porMes[mes]!,
-                    nomePorTrabalho: nomePorTrabalho,
+                      const SizedBox(height: Space.x3),
+                      Text(
+                        'Nada registrado ainda. Quando um pagamento cair, ele '
+                        'aparece aqui — com o imposto já separado.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
-                const SizedBox(height: Space.x4),
-                const EstimativaSeal(short: true),
-                const SizedBox(height: Space.x8),
-              ],
-            ),
+                ),
+              )
+            : ListView(
+                padding: const EdgeInsets.all(Space.x4),
+                children: <Widget>[
+                  for (final DateTime mes in meses)
+                    _Mes(
+                      mes: mes,
+                      entradas: porMes[mes]!,
+                      nomePorTrabalho: nomePorTrabalho,
+                    ),
+                  const SizedBox(height: Space.x4),
+                  const EstimativaSeal(short: true),
+                  const SizedBox(height: Space.x8),
+                ],
+              ),
+      ),
     );
   }
 

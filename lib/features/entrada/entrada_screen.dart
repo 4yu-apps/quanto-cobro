@@ -25,6 +25,7 @@ import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
 import '../../core/ui/vitrine_card.dart';
 import 'entrada_bar.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// **Registrar uma entrada** — o caminho de ouro, o gesto que se repete.
 ///
@@ -218,192 +219,196 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          MoneyField(
-            controller: _valor,
-            label: 'Quanto você recebeu?',
-            prefix: r'R$ ',
-            autofocus: true,
-            onChanged: (_) {
-              setState(() => _saved = false);
-              final double v = _valorEmReais;
-              _anunciar(
-                v > 0
-                    ? computeReserva(
-                        v,
-                        regime,
-                        taxaEfetiva: taxaEfetiva,
-                        dasJaSeparado: _impostoJaSeparadoNoMes(),
-                      )
-                    : null,
-              );
-            },
-          ),
-          const SizedBox(height: Space.x4),
-
-          // O campo que faz o trabalho nascer. Opcional de propósito: quem
-          // recebeu algo avulso não precisa inventar um cliente pra registrar.
-          if (_trabalho == null)
-            TextField(
-              controller: _deQuem,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'De quem? (opcional)',
-                hintText: 'Ex.: Augusto',
-                helperText:
-                    'Se for a primeira vez, eu crio o trabalho pra você.',
-              ),
-              onChanged: (_) => setState(() {}),
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            MoneyField(
+              controller: _valor,
+              label: 'Quanto você recebeu?',
+              prefix: r'R$ ',
+              autofocus: true,
+              onChanged: (_) {
+                setState(() => _saved = false);
+                final double v = _valorEmReais;
+                _anunciar(
+                  v > 0
+                      ? computeReserva(
+                          v,
+                          regime,
+                          taxaEfetiva: taxaEfetiva,
+                          dasJaSeparado: _impostoJaSeparadoNoMes(),
+                        )
+                      : null,
+                );
+              },
             ),
+            const SizedBox(height: Space.x4),
 
-          const SizedBox(height: Space.x3),
-          // Regime como FRASE, não como fileira de chips: é ajuste raro, da
-          // pessoa, e ocupava o lugar da resposta.
-          _LinhaRegime(regime: regime),
+            // O campo que faz o trabalho nascer. Opcional de propósito: quem
+            // recebeu algo avulso não precisa inventar um cliente pra registrar.
+            if (_trabalho == null)
+              TextField(
+                controller: _deQuem,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'De quem? (opcional)',
+                  hintText: 'Ex.: Augusto',
+                  helperText:
+                      'Se for a primeira vez, eu crio o trabalho pra você.',
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
 
-          const SizedBox(height: Space.x6),
-          AnimatedSwitcher(
-            duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
-            child: res == null
-                ? Padding(
-                    key: const ValueKey<bool>(true),
-                    padding: const EdgeInsets.only(top: Space.x8),
-                    child: Column(
-                      children: <Widget>[
-                        Icon(
-                          Icons.payments_outlined,
-                          size: 40,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: Space.x3),
-                        Text(
-                          'Digite o valor que caiu pra ver quanto guardar.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyLarge?.copyWith(
+            const SizedBox(height: Space.x3),
+            // Regime como FRASE, não como fileira de chips: é ajuste raro, da
+            // pessoa, e ocupava o lugar da resposta.
+            _LinhaRegime(regime: regime),
+
+            const SizedBox(height: Space.x6),
+            AnimatedSwitcher(
+              duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+              child: res == null
+                  ? Padding(
+                      key: const ValueKey<bool>(true),
+                      padding: const EdgeInsets.only(top: Space.x8),
+                      child: Column(
+                        children: <Widget>[
+                          Icon(
+                            Icons.payments_outlined,
+                            size: 40,
                             color: cs.onSurfaceVariant,
                           ),
+                          const SizedBox(height: Space.x3),
+                          Text(
+                            'Digite o valor que caiu pra ver quanto guardar.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      key: const ValueKey<bool>(false),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        VitrineCard(
+                          highlight: _saved,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                res.impostoDoMesQuitado
+                                    ? 'ESSE DINHEIRO É TODO SEU'
+                                    : 'SEPARE PRO IMPOSTO',
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: Space.x1),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: MoneyCountUp(
+                                  res.impostoDoMesQuitado
+                                      ? valor
+                                      : res.separado,
+                                  duration: Motion.quick,
+                                  style: AppType.valueHero.copyWith(
+                                    color: res.impostoDoMesQuitado
+                                        ? d.lucro
+                                        : d.reserva,
+                                  ),
+                                  semanticLabel: res.impostoDoMesQuitado
+                                      ? 'Esse dinheiro é todo seu: ${moneyBRL(valor)}'
+                                      : 'Separe ${moneyBRL(res.separado)} pro imposto',
+                                ),
+                              ),
+                              const SizedBox(height: Space.x1),
+                              Text(
+                                _explicacao(res),
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                              const SizedBox(height: Space.x4),
+                              EntradaBar(
+                                total: valor,
+                                separado: res.separado,
+                                sobra: res.sobra,
+                              ),
+                              const SizedBox(height: Space.x2),
+                              // O cofre FECHA: a linha nasce dentro do mesmo
+                              // card, e o valor conta do total anterior pro
+                              // novo. Herói, barra e campo ficam parados — o
+                              // cofre não pula, ele fecha.
+                              _CofreDoMes(
+                                antes: _cofreAntes,
+                                depois: _cofreDepois,
+                              ),
+                              Wrap(
+                                spacing: Space.x4,
+                                runSpacing: Space.x2,
+                                children: <Widget>[
+                                  _legenda(
+                                    context,
+                                    d.custo,
+                                    'Pra usar',
+                                    res.sobra,
+                                  ),
+                                  _legenda(
+                                    context,
+                                    d.reserva,
+                                    'Imposto',
+                                    res.separado.toDouble(),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(height: Space.x4),
+                        if (_saved)
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: FilledButton.tonal(
+                                  onPressed: () => setState(() {
+                                    _valor.clear();
+                                    if (widget.trabalhoId == null) {
+                                      _deQuem.clear();
+                                    }
+                                    _saved = false;
+                                    _cofreAntes = null;
+                                    _cofreDepois = null;
+                                  }),
+                                  child: const Text('Registrar outro'),
+                                ),
+                              ),
+                              const SizedBox(width: Space.x3),
+                              TextButton(
+                                onPressed: _desfazer,
+                                child: const Text('Desfazer'),
+                              ),
+                            ],
+                          )
+                        else
+                          FilledButton.tonal(
+                            onPressed: () => _salvar(res, regime, area),
+                            child: const Text('Guardar'),
+                          ),
+                        const SizedBox(height: Space.x4),
+                        if (tabelasDefasadas(DateTime.now())) ...<Widget>[
+                          StaleBanner(ano: kTabelasAno),
+                          const SizedBox(height: Space.x3),
+                        ],
+                        const EstimativaSeal(short: true),
                       ],
                     ),
-                  )
-                : Column(
-                    key: const ValueKey<bool>(false),
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      VitrineCard(
-                        highlight: _saved,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              res.impostoDoMesQuitado
-                                  ? 'ESSE DINHEIRO É TODO SEU'
-                                  : 'SEPARE PRO IMPOSTO',
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: cs.onSurfaceVariant,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: Space.x1),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: MoneyCountUp(
-                                res.impostoDoMesQuitado ? valor : res.separado,
-                                duration: Motion.quick,
-                                style: AppType.valueHero.copyWith(
-                                  color: res.impostoDoMesQuitado
-                                      ? d.lucro
-                                      : d.reserva,
-                                ),
-                                semanticLabel: res.impostoDoMesQuitado
-                                    ? 'Esse dinheiro é todo seu: ${moneyBRL(valor)}'
-                                    : 'Separe ${moneyBRL(res.separado)} pro imposto',
-                              ),
-                            ),
-                            const SizedBox(height: Space.x1),
-                            Text(
-                              _explicacao(res),
-                              style: theme.textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: Space.x4),
-                            EntradaBar(
-                              total: valor,
-                              separado: res.separado,
-                              sobra: res.sobra,
-                            ),
-                            const SizedBox(height: Space.x2),
-                            // O cofre FECHA: a linha nasce dentro do mesmo
-                            // card, e o valor conta do total anterior pro
-                            // novo. Herói, barra e campo ficam parados — o
-                            // cofre não pula, ele fecha.
-                            _CofreDoMes(
-                              antes: _cofreAntes,
-                              depois: _cofreDepois,
-                            ),
-                            Wrap(
-                              spacing: Space.x4,
-                              runSpacing: Space.x2,
-                              children: <Widget>[
-                                _legenda(
-                                  context,
-                                  d.custo,
-                                  'Pra usar',
-                                  res.sobra,
-                                ),
-                                _legenda(
-                                  context,
-                                  d.reserva,
-                                  'Imposto',
-                                  res.separado.toDouble(),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: Space.x4),
-                      if (_saved)
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: FilledButton.tonal(
-                                onPressed: () => setState(() {
-                                  _valor.clear();
-                                  if (widget.trabalhoId == null) {
-                                    _deQuem.clear();
-                                  }
-                                  _saved = false;
-                                  _cofreAntes = null;
-                                  _cofreDepois = null;
-                                }),
-                                child: const Text('Registrar outro'),
-                              ),
-                            ),
-                            const SizedBox(width: Space.x3),
-                            TextButton(
-                              onPressed: _desfazer,
-                              child: const Text('Desfazer'),
-                            ),
-                          ],
-                        )
-                      else
-                        FilledButton.tonal(
-                          onPressed: () => _salvar(res, regime, area),
-                          child: const Text('Guardar'),
-                        ),
-                      const SizedBox(height: Space.x4),
-                      if (tabelasDefasadas(DateTime.now())) ...<Widget>[
-                        StaleBanner(ano: kTabelasAno),
-                        const SizedBox(height: Space.x3),
-                      ],
-                      const EstimativaSeal(short: true),
-                    ],
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

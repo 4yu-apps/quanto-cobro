@@ -45,6 +45,10 @@ class EmptyStateHero extends StatelessWidget {
             const SizedBox(height: Space.x6),
             FilledButton(onPressed: onComecar, child: const Text('Começar')),
             const SizedBox(height: Space.x3),
+            // Em 320dp (o celular barato, que é o público) este Row estourava
+            // 144px e "100% offline" saía da tela — a promessa que a primeira
+            // tela do app existe pra fazer. Flexible + softWrap: o texto quebra
+            // em duas linhas em vez de vazar.
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -54,10 +58,13 @@ class EmptyStateHero extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: Space.x2),
-                Text(
-                  'Leva 2 minutos · 100% offline',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Flexible(
+                  child: Text(
+                    'Leva 2 minutos · 100% offline',
+                    softWrap: true,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],

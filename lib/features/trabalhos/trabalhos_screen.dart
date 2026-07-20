@@ -18,6 +18,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/panel_card.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// Aba **Trabalhos** — os freelas da pessoa.
 ///
@@ -49,28 +50,37 @@ class TrabalhosScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: ordenados.isEmpty
-          ? const _Vazio()
-          : ListView(
-              padding: EdgeInsets.fromLTRB(
-                Space.x4,
-                Space.x4,
-                Space.x4,
-                kFloatingNavReserve + MediaQuery.viewPaddingOf(context).bottom,
-              ),
-              children: <Widget>[
-                if (areas.hierarquiaVisivel)
-                  ..._porArea(context, ref, areas, ordenados, recebido, ultima)
-                else
-                  ..._planos(context, ordenados, recebido, ultima),
-                const SizedBox(height: Space.x4),
-                OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.trabalhoForm),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Novo trabalho'),
+      body: ContentWidth(
+        child: ordenados.isEmpty
+            ? const _Vazio()
+            : ListView(
+                padding: EdgeInsets.fromLTRB(
+                  Space.x4,
+                  Space.x4,
+                  Space.x4,
+                  reservaDaNavbar(context),
                 ),
-              ],
-            ),
+                children: <Widget>[
+                  if (areas.hierarquiaVisivel)
+                    ..._porArea(
+                      context,
+                      ref,
+                      areas,
+                      ordenados,
+                      recebido,
+                      ultima,
+                    )
+                  else
+                    ..._planos(context, ordenados, recebido, ultima),
+                  const SizedBox(height: Space.x4),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push(Routes.trabalhoForm),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Novo trabalho'),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -262,11 +272,11 @@ class _Vazio extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           Space.x6,
           Space.x6,
           Space.x6,
-          kFloatingNavReserve,
+          reservaDaNavbar(context),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

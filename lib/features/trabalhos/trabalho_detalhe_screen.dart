@@ -16,6 +16,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/panel_card.dart';
 import '../proposta/proposta_flow.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// O detalhe de um trabalho — **a tela que o dono descreveu literalmente**:
 /// *"o Augusto me pagou 400 num mês, 600 no outro, 200 no outro — e quanto eu
@@ -117,96 +118,99 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
                 label: const Text('Nova entrada'),
               ),
             ),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          PanelCard(
-            padding: const EdgeInsets.all(Space.x5),
-            accent: d.lucro,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'RECEBIDO NESTE TRABALHO',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: Space.x1),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    moneyBRL(total),
-                    maxLines: 1,
-                    style: AppType.valueXl.copyWith(color: d.lucro),
-                    semanticsLabel:
-                        'Recebido neste trabalho: ${moneyBRL(total)}',
-                  ),
-                ),
-                if (separado > 0) ...<Widget>[
-                  const SizedBox(height: Space.x1),
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            PanelCard(
+              padding: const EdgeInsets.all(Space.x5),
+              accent: d.lucro,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
                   Text(
-                    'separou ${moneyBRL(separado)} de imposto',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: d.reserva,
-                      fontFeatures: AppType.tnum,
-                    ),
-                  ),
-                ],
-                if (trabalho.encerrado) ...<Widget>[
-                  const SizedBox(height: Space.x2),
-                  Text(
-                    'Trabalho encerrado.',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    'RECEBIDO NESTE TRABALHO',
+                    style: theme.textTheme.labelLarge?.copyWith(
                       color: cs.onSurfaceVariant,
+                      letterSpacing: 0.5,
                     ),
                   ),
+                  const SizedBox(height: Space.x1),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      moneyBRL(total),
+                      maxLines: 1,
+                      style: AppType.valueXl.copyWith(color: d.lucro),
+                      semanticsLabel:
+                          'Recebido neste trabalho: ${moneyBRL(total)}',
+                    ),
+                  ),
+                  if (separado > 0) ...<Widget>[
+                    const SizedBox(height: Space.x1),
+                    Text(
+                      'separou ${moneyBRL(separado)} de imposto',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: d.reserva,
+                        fontFeatures: AppType.tnum,
+                      ),
+                    ),
+                  ],
+                  if (trabalho.encerrado) ...<Widget>[
+                    const SizedBox(height: Space.x2),
+                    Text(
+                      'Trabalho encerrado.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
 
-          if (trabalho.observacoes != null) ...<Widget>[
-            const SizedBox(height: Space.x5),
+            if (trabalho.observacoes != null) ...<Widget>[
+              const SizedBox(height: Space.x5),
+              Text(
+                'ANOTAÇÕES',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: Space.x2),
+              Text(trabalho.observacoes!, style: theme.textTheme.bodyMedium),
+            ],
+
+            const SizedBox(height: Space.x6),
             Text(
-              'ANOTAÇÕES',
+              'ENTRADAS',
               style: theme.textTheme.labelLarge?.copyWith(
                 color: cs.onSurfaceVariant,
                 letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: Space.x2),
-            Text(trabalho.observacoes!, style: theme.textTheme.bodyMedium),
+
+            if (porMes.isEmpty)
+              Text(
+                'Nada registrado ainda. Quando o dinheiro cair, toque em "Nova '
+                'entrada" — o imposto sai separado junto.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              )
+            else
+              // Agrupado por MÊS: é assim que a pessoa pensa o próprio dinheiro,
+              // e é o que responde "quanto ele me pagou em cada mês".
+              for (final MapEntry<DateTime, List<Entrada>> mes
+                  in porMes.entries)
+                _BlocoDoMes(mes: mes.key, entradas: mes.value),
+
+            const SizedBox(height: Space.x8),
           ],
-
-          const SizedBox(height: Space.x6),
-          Text(
-            'ENTRADAS',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: Space.x2),
-
-          if (porMes.isEmpty)
-            Text(
-              'Nada registrado ainda. Quando o dinheiro cair, toque em "Nova '
-              'entrada" — o imposto sai separado junto.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            )
-          else
-            // Agrupado por MÊS: é assim que a pessoa pensa o próprio dinheiro,
-            // e é o que responde "quanto ele me pagou em cada mês".
-            for (final MapEntry<DateTime, List<Entrada>> mes in porMes.entries)
-              _BlocoDoMes(mes: mes.key, entradas: mes.value),
-
-          const SizedBox(height: Space.x8),
-        ],
+        ),
       ),
     );
   }

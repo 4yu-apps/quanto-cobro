@@ -26,6 +26,7 @@ import '../../core/ui/stale_banner.dart';
 import '../../core/ui/vitrine_card.dart';
 import '../areas/areas_screen.dart';
 import '../proposta/proposta_flow.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// Resultado (Blueprint §5.3): o clímax. Regra da casa: resposta de dinheiro
 /// vive numa SUPERFÍCIE, nunca solta no fundo — resposta-mãe em cima (vitrine),
@@ -137,247 +138,249 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          // Ato 1 — vitrine: a resposta-mãe, com a aurora do clímax.
-          StaggerIn(
-            index: 0,
-            child: VitrineCard(
-              climax: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'COBRE POR HORA',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      letterSpacing: 0.5,
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            // Ato 1 — vitrine: a resposta-mãe, com a aurora do clímax.
+            StaggerIn(
+              index: 0,
+              child: VitrineCard(
+                climax: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'COBRE POR HORA',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: Space.x1),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: <Widget>[
-                        Stack(
-                          alignment: Alignment.centerLeft,
-                          children: <Widget>[
-                            ExcludeSemantics(
-                              child: Opacity(
-                                opacity: 0,
-                                child: Text(
-                                  moneyBRL(r.valorHora),
-                                  style: heroStyle,
+                    const SizedBox(height: Space.x1),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: <Widget>[
+                          Stack(
+                            alignment: Alignment.centerLeft,
+                            children: <Widget>[
+                              ExcludeSemantics(
+                                child: Opacity(
+                                  opacity: 0,
+                                  child: Text(
+                                    moneyBRL(r.valorHora),
+                                    style: heroStyle,
+                                  ),
                                 ),
                               ),
-                            ),
-                            MoneyCountUp(
-                              r.valorHora,
-                              curve: MotionCurves.landing,
-                              style: heroStyle,
-                              semanticLabel:
-                                  'Cobre ${moneyBRL(r.valorHora)} por hora',
-                            ),
-                          ],
-                        ),
-                        ExcludeSemantics(
-                          child: Text(
-                            ' /hora',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
+                              MoneyCountUp(
+                                r.valorHora,
+                                curve: MotionCurves.landing,
+                                style: heroStyle,
+                                semanticLabel:
+                                    'Cobre ${moneyBRL(r.valorHora)} por hora',
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    'Esse é o seu piso. Cobre mais quando o trabalho valer mais.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: Space.x2),
-                  Text(
-                    '≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
-                    style: theme.textTheme.bodyMedium,
-                    semanticsLabel:
-                        'Cerca de ${moneyBRL(r.valorDia)} por dia, faturando ${moneyBRL(r.faturamento)} por mês',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: Space.x4),
-
-          // Ato 2 e 3 — anatomia: o imposto de verdade + o lucro, e a Divisão.
-          StaggerIn(
-            index: 1,
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _blocoImposto(context, r, d, regime),
-                  const Divider(),
-                  MergeSemantics(
-                    child: _bloco(
-                      context,
-                      'LUCRO REAL ESTIMADO',
-                      '${moneyBRL(r.lucro)}/mês',
-                      d.lucro,
-                      semantica:
-                          'Lucro real estimado: ${moneyBRL(r.lucro)} por mês',
-                    ),
-                  ),
-                  const Divider(),
-                  DivisaoBar(
-                    lucro: div.lucro,
-                    reserva: div.reserva,
-                    custo: div.custo,
-                    emphasis: DivisaoEmphasis.lucro,
-                    // Nasce DEPOIS do véu do stagger: o usuário VÊ o dinheiro
-                    // se repartir (K1) — e o número continua parando por último.
-                    bornDelay: Motion.quick,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Teto do MEI: enquadrado como CRESCIMENTO, não erro (terracota calmo).
-          if (r.acimaTetoMei) ...<Widget>[
-            const SizedBox(height: Space.x3),
-            // Sem StaggerIn: aviso é verdade JUNTO com o número, não depois.
-            Builder(
-              builder: (BuildContext context) => MergeSemantics(
-                child: Container(
-                  padding: const EdgeInsets.all(Space.x4),
-                  decoration: BoxDecoration(
-                    color: d.alertaContainer,
-                    borderRadius: const BorderRadius.all(Radii.md),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Icon(
-                            Icons.trending_up,
-                            size: 20,
-                            color: d.onAlertaContainer,
-                          ),
-                          const SizedBox(width: Space.x2),
-                          Expanded(
+                          ExcludeSemantics(
                             child: Text(
-                              'Sua meta passou o teto do MEI',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: d.onAlertaContainer,
+                              ' /hora',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: Space.x2),
-                      Text(
-                        'Pra ganhar isso, você precisaria faturar ${moneyBRL(r.faturamento)}/mês — '
-                        'o MEI permite até ${moneyBRL(kTetoMensalMei)}/mês. Bom sinal: seu trabalho '
-                        'está maior que o MEI. Vale conversar com um contador sobre o Simples. '
-                        'Seu valor-hora continua valendo.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: d.onAlertaContainer,
+                    ),
+                    const SizedBox(height: Space.x1),
+                    Text(
+                      'Esse é o seu piso. Cobre mais quando o trabalho valer mais.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: Space.x2),
+                    Text(
+                      '≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
+                      style: theme.textTheme.bodyMedium,
+                      semanticsLabel:
+                          'Cerca de ${moneyBRL(r.valorDia)} por dia, faturando ${moneyBRL(r.faturamento)} por mês',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: Space.x4),
+
+            // Ato 2 e 3 — anatomia: o imposto de verdade + o lucro, e a Divisão.
+            StaggerIn(
+              index: 1,
+              child: PanelCard(
+                padding: const EdgeInsets.all(Space.x5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    _blocoImposto(context, r, d, regime),
+                    const Divider(),
+                    MergeSemantics(
+                      child: _bloco(
+                        context,
+                        'LUCRO REAL ESTIMADO',
+                        '${moneyBRL(r.lucro)}/mês',
+                        d.lucro,
+                        semantica:
+                            'Lucro real estimado: ${moneyBRL(r.lucro)} por mês',
+                      ),
+                    ),
+                    const Divider(),
+                    DivisaoBar(
+                      lucro: div.lucro,
+                      reserva: div.reserva,
+                      custo: div.custo,
+                      emphasis: DivisaoEmphasis.lucro,
+                      // Nasce DEPOIS do véu do stagger: o usuário VÊ o dinheiro
+                      // se repartir (K1) — e o número continua parando por último.
+                      bornDelay: Motion.quick,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Teto do MEI: enquadrado como CRESCIMENTO, não erro (terracota calmo).
+            if (r.acimaTetoMei) ...<Widget>[
+              const SizedBox(height: Space.x3),
+              // Sem StaggerIn: aviso é verdade JUNTO com o número, não depois.
+              Builder(
+                builder: (BuildContext context) => MergeSemantics(
+                  child: Container(
+                    padding: const EdgeInsets.all(Space.x4),
+                    decoration: BoxDecoration(
+                      color: d.alertaContainer,
+                      borderRadius: const BorderRadius.all(Radii.md),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Icon(
+                              Icons.trending_up,
+                              size: 20,
+                              color: d.onAlertaContainer,
+                            ),
+                            const SizedBox(width: Space.x2),
+                            Expanded(
+                              child: Text(
+                                'Sua meta passou o teto do MEI',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: d.onAlertaContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Space.x2),
+                        Text(
+                          'Pra ganhar isso, você precisaria faturar ${moneyBRL(r.faturamento)}/mês — '
+                          'o MEI permite até ${moneyBRL(kTetoMensalMei)}/mês. Bom sinal: seu trabalho '
+                          'está maior que o MEI. Vale conversar com um contador sobre o Simples. '
+                          'Seu valor-hora continua valendo.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: d.onAlertaContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            if (custoMaiorQueMeta) ...<Widget>[
+              const SizedBox(height: Space.x3),
+              Builder(
+                builder: (BuildContext context) => Container(
+                  padding: const EdgeInsets.all(Space.x3),
+                  decoration: BoxDecoration(
+                    color: d.alertaContainer,
+                    borderRadius: const BorderRadius.all(Radii.md),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(
+                        Icons.trending_down,
+                        size: 20,
+                        color: d.onAlertaContainer,
+                      ),
+                      const SizedBox(width: Space.x2),
+                      Expanded(
+                        child: Text(
+                          'Seus custos estão maiores que a renda que você quer. Vale rever.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: d.onAlertaContainer,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
-
-          if (custoMaiorQueMeta) ...<Widget>[
-            const SizedBox(height: Space.x3),
-            Builder(
-              builder: (BuildContext context) => Container(
-                padding: const EdgeInsets.all(Space.x3),
-                decoration: BoxDecoration(
-                  color: d.alertaContainer,
-                  borderRadius: const BorderRadius.all(Radii.md),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Icon(
-                      Icons.trending_down,
-                      size: 20,
-                      color: d.onAlertaContainer,
-                    ),
-                    const SizedBox(width: Space.x2),
-                    Expanded(
-                      child: Text(
-                        'Seus custos estão maiores que a renda que você quer. Vale rever.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: d.onAlertaContainer,
-                        ),
+            ],
+            const SizedBox(height: Space.x4),
+            StaggerIn(
+              index: 3,
+              child: Wrap(
+                spacing: Space.x2,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () => context.push(Routes.detalhe, extra: p),
+                    child: const Text('Ver detalhamento'),
+                  ),
+                  // Porta secundária da proposta (07 §A.2). Discreta de
+                  // propósito: aqui a ação que importa é SALVAR o cálculo — a
+                  // proposta principal nasce do Simulador, onde a pessoa já
+                  // validou o preço de um projeto concreto.
+                  TextButton(
+                    onPressed: () => abrirProposta(
+                      context,
+                      ref,
+                      inicial: Proposta(
+                        servico: '',
+                        valor: 0,
+                        valorHora: r.valorHora.toDouble(),
                       ),
                     ),
-                  ],
-                ),
+                    child: const Text('Fazer proposta'),
+                  ),
+                ],
               ),
             ),
-          ],
-          const SizedBox(height: Space.x4),
-          StaggerIn(
-            index: 3,
-            child: Wrap(
-              spacing: Space.x2,
+            const SizedBox(height: Space.x2),
+            // Sem StaggerIn: o selo e o aviso de tabela são rodapé, não ato.
+            // Chegar atrasado aqui faz a tela parecer que ainda está carregando
+            // depois de o número já ter nascido.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                TextButton(
-                  onPressed: () => context.push(Routes.detalhe, extra: p),
-                  child: const Text('Ver detalhamento'),
-                ),
-                // Porta secundária da proposta (07 §A.2). Discreta de
-                // propósito: aqui a ação que importa é SALVAR o cálculo — a
-                // proposta principal nasce do Simulador, onde a pessoa já
-                // validou o preço de um projeto concreto.
-                TextButton(
-                  onPressed: () => abrirProposta(
-                    context,
-                    ref,
-                    inicial: Proposta(
-                      servico: '',
-                      valor: 0,
-                      valorHora: r.valorHora.toDouble(),
-                    ),
-                  ),
-                  child: const Text('Fazer proposta'),
-                ),
+                const EstimativaSeal(),
+                if (stale) ...<Widget>[
+                  const SizedBox(height: Space.x2),
+                  // Rebaixado a footnote: informa sem carimbar desconfiança
+                  // nem empurrar nada pra baixo da dobra.
+                  StaleBanner(ano: kTabelasAno, footnote: true),
+                ],
               ],
             ),
-          ),
-          const SizedBox(height: Space.x2),
-          // Sem StaggerIn: o selo e o aviso de tabela são rodapé, não ato.
-          // Chegar atrasado aqui faz a tela parecer que ainda está carregando
-          // depois de o número já ter nascido.
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const EstimativaSeal(),
-              if (stale) ...<Widget>[
-                const SizedBox(height: Space.x2),
-                // Rebaixado a footnote: informa sem carimbar desconfiança
-                // nem empurrar nada pra baixo da dobra.
-                StaleBanner(ano: kTabelasAno, footnote: true),
-              ],
-            ],
-          ),
-          const SizedBox(height: Space.x2),
-        ],
+            const SizedBox(height: Space.x2),
+          ],
+        ),
       ),
     );
   }

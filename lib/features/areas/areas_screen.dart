@@ -15,6 +15,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// **Meus preços** — as áreas de trabalho, cada uma com o seu valor-hora.
 ///
@@ -42,73 +43,75 @@ class AreasScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: data.areas.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.calculate_outlined,
-                      size: 40,
-                      color: cs.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: Space.x3),
-                    Text(
-                      'Faça seu cálculo pra descobrir quanto vale a sua hora.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
+      body: ContentWidth(
+        child: data.areas.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.x6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.calculate_outlined,
+                        size: 40,
                         color: cs.onSurfaceVariant,
                       ),
-                    ),
-                    const SizedBox(height: Space.x6),
-                    FilledButton(
-                      onPressed: () => context.push(Routes.calc),
-                      child: const Text('Calcular agora'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(Space.x4),
-              children: <Widget>[
-                Text(
-                  data.hierarquiaVisivel
-                      ? 'Toque pra ativar. O Início e a entrada passam a usar a área ativa.'
-                      : 'É daqui que sai o seu valor-hora.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: Space.x4),
-                Card(
-                  color: cs.surfaceContainer,
-                  child: Column(
-                    children: <Widget>[
-                      for (int i = 0; i < data.areas.length; i++) ...<Widget>[
-                        if (i > 0) const Divider(height: 1, indent: Space.x4),
-                        _tile(
-                          context,
-                          ref,
-                          data.areas[i],
-                          regime,
-                          ativa: data.areas[i].id == data.active?.id,
-                          unica: data.areas.length == 1,
+                      const SizedBox(height: Space.x3),
+                      Text(
+                        'Faça seu cálculo pra descobrir quanto vale a sua hora.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: cs.onSurfaceVariant,
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: Space.x6),
+                      FilledButton(
+                        onPressed: () => context.push(Routes.calc),
+                        child: const Text('Calcular agora'),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: Space.x4),
-                OutlinedButton.icon(
-                  onPressed: () => novaArea(context, ref),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Nova área de trabalho'),
-                ),
-              ],
-            ),
+              )
+            : ListView(
+                padding: const EdgeInsets.all(Space.x4),
+                children: <Widget>[
+                  Text(
+                    data.hierarquiaVisivel
+                        ? 'Toque pra ativar. O Início e a entrada passam a usar a área ativa.'
+                        : 'É daqui que sai o seu valor-hora.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: Space.x4),
+                  Card(
+                    color: cs.surfaceContainer,
+                    child: Column(
+                      children: <Widget>[
+                        for (int i = 0; i < data.areas.length; i++) ...<Widget>[
+                          if (i > 0) const Divider(height: 1, indent: Space.x4),
+                          _tile(
+                            context,
+                            ref,
+                            data.areas[i],
+                            regime,
+                            ativa: data.areas[i].id == data.active?.id,
+                            unica: data.areas.length == 1,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: Space.x4),
+                  OutlinedButton.icon(
+                    onPressed: () => novaArea(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nova área de trabalho'),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
