@@ -152,11 +152,14 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       ),
 
       // ---- Ferramentas/consulta: gaveta lateral rápida ----
+      // Registrar uma entrada é FLUXO, não gaveta: é o gesto mais importante
+      // do app e uma mudança de modo ("agora eu vou guardar dinheiro"). Abria
+      // com a mesma transição das Configurações.
       GoRoute(
         path: Routes.entrada,
         // `extra` = id do trabalho, quando veio do detalhe dele.
         pageBuilder: (_, GoRouterState s) =>
-            _toolPage(s, EntradaScreen(trabalhoId: s.extra as String?)),
+            _flowPage(s, EntradaScreen(trabalhoId: s.extra as String?)),
       ),
       GoRoute(
         path: Routes.detalhe,
