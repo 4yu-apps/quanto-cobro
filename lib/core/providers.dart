@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'billing/billing_service.dart';
 import 'billing/entitlement.dart';
 import 'data/area_repository.dart';
 import 'data/backup_service.dart';
@@ -421,6 +422,16 @@ class ProNotifier extends Notifier<bool> {
 
 final NotifierProvider<ProNotifier, bool> proProvider =
     NotifierProvider<ProNotifier, bool>(ProNotifier.new);
+
+/// A ponte com o Play Billing. `onEntitled` liga o Pro quando a loja confirma a
+/// compra — é o único caminho pra virar Pro agora (antes o botão concedia local,
+/// e dava pra virar Pro sem pagar). Inicializado uma vez no boot (app.dart).
+final Provider<BillingService> billingServiceProvider =
+    Provider<BillingService>((Ref ref) {
+      return BillingService(
+        onEntitled: () => ref.read(proProvider.notifier).grant(),
+      );
+    });
 
 // ---------------------------------------------------------------------------
 // Backup e câmbio

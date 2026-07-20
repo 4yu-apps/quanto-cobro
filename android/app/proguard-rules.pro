@@ -45,6 +45,13 @@
 -dontwarn com.mr.flutter.plugin.filepicker.**
 
 # ---------------------------------------------------------------------------
+# Play Billing (in_app_purchase): a assinatura Pro. Sem isso, comprar/restaurar
+# quebra em runtime — e quebra depois de o usuario tocar em "Assinar".
+# ---------------------------------------------------------------------------
+-keep class com.android.billingclient.api.** { *; }
+-dontwarn com.android.billingclient.api.**
+
+# ---------------------------------------------------------------------------
 # drift / sqlite3_flutter_libs: a lib nativa e .so (R8 nao toca), mas o loader
 # JNI resolve simbolos por nome. Manter evita "library not found" em runtime.
 # ---------------------------------------------------------------------------

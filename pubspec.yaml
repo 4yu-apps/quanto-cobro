@@ -3,7 +3,7 @@ description: "Quanto Cobro? - calculadora do freelancer BR (valor-hora, reserva 
 publish_to: 'none'
 
 # versionName+versionCode. Nome de EXIBIÇÃO fica em lib/core/config/app_config.dart.
-version: 0.8.0+13
+version: 0.8.0+14
 
 environment:
   sdk: ^3.12.2
@@ -57,6 +57,11 @@ dependencies:
   firebase_core: ^3.8.0
   firebase_analytics: ^11.4.0
   firebase_crashlytics: ^4.2.0
+
+  # Play Billing — a assinatura Pro (pro_mensal, plano mensal). Antes disso o
+  # entitlement era um bool local (dava pra virar Pro sem pagar); agora o Pro
+  # só nasce de uma compra confirmada pela loja.
+  in_app_purchase: ^3.2.0
 
 # win32 é dep transitiva SÓ do Windows (share_plus quer ^6, file_picker quer ^5).
 # O app é Android/iOS — win32 nunca é compilado. Fixo num 5.x pra os dois

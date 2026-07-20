@@ -28,7 +28,22 @@ class ProScreen extends ConsumerStatefulWidget {
 }
 
 class _ProScreenState extends ConsumerState<ProScreen> {
-  bool _activating = false;
+  bool _comprando = false;
+
+  /// O preço REAL da loja, na moeda do usuário (BRL 6,90 aqui, USD/EUR 1,49 lá
+  /// fora). Fica null até a loja responder — o texto cai no fallback em reais.
+  String? _preco;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarPreco();
+  }
+
+  Future<void> _carregarPreco() async {
+    final String? p = await ref.read(billingServiceProvider).precoFormatado();
+    if (mounted && p != null) setState(() => _preco = p);
+  }
 
   static const List<(IconData, String)> _hoje = <(IconData, String)>[
     (
@@ -123,7 +138,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                   duration: reduceMotionOf(context)
                       ? Duration.zero
                       : Motion.emphasized,
-                  scale: _activating ? 1.06 : 1,
+                  scale: _comprando ? 1.06 : 1,
                   child: Container(
                     width: 72,
                     height: 72,
@@ -189,7 +204,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
               _plano_(
                 context,
                 'Pro',
-                'R\$ 6,90 por mês · cancela quando quiser',
+                '${_preco ?? 'R\$ 6,90'} por mês · cancela quando quiser',
                 destaque: true,
               ),
               const SizedBox(height: Space.x4),
@@ -200,67 +215,66 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                   backgroundColor: pc.proSolid,
                   foregroundColor: pc.onProSolid,
                 ),
-                onPressed: _activating
+                // Abre a compra da LOJA. O Pro não liga aqui: liga quando a loja
+                // CONFIRMA (billing_service -> grant), e aí a tela troca pro
+                // recibo sozinha (isPro no build). Fim do "Pro sem pagar".
+                onPressed: _comprando
                     ? null
                     : () async {
                         Haptics.commit();
-                        await ref.read(proProvider.notifier).grant();
                         telemetry.evento(
                           Evento.proAtivado,
                           params: <String, Object?>{'gatilho': widget.gatilho},
                         );
+                        setState(() => _comprando = true);
+                        final bool abriu = await ref
+                            .read(billingServiceProvider)
+                            .comprar();
                         if (!context.mounted) return;
-                        setState(() => _activating = true);
-                        announce(
-                          context,
-                          'Pro ativo. Seus vários trabalhos estão liberados.',
-                        );
-                        ScaffoldMessenger.of(context)
-                          ..clearSnackBars()
-                          ..showSnackBar(
-                            const SnackBar(content: Text('Pro ativado')),
+                        setState(() => _comprando = false);
+                        if (!abriu) {
+                          announce(
+                            context,
+                            'A loja não está disponível agora. Tenta de novo em instantes.',
                           );
-                        if (!reduceMotionOf(context)) {
-                          // Sem espera: segurar 600ms quem acabou de
-                          // pagar é o pior momento pra fazer alguém esperar.
+                          ScaffoldMessenger.of(context)
+                            ..clearSnackBars()
+                            ..showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Loja indisponível agora. Tenta de novo.',
+                                ),
+                              ),
+                            );
                         }
-                        if (!context.mounted) return;
-                        GoRouter.of(context).pop();
                       },
-                child: AnimatedSwitcher(
-                  duration: reduceMotionOf(context)
-                      ? Duration.zero
-                      : Motion.base,
-                  child: _activating
-                      ? const Row(
-                          key: ValueKey<String>('ativo'),
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Icon(Icons.check),
-                            SizedBox(width: Space.x2),
-                            Text('Pro ativo'),
-                          ],
-                        )
-                      : const Text('Assinar', key: ValueKey<String>('comprar')),
-                ),
+                child: _comprando
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: pc.onProSolid,
+                        ),
+                      )
+                    : const Text('Assinar'),
               ),
               const SizedBox(height: Space.x2),
               Text(
-                'Preços provisórios. O pagamento real é ligado com a configuração da loja; '
-                'por ora o Pro é ativado localmente pra você testar.',
+                'Cobrado pela Google Play. Cancela quando quiser, direto na Play.',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
+                  await ref.read(billingServiceProvider).restaurar();
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context)
                     ..clearSnackBars()
                     ..showSnackBar(
                       const SnackBar(
-                        content: Text(
-                          'A restauração fica disponível quando a compra pela loja for ativada. Você não perde nada.',
-                        ),
+                        content: Text('Procurando sua assinatura…'),
                       ),
                     );
                 },

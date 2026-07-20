@@ -37,6 +37,10 @@ class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
     _router = createAppRouter(
       initialLocation: onboardingDone ? Routes.painel : Routes.onboarding,
     );
+    // Billing: liga o ouvinte de compras e restaura o Pro no boot. Best-effort
+    // e fire-and-forget — não bloqueia a primeira tela, e a falha (loja
+    // indisponível/offline) não derruba o app.
+    ref.read(billingServiceProvider).init();
   }
 
   @override
