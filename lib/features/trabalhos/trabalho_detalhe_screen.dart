@@ -26,9 +26,18 @@ import '../../core/ui/secao_titulo.dart';
 /// Tocar no card abre AQUI. Editar é o ⋮ — porque abrir é o que a pessoa quer
 /// fazer dez vezes, e editar é o que ela faz uma.
 class TrabalhoDetalheScreen extends ConsumerWidget {
-  const TrabalhoDetalheScreen({super.key, required this.trabalhoId});
+  const TrabalhoDetalheScreen({super.key, required this.trabalhoId})
+    : embutido = false;
+
+  /// A mesma tela, sem `Scaffold` — pra viver no painel direito do
+  /// mestre-detalhe em tela larga. Nada do conteúdo muda: o que sai é só a
+  /// casca (AppBar e barra de baixo), porque quem já tem a lista à esquerda
+  /// não precisa de um botão "voltar" nem de um segundo título de tela.
+  const TrabalhoDetalheScreen.painel({super.key, required this.trabalhoId})
+    : embutido = true;
 
   final String trabalhoId;
+  final bool embutido;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,17 +49,19 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
         .byId(trabalhoId);
 
     if (trabalho == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Trabalho')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(Space.x6),
-            child: Text(
-              'Esse trabalho não existe mais.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+      final Widget vazio = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(Space.x6),
+          child: Text(
+            'Esse trabalho não existe mais.',
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
+      );
+      if (embutido) return vazio;
+      return Scaffold(
+        appBar: AppBar(title: const Text('Trabalho')),
+        body: vazio,
       );
     }
 
@@ -70,38 +81,169 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
         .expand((List<Entrada> l) => l)
         .fold(0, (int s, Entrada e) => s + e.separado);
 
+    final Widget menu = PopupMenuButton<String>(
+      tooltip: 'Opções de ${trabalho.nome}',
+      onSelected: (String op) => _menu(context, ref, trabalho, op),
+      itemBuilder: (BuildContext c) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'editar',
+          child: Text('Editar trabalho'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'proposta',
+          child: Text('Fazer proposta'),
+        ),
+        PopupMenuItem<String>(
+          value: 'encerrar',
+          child: Text(
+            trabalho.encerrado ? 'Reabrir trabalho' : 'Encerrar trabalho',
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'apagar',
+          child: Text('Apagar trabalho'),
+        ),
+      ],
+    );
+
+    final Widget? botao = trabalho.encerrado
+        ? null
+        : FilledButton.icon(
+            onPressed: () {
+              Haptics.select();
+              context.push(Routes.entrada, extra: trabalho.id);
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Nova entrada'),
+          );
+
+    final Widget corpo = ContentWidth(
+      child: ListView(
+        padding: const EdgeInsets.all(Space.x4),
+        children: <Widget>[
+          PanelCard(
+            padding: const EdgeInsets.all(Space.x5),
+            accent: d.lucro,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'RECEBIDO NESTE TRABALHO',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: Space.x1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    moneyBRL(total),
+                    maxLines: 1,
+                    style: AppType.valueXl.copyWith(color: d.lucro),
+                    semanticsLabel:
+                        'Recebido neste trabalho: ${moneyBRL(total)}',
+                  ),
+                ),
+                if (separado > 0) ...<Widget>[
+                  const SizedBox(height: Space.x1),
+                  Text(
+                    'separou ${moneyBRL(separado)} de imposto',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: d.reserva,
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
+                ],
+                if (trabalho.encerrado) ...<Widget>[
+                  const SizedBox(height: Space.x2),
+                  Text(
+                    'Trabalho encerrado.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          if (trabalho.observacoes != null) ...<Widget>[
+            const SizedBox(height: Space.x5),
+            SecaoTitulo('Anotações', bottom: Space.x2),
+            Text(trabalho.observacoes!, style: theme.textTheme.bodyMedium),
+          ],
+
+          const SizedBox(height: Space.x6),
+          SecaoTitulo('Entradas', bottom: Space.x2),
+
+          if (porMes.isEmpty)
+            Text(
+              'Nada registrado ainda. Quando o dinheiro cair, toque em "Nova '
+              'entrada" — o imposto sai separado junto.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            )
+          else
+            // Agrupado por MÊS: é assim que a pessoa pensa o próprio dinheiro,
+            // e é o que responde "quanto ele me pagou em cada mês".
+            for (final MapEntry<DateTime, List<Entrada>> mes in porMes.entries)
+              _BlocoDoMes(mes: mes.key, entradas: mes.value),
+
+          const SizedBox(height: Space.x8),
+        ],
+      ),
+    );
+
+    // No painel: sem AppBar nem barra de baixo. O nome do trabalho vira um
+    // cabeçalho dentro do painel — quem já enxerga a lista à esquerda não
+    // precisa de um segundo título de tela nem de um "voltar".
+    if (embutido) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x2, 0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      trabalho.nome,
+                      style: theme.textTheme.titleLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                menu,
+              ],
+            ),
+          ),
+          Expanded(child: corpo),
+          if (botao != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.x4,
+                0,
+                Space.x4,
+                Space.x4,
+              ),
+              child: botao,
+            ),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(trabalho.nome, overflow: TextOverflow.ellipsis),
-        actions: <Widget>[
-          PopupMenuButton<String>(
-            tooltip: 'Opções',
-            onSelected: (String op) => _menu(context, ref, trabalho, op),
-            itemBuilder: (BuildContext c) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'editar',
-                child: Text('Editar trabalho'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'proposta',
-                child: Text('Fazer proposta'),
-              ),
-              PopupMenuItem<String>(
-                value: 'encerrar',
-                child: Text(
-                  trabalho.encerrado ? 'Reabrir trabalho' : 'Encerrar trabalho',
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'apagar',
-                child: Text('Apagar trabalho'),
-              ),
-            ],
-          ),
-        ],
+        actions: <Widget>[menu],
       ),
-      bottomNavigationBar: trabalho.encerrado
+      bottomNavigationBar: botao == null
           ? null
           : SafeArea(
               minimum: const EdgeInsets.fromLTRB(
@@ -110,95 +252,9 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
                 Space.x4,
                 Space.x4,
               ),
-              child: FilledButton.icon(
-                onPressed: () {
-                  Haptics.select();
-                  context.push(Routes.entrada, extra: trabalho.id);
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Nova entrada'),
-              ),
+              child: botao,
             ),
-      body: ContentWidth(
-        child: ListView(
-          padding: const EdgeInsets.all(Space.x4),
-          children: <Widget>[
-            PanelCard(
-              padding: const EdgeInsets.all(Space.x5),
-              accent: d.lucro,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'RECEBIDO NESTE TRABALHO',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: Space.x1),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      moneyBRL(total),
-                      maxLines: 1,
-                      style: AppType.valueXl.copyWith(color: d.lucro),
-                      semanticsLabel:
-                          'Recebido neste trabalho: ${moneyBRL(total)}',
-                    ),
-                  ),
-                  if (separado > 0) ...<Widget>[
-                    const SizedBox(height: Space.x1),
-                    Text(
-                      'separou ${moneyBRL(separado)} de imposto',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: d.reserva,
-                        fontFeatures: AppType.tnum,
-                      ),
-                    ),
-                  ],
-                  if (trabalho.encerrado) ...<Widget>[
-                    const SizedBox(height: Space.x2),
-                    Text(
-                      'Trabalho encerrado.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            if (trabalho.observacoes != null) ...<Widget>[
-              const SizedBox(height: Space.x5),
-              SecaoTitulo('Anotações', bottom: Space.x2),
-              Text(trabalho.observacoes!, style: theme.textTheme.bodyMedium),
-            ],
-
-            const SizedBox(height: Space.x6),
-            SecaoTitulo('Entradas', bottom: Space.x2),
-
-            if (porMes.isEmpty)
-              Text(
-                'Nada registrado ainda. Quando o dinheiro cair, toque em "Nova '
-                'entrada" — o imposto sai separado junto.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              )
-            else
-              // Agrupado por MÊS: é assim que a pessoa pensa o próprio dinheiro,
-              // e é o que responde "quanto ele me pagou em cada mês".
-              for (final MapEntry<DateTime, List<Entrada>> mes
-                  in porMes.entries)
-                _BlocoDoMes(mes: mes.key, entradas: mes.value),
-
-            const SizedBox(height: Space.x8),
-          ],
-        ),
-      ),
+      body: corpo,
     );
   }
 
