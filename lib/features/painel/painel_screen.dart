@@ -18,6 +18,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/empty_state_hero.dart';
 import '../../core/ui/estimativa_seal.dart';
@@ -282,61 +283,60 @@ class _CardDoMes extends StatelessWidget {
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
-    return Semantics(
-      button: true,
+    return SemanticButton(
       label:
           'Em ${mesAno(mes)} entraram ${moneyBRL(entrou)}, e você separou '
-          '${moneyBRL(separado)} de imposto. Ver o histórico.',
-      child: ExcludeSemantics(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () => context.push(Routes.historico),
-            borderRadius: const BorderRadius.all(Radii.lg),
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x5),
-              accent: d.reserva,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          'ESTE MÊS',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            letterSpacing: 0.5,
-                          ),
+          '${moneyBRL(separado)} de imposto.',
+      tapHint: 'abre o histórico',
+      onTap: () => context.push(Routes.historico),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => context.push(Routes.historico),
+          borderRadius: const BorderRadius.all(Radii.lg),
+          child: PanelCard(
+            padding: const EdgeInsets.all(Space.x5),
+            accent: d.reserva,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        'ESTE MÊS',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 18,
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Space.x1),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      moneyBRL(entrou),
-                      maxLines: 1,
-                      style: AppType.valueXl.copyWith(color: d.lucro),
                     ),
-                  ),
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    'e você separou ${moneyBRL(separado)} de imposto',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: d.reserva,
-                      fontFeatures: AppType.tnum,
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
                     ),
+                  ],
+                ),
+                const SizedBox(height: Space.x1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    moneyBRL(entrou),
+                    maxLines: 1,
+                    style: AppType.valueXl.copyWith(color: d.lucro),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: Space.x1),
+                Text(
+                  'e você separou ${moneyBRL(separado)} de imposto',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: d.reserva,
+                    fontFeatures: AppType.tnum,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

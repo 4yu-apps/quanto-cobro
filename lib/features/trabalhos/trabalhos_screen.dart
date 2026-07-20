@@ -16,6 +16,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
 import '../../core/ui/panel_card.dart';
 
 /// Aba **Trabalhos** — os freelas da pessoa.
@@ -167,67 +168,64 @@ class _TrabalhoCard extends StatelessWidget {
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
-    return Semantics(
-      button: true,
+    return SemanticButton(
       label: _semantica(),
-      onTapHint: 'abrir o trabalho',
-      child: ExcludeSemantics(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () =>
-                context.push(Routes.trabalhoDetalhe, extra: trabalho.id),
-            borderRadius: const BorderRadius.all(Radii.lg),
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x4),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          trabalho.nome,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: trabalho.encerrado
-                                ? cs.onSurfaceVariant
-                                : cs.onSurface,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: Space.x1),
-                        Text(
-                          _linhaApoio(),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: Space.x3),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+      tapHint: 'abrir o trabalho',
+      onTap: () => context.push(Routes.trabalhoDetalhe, extra: trabalho.id),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => context.push(Routes.trabalhoDetalhe, extra: trabalho.id),
+          borderRadius: const BorderRadius.all(Radii.lg),
+          child: PanelCard(
+            padding: const EdgeInsets.all(Space.x4),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        moneyBRL(recebido),
+                        trabalho.nome,
                         style: theme.textTheme.titleMedium?.copyWith(
-                          fontFamily: AppType.numberFamily,
-                          fontFeatures: AppType.tnum,
-                          color: recebido > 0 ? d.lucro : cs.onSurfaceVariant,
+                          color: trabalho.encerrado
+                              ? cs.onSurfaceVariant
+                              : cs.onSurface,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: Space.x1),
                       Text(
-                        'recebido',
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        _linhaApoio(),
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: Space.x3),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      moneyBRL(recebido),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontFamily: AppType.numberFamily,
+                        fontFeatures: AppType.tnum,
+                        color: recebido > 0 ? d.lucro : cs.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      'recebido',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

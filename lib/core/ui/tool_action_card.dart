@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/motion.dart';
 import '../theme/tokens.dart';
+import 'a11y.dart';
 import 'panel_card.dart';
 
 /// Card-ação dos tools recorrentes (DS §6.3). Na virada, têm peso de
@@ -32,48 +33,49 @@ class ToolActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    return Semantics(
+    return SemanticButton(
       container: true,
-      button: true,
       label: subtitle == null ? title : '$title. $subtitle',
-      child: ExcludeSemantics(
-        child: PressableScale(
-          child: PanelCard(
-            accent: accent ?? cs.primary,
-            padding: const EdgeInsets.all(Space.x4),
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                onTap: () {
-                  Haptics.select();
-                  onTap();
-                },
-                borderRadius: const BorderRadius.all(Radii.lg),
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 104),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Icon(icon, size: 28, color: accent ?? cs.primary),
-                      const SizedBox(height: Space.x4),
+      onTap: () {
+        Haptics.select();
+        onTap();
+      },
+      child: PressableScale(
+        child: PanelCard(
+          accent: accent ?? cs.primary,
+          padding: const EdgeInsets.all(Space.x4),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: () {
+                Haptics.select();
+                onTap();
+              },
+              borderRadius: const BorderRadius.all(Radii.lg),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 104),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Icon(icon, size: 28, color: accent ?? cs.primary),
+                    const SizedBox(height: Space.x4),
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    if (subtitle != null) ...<Widget>[
+                      const SizedBox(height: 2),
                       Text(
-                        title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: cs.onSurface,
+                        subtitle!,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
                         ),
                       ),
-                      if (subtitle != null) ...<Widget>[
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle!,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),

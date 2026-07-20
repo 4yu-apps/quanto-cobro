@@ -122,94 +122,98 @@ class AreasScreen extends ConsumerWidget {
   }) {
     final ThemeData theme = Theme.of(context);
     final int vh = computeValorHora(a, regime).valorHora;
-    return MergeSemantics(
-      child: Semantics(
-        button: !ativa,
-        selected: ativa,
-        child: ListTile(
-          leading: Icon(
-            ativa ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: ativa
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline,
-          ),
-          title: Text(a.nome),
-          subtitle: Text(ativa ? 'Ativa' : 'Toque pra ativar'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                '${moneyBRL(vh)}/h',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontFeatures: AppType.tnum,
-                  color: theme.colorScheme.primary,
-                ),
+    // SEM MergeSemantics: ele funde o tile e o ⋮ num nó só, e o gesto do nó
+    // fundido cai sempre no PRIMEIRO da árvore — o onTap do tile. Com leitor de
+    // tela, o menu (Editar · Renomear · Apagar) fica inalcançável: nem é falado,
+    // nem abre. O ListTile já funde título + subtítulo sozinho; o merge só
+    // existia pra juntar o "R$ 92/h", e isso se resolve no próprio rótulo dele.
+    return Semantics(
+      button: !ativa,
+      selected: ativa,
+      child: ListTile(
+        leading: Icon(
+          ativa ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+          color: ativa ? theme.colorScheme.primary : theme.colorScheme.outline,
+        ),
+        title: Text(a.nome),
+        subtitle: Text(ativa ? 'Ativa' : 'Toque pra ativar'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              '${moneyBRL(vh)}/h',
+              // "/h" na fala vira "barra agá".
+              semanticsLabel: '${moneyBRL(vh)} por hora',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontFeatures: AppType.tnum,
+                color: theme.colorScheme.primary,
               ),
-              PopupMenuButton<String>(
-                tooltip: 'Opções',
-                onSelected: (String op) async {
-                  if (op == 'editar') {
-                    await ref.read(areasProvider.notifier).select(a.id);
-                    if (context.mounted) context.push(Routes.calc);
-                  } else if (op == 'renomear') {
-                    final String? nome = await pedirNomeArea(
-                      context,
-                      inicial: a.nome,
-                    );
-                    if (nome != null) {
-                      await ref.read(areasProvider.notifier).rename(a.id, nome);
-                    }
-                  } else if (op == 'apagar') {
-                    if (unica) {
-                      ScaffoldMessenger.of(context)
-                        ..clearSnackBars()
-                        ..showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Essa é a sua única área. Pra zerar tudo, use Apagar meus dados.',
-                            ),
-                          ),
-                        );
-                      return;
-                    }
-                    Haptics.select();
-                    final AreasNotifier n = ref.read(areasProvider.notifier);
-                    await n.remove(a.id);
-                    if (!context.mounted) return;
+            ),
+            PopupMenuButton<String>(
+              // "Opções" sozinho, numa lista de três áreas, não diz de quê.
+              tooltip: 'Opções de ${a.nome}',
+              onSelected: (String op) async {
+                if (op == 'editar') {
+                  await ref.read(areasProvider.notifier).select(a.id);
+                  if (context.mounted) context.push(Routes.calc);
+                } else if (op == 'renomear') {
+                  final String? nome = await pedirNomeArea(
+                    context,
+                    inicial: a.nome,
+                  );
+                  if (nome != null) {
+                    await ref.read(areasProvider.notifier).rename(a.id, nome);
+                  }
+                } else if (op == 'apagar') {
+                  if (unica) {
                     ScaffoldMessenger.of(context)
                       ..clearSnackBars()
                       ..showSnackBar(
-                        SnackBar(
-                          content: Text('"${a.nome}" apagada'),
-                          action: SnackBarAction(
-                            label: 'Desfazer',
-                            onPressed: () => n.saveAndActivate(a),
+                        const SnackBar(
+                          content: Text(
+                            'Essa é a sua única área. Pra zerar tudo, use Apagar meus dados.',
                           ),
                         ),
                       );
+                    return;
                   }
-                },
-                itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'editar',
-                    child: Text('Editar cálculo'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'renomear',
-                    child: Text('Renomear'),
-                  ),
-                  PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
-                ],
-              ),
-            ],
-          ),
-          onTap: ativa
-              ? null
-              : () {
                   Haptics.select();
-                  ref.read(areasProvider.notifier).select(a.id);
-                },
+                  final AreasNotifier n = ref.read(areasProvider.notifier);
+                  await n.remove(a.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text('"${a.nome}" apagada'),
+                        action: SnackBarAction(
+                          label: 'Desfazer',
+                          onPressed: () => n.saveAndActivate(a),
+                        ),
+                      ),
+                    );
+                }
+              },
+              itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: 'editar',
+                  child: Text('Editar cálculo'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'renomear',
+                  child: Text('Renomear'),
+                ),
+                PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
+              ],
+            ),
+          ],
         ),
+        onTap: ativa
+            ? null
+            : () {
+                Haptics.select();
+                ref.read(areasProvider.notifier).select(a.id);
+              },
       ),
     );
   }

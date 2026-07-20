@@ -872,16 +872,18 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               color: selected
                   ? theme.colorScheme.primaryContainer
                   : theme.colorScheme.surfaceContainerLow,
-              borderRadius: const BorderRadius.all(Radii.md),
-              shape: selected
-                  ? RoundedRectangleBorder(
-                      borderRadius: const BorderRadius.all(Radii.md),
-                      side: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: 1.5,
-                      ),
-                    )
-                  : null,
+              // Um só: o `shape` carrega o raio E a borda. `borderRadius` junto
+              // de `shape` estoura assert do Material — e como um regime está
+              // sempre selecionado (MEI é o default), o passo 4 morria em
+              // debug SEMPRE. Em release o assert some e ninguém vê; mas
+              // nenhum widget test conseguia chegar aqui, e é por isso que
+              // nenhum existia.
+              shape: RoundedRectangleBorder(
+                borderRadius: const BorderRadius.all(Radii.md),
+                side: selected
+                    ? BorderSide(color: theme.colorScheme.primary, width: 1.5)
+                    : BorderSide.none,
+              ),
               child: InkWell(
                 borderRadius: const BorderRadius.all(Radii.md),
                 onTap: () {
