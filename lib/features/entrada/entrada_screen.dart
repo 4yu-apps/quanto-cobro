@@ -52,6 +52,20 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   bool _saved = false;
   Timer? _announceTimer;
 
+  /// Trava do salvamento. `_salvar` é `async` e nada impedia dois disparos
+  /// durante o `await`: saíam duas entradas e o Desfazer removia uma. Toque
+  /// duplo é o normal de quem tem tremor, usa Switch Access, ou de quem o
+  /// leitor de tela fez disparar duas vezes.
+  bool _salvando = false;
+
+  /// Pra onde o foco pousa quando os botões trocam de identidade. Sem eles, o
+  /// nó em que a pessoa estava é destruído debaixo dela e o leitor de tela
+  /// recai no topo da tela — com o "Desfazer" virando um botão que ninguém
+  /// acha.
+  final FocusNode _focoDepoisDoSave = FocusNode();
+  final FocusNode _focoGuardar = FocusNode();
+  final FocusNode _focoValor = FocusNode();
+
   /// Quanto já havia no cofre ANTES desta entrada, e quanto ficou depois.
   /// É o par que faz o valor contar de 344 pra 412 em vez de zero pra 412 —
   /// "você cresceu 68", não "você tem 412".
@@ -80,6 +94,9 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   void dispose() {
     _valor.dispose();
     _deQuem.dispose();
+    _focoDepoisDoSave.dispose();
+    _focoGuardar.dispose();
+    _focoValor.dispose();
     _announceTimer?.cancel();
     super.dispose();
   }
@@ -106,6 +123,8 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   }
 
   void _desfazer() {
+    // A fala do "digitando" não pode chegar DEPOIS da fala do desfazer.
+    _announceTimer?.cancel();
     final Entrada? e = _ultima;
     if (e == null) return;
     ref.read(entradasProvider.notifier).remove(e);
@@ -115,6 +134,10 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       _ultima = null;
       _cofreAntes = null;
       _cofreDepois = null;
+    });
+    // O botão que ela apertou deixou de existir; o foco volta pro "Guardar".
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focoGuardar.requestFocus();
     });
   }
 
@@ -133,6 +156,14 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   }
 
   Future<void> _salvar(ReservaResult res, RegimeId regime, Area? area) async {
+    // Digite o valor, toque em Guardar dentro de 900ms, e a sequência era:
+    // "Guardado. R$ 68 separados…" e, 300ms depois, "Separe R$ 68 pro
+    // imposto." Pra quem não vê a tela a segunda frase DESFAZ a primeira —
+    // soa como se o salvamento não tivesse pego e o app pedisse de novo. No
+    // caminho de ouro, no gesto que se repete toda semana.
+    _announceTimer?.cancel();
+    if (_salvando) return;
+    _salvando = true;
     Haptics.commit();
     final DateTime agora = DateTime.now();
 
@@ -168,7 +199,10 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       },
     );
 
-    if (!mounted) return;
+    if (!mounted) {
+      _salvando = false;
+      return;
+    }
     // O gesto mais importante do app VIBRA e agora também FALA: a SnackBar não
     // é anunciada de forma confiável pelo leitor de tela.
     announce(
@@ -182,6 +216,10 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       _ultima = entrada;
       _cofreAntes = antes;
       _cofreDepois = antes + res.separado;
+      _salvando = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focoDepoisDoSave.requestFocus();
     });
   }
 
@@ -227,7 +265,12 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
               controller: _valor,
               label: 'Quanto você recebeu?',
               prefix: r'R$ ',
-              autofocus: true,
+              focusNode: _focoValor,
+              // Autofocus é ouro pra quem enxerga — abre o teclado no campo
+              // certo. Mas ele rouba o foco antes de o leitor de tela terminar
+              // de anunciar o nome da tela, então quem navega por fala perde a
+              // orientação. Gateado: dá o ganho sem cobrar o preço.
+              autofocus: !MediaQuery.accessibleNavigationOf(context),
               onChanged: (_) {
                 setState(() => _saved = false);
                 final double v = _valorEmReais;
@@ -369,32 +412,64 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                           ),
                         ),
                         const SizedBox(height: Space.x4),
+                        // O Desfazer inline (no lugar da SnackBar) foi a
+                        // decisão certa: SnackBar some sozinha em ~4s, e isso
+                        // é WCAG 2.2.1 na cara — com leitor de tela dá pra
+                        // ouvir o anúncio e mais nada. Aqui não tem prazo, e
+                        // ele fica na ordem de leitura, logo depois do card
+                        // que acabou de mudar. Falta só o foco não cair no
+                        // vazio quando os botões trocam de identidade.
                         if (_saved)
                           Row(
                             children: <Widget>[
                               Expanded(
                                 child: FilledButton.tonal(
-                                  onPressed: () => setState(() {
-                                    _valor.clear();
-                                    if (widget.trabalhoId == null) {
-                                      _deQuem.clear();
-                                    }
-                                    _saved = false;
-                                    _cofreAntes = null;
-                                    _cofreDepois = null;
-                                  }),
+                                  focusNode: _focoDepoisDoSave,
+                                  onPressed: () {
+                                    setState(() {
+                                      _valor.clear();
+                                      if (widget.trabalhoId == null) {
+                                        _deQuem.clear();
+                                      }
+                                      _saved = false;
+                                      _cofreAntes = null;
+                                      _cofreDepois = null;
+                                    });
+                                    // O campo é limpo; sem isto ninguém avisa
+                                    // quem não vê a tela que ele esvaziou.
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          if (mounted) {
+                                            _focoValor.requestFocus();
+                                          }
+                                        });
+                                  },
                                   child: const Text('Registrar outro'),
                                 ),
                               ),
                               const SizedBox(width: Space.x3),
-                              TextButton(
-                                onPressed: _desfazer,
-                                child: const Text('Desfazer'),
+                              Semantics(
+                                // "Desfazer" sozinho é um cheque em branco:
+                                // desfazer o quê? O registro? O trabalho que
+                                // nasceu? O rótulo diz o que se perde.
+                                label: _ultima == null
+                                    ? 'Desfazer'
+                                    : 'Desfazer o registro de '
+                                          '${moneyBRL(_ultima!.valor)}',
+                                button: true,
+                                onTap: _desfazer,
+                                child: ExcludeSemantics(
+                                  child: TextButton(
+                                    onPressed: _desfazer,
+                                    child: const Text('Desfazer'),
+                                  ),
+                                ),
                               ),
                             ],
                           )
                         else
                           FilledButton.tonal(
+                            focusNode: _focoGuardar,
                             onPressed: () => _salvar(res, regime, area),
                             child: const Text('Guardar'),
                           ),
