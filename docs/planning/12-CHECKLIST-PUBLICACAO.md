@@ -1,5 +1,11 @@
 # 12 — Checklist até a publicação oficial
 
+> ⚠️ **DESATUALIZADO — ver [13-HANDOFF.md](13-HANDOFF.md) pro estado atual.**
+> Depois deste checklist, na mesma sessão: keystore gerada, Firebase e billing
+> ligados, assinatura `pro_mensal` criada, app no teste interno (bundle 15). O
+> que sobra deste doc é só o **gate de produção** (§7 do 13). Mantido por
+> histórico.
+>
 > Escrito em 20/07/2026. Estado do código: `main` em `0.8.0+11`, 283 testes
 > verdes, CI + build de APK funcionando, R8 ligado. Este doc é **só o que falta**
 > até o app estar publicado na Play. Marca o que já foi e o que trava o quê.
