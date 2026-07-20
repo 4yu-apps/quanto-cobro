@@ -116,8 +116,13 @@ const double _coreDoIcone = 0.80;
 /// Estes dois são os do `splash_overlay.dart`: charcoal levantado no centro,
 /// quase preto na borda. Radial, não linear — é um spotlight, e é ele que faz
 /// a marca parecer iluminada por dentro em vez de colada num retângulo.
-const Color _fundoCentro = Color(0xFF17201B);
-const Color _fundoBorda = Color(0xFF0A0C0B);
+/// Três paradas, não duas: a do meio segura o tom quase chapado até 60% do
+/// raio, e aí a borda cai rápido. É o que faz a vinheta ser SENTIDA e não
+/// vista — com duas paradas o degradê é linear do centro à borda e o resultado
+/// parece um fundo cinza mal resolvido, não um foco de luz.
+const Color _fundoCentro = Color(0xFF1B2620);
+const Color _fundoMeio = Color(0xFF131A16);
+const Color _fundoBorda = Color(0xFF050807);
 
 /// A versão com fundo: usada no ícone legado e no 512 da loja.
 class _IconeCheio extends StatelessWidget {
@@ -135,8 +140,12 @@ class _IconeCheio extends StatelessWidget {
       borderRadius: BorderRadius.circular(lado * raio),
       gradient: const RadialGradient(
         center: Alignment.center,
-        radius: 0.78,
-        colors: <Color>[_fundoCentro, _fundoBorda],
+        // 0.9 leva o fim do degradê até perto dos cantos: com raio curto a
+        // vinheta fecha antes deles e sobra um anel escuro visível, que lê
+        // como erro de arte.
+        radius: 0.9,
+        colors: <Color>[_fundoCentro, _fundoMeio, _fundoBorda],
+        stops: <double>[0.0, 0.6, 1.0],
       ),
     ),
     // 76% aqui, contra 62% do adaptive. O adaptive é preso na keyline de 66dp
