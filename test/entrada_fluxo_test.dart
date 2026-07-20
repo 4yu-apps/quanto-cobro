@@ -97,6 +97,10 @@ void main() {
     await tester.pumpAndSettle();
     await guardar(tester);
 
+    // Sem SnackBar cobrindo: o "Registrar outro" virou o botão primário da
+    // linha de confirmação, e está sempre alcançável.
+    await tester.ensureVisible(find.text('Registrar outro'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Registrar outro'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '600');
@@ -134,6 +138,10 @@ void main() {
     await tester.pumpAndSettle();
     await guardar(tester);
 
+    // Sem SnackBar cobrindo: o "Registrar outro" virou o botão primário da
+    // linha de confirmação, e está sempre alcançável.
+    await tester.ensureVisible(find.text('Registrar outro'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Registrar outro'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '600');

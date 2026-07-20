@@ -32,7 +32,7 @@ class PropostaPapel extends StatelessWidget {
   static const Color _tinta = Color(0xFF15201C);
   static const Color _tintaSuave = Color(0xFF6A736F);
   static const Color _linha = Color(0xFFDDE3E0);
-  static const Color _acento = Color(0xFF007D54);
+
   static const Color _fundoValor = Color(0xFFF3F7F5);
 
   @override
@@ -95,19 +95,19 @@ class PropostaPapel extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
-                  const Text(
+                  Text(
                     'PROPOSTA',
                     style: TextStyle(
-                      color: _acento,
+                      color: Color(marca.cor),
                       fontSize: 8,
                       letterSpacing: 2,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  if (marca.contato.trim().isNotEmpty) ...<Widget>[
+                  if (marca.contatoFormatado.trim().isNotEmpty) ...<Widget>[
                     const SizedBox(height: 4),
                     Text(
-                      marca.contato.trim(),
+                      marca.contatoFormatado.trim(),
                       textAlign: TextAlign.right,
                       style: const TextStyle(color: _tintaSuave, fontSize: 9.5),
                     ),
@@ -214,7 +214,7 @@ class PropostaPapel extends StatelessWidget {
   Widget _blocoValor() => ClipRRect(
     borderRadius: BorderRadius.circular(12),
     child: ColoredBox(
-      color: _acento,
+      color: Color(marca.cor),
       child: Padding(
         padding: const EdgeInsets.only(left: 3),
         child: ColoredBox(

@@ -47,7 +47,12 @@ Future<Uint8List> gerarPropostaPdf({
       // Rodapé em toda página: em proposta de 2+ páginas, a validade precisa
       // aparecer na folha que o cliente tem na mão, não só na primeira.
       footer: (pw.Context context) => _rodape(fontes, proposta, emitidaEm),
-      build: (pw.Context context) => _corpoDoDocumento(fontes, proposta, marca),
+      build: (pw.Context context) => _corpoDoDocumento(
+        fontes,
+        proposta,
+        marca,
+        PdfColor.fromInt(marca.cor),
+      ),
     ),
   );
 
@@ -65,7 +70,8 @@ Future<Uint8List> gerarPropostaPdf({
 const PdfColor _tinta = PdfColor.fromInt(0xFF15201C);
 const PdfColor _tintaSuave = PdfColor.fromInt(0xFF6A736F);
 const PdfColor _linha = PdfColor.fromInt(0xFFDDE3E0);
-const PdfColor _acento = PdfColor.fromInt(0xFF007D54); // BrandColors.verdeJusto
+// A cor de acento vem da marca do freelancer (`marca.cor`) e é passada
+// adiante; ver `core/model/cor_marca.dart` pra regra de contraste.
 const PdfColor _fundoValor = PdfColor.fromInt(0xFFF3F7F5);
 
 // Ritmo vertical espelhando tokens.dart (Space.x2/x4/x6/x8) em pontos.
@@ -144,14 +150,19 @@ pw.Widget _secao(_Fontes f, String texto) =>
 /// e observações) vão com `TextOverflow.span` — sem isso o pdf trata o
 /// parágrafo como bloco indivisível e joga exceção quando ele passa de uma
 /// página.
-List<pw.Widget> _corpoDoDocumento(_Fontes f, Proposta proposta, Marca marca) {
+List<pw.Widget> _corpoDoDocumento(
+  _Fontes f,
+  Proposta proposta,
+  Marca marca,
+  PdfColor acento,
+) {
   final String servico = proposta.servico.trim();
   final String descricao = proposta.descricao.trim();
   final String cliente = proposta.cliente.trim();
   final String observacoes = proposta.observacoes.trim();
 
   return <pw.Widget>[
-    _cabecalho(f, marca),
+    _cabecalho(f, marca, acento),
     pw.SizedBox(height: _x6),
 
     if (cliente.isNotEmpty) ...<pw.Widget>[
@@ -184,7 +195,7 @@ List<pw.Widget> _corpoDoDocumento(_Fontes f, Proposta proposta, Marca marca) {
     ],
 
     pw.SizedBox(height: _x3),
-    _valor(f, proposta),
+    _valor(f, proposta, acento),
     pw.SizedBox(height: _x8),
 
     ..._condicoes(f, proposta),
@@ -198,9 +209,9 @@ List<pw.Widget> _corpoDoDocumento(_Fontes f, Proposta proposta, Marca marca) {
   ];
 }
 
-pw.Widget _cabecalho(_Fontes f, Marca marca) {
+pw.Widget _cabecalho(_Fontes f, Marca marca, PdfColor acento) {
   final String nome = marca.nome.trim();
-  final String contato = marca.contato.trim();
+  final String contato = marca.contatoFormatado.trim();
   final pw.MemoryImage? logo = _lerLogo(marca.logoPath);
 
   return pw.Column(
@@ -247,7 +258,7 @@ pw.Widget _cabecalho(_Fontes f, Marca marca) {
                 style: pw.TextStyle(
                   font: f.medium,
                   fontSize: 8,
-                  color: _acento,
+                  color: acento,
                   letterSpacing: 2,
                 ),
               ),
@@ -294,10 +305,10 @@ pw.MemoryImage? _lerLogo(String? caminho) {
 ///
 /// Dois contêineres aninhados em vez de um `Border(left:)`: o pdf proíbe
 /// borda não-uniforme com raio, e a barra de acento é justamente de um lado só.
-pw.Widget _valor(_Fontes f, Proposta proposta) => pw.Container(
+pw.Widget _valor(_Fontes f, Proposta proposta, PdfColor acento) => pw.Container(
   width: double.infinity,
-  decoration: const pw.BoxDecoration(
-    color: _acento,
+  decoration: pw.BoxDecoration(
+    color: acento,
     borderRadius: pw.BorderRadius.all(pw.Radius.circular(12)),
   ),
   padding: const pw.EdgeInsets.only(left: 3),

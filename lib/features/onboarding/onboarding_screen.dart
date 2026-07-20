@@ -7,7 +7,6 @@ import '../../core/providers.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
-import '../../core/ui/divisao_bar.dart';
 
 /// Onboarding (Blueprint §2.3): curto. Fisga a dor, ensina "A Divisão" uma vez,
 /// promete privacidade e captura o modo (Brasil x exterior). Mostrado uma vez.
@@ -22,7 +21,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pc = PageController();
   int _page = 0;
   String _modo = 'br';
-  static const int _last = 2;
+
+  /// Duas páginas, não três. A do meio era uma AULA sobre a Divisão dada a
+  /// quem ainda não tinha visto número nenhum — e a pergunta "Brasil x
+  /// exterior" saiu junto: ela é feita de novo, melhor e no contexto certo, no
+  /// passo do regime. Fazer a mesma pergunta duas vezes, a primeira antes de
+  /// entregar qualquer valor, é o retrato do app que cobra antes de dar.
+  static const int _last = 1;
 
   @override
   void dispose() {
@@ -70,7 +75,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     'Página ${i + 1} de ${_last + 1}. ${_pageTitle(i)}',
                   );
                 },
-                children: <Widget>[_page1(theme), _page2(theme), _page3(theme)],
+                children: <Widget>[_page1(theme), _page3(theme)],
               ),
             ),
             Row(
@@ -166,44 +171,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   String _pageTitle(int page) => switch (page) {
     0 => 'Pare de trabalhar de graça.',
-    1 => 'Veja pra onde vai cada real.',
     _ => '100 por cento no seu aparelho.',
   };
-
-  Widget _page2(ThemeData theme) => _pageBody(
-    theme,
-    icon: null,
-    title: 'Veja pra onde vai cada real.',
-    body:
-        'Toda vez que um pagamento cair, o app mostra o que é seu, o que é imposto e o que foi custo.',
-    extra: Card(
-      color: theme.colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radii.xl),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(Space.x5),
-        child: ExcludeSemantics(
-          child: KeyedSubtree(
-            key: ValueKey<bool>(_page == 1),
-            child: const DivisaoBar(
-              lucro: 5000,
-              reserva: 1600,
-              custo: 850,
-              bornDelay: Motion.quick,
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
 
   Widget _page3(ThemeData theme) => _pageBody(
     theme,
     icon: Icons.lock_outline,
     title: '100% no seu aparelho.',
     body:
-        'Sem cadastro, sem login, sem enviar seus dados pra ninguém. É só abrir e usar, mesmo offline. Isso só deixa pré-escolhido como você trabalha; você confirma depois.',
+        'Sem cadastro, sem login, sem enviar seus dados pra ninguém. É só abrir e usar, mesmo offline.',
     extra: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[

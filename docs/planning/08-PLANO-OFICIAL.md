@@ -102,7 +102,7 @@ daqui a um ano.
 
 ---
 
-## 4. Fase 1 — O esqueleto novo *(a maior; destrava tudo)*
+## 4. Fase 1 — O esqueleto novo ✅ **FEITA**
 
 ### 4.1 Renomear os conceitos no código
 `Perfil` → `Area` · `Projeto` → `Trabalho` · `ReservaEntry` → `Entrada`
@@ -170,7 +170,7 @@ A aba Guardado morre. O resumo *"entrou X este mês, separou Y"* vira card no
 
 ---
 
-## 5. Fase 2 — Os cortes *(mesma leva de código que a Fase 1)*
+## 5. Fase 2 — Os cortes ✅ **FEITA**
 
 | Sai | Por quê |
 |---|---|
@@ -190,7 +190,7 @@ para de te dar tarefa por isso.
 
 ---
 
-## 6. Fase 3 — O caminho do cálculo *(o objetivo nº 1, afiado)*
+## 6. Fase 3 — O caminho do cálculo ✅ **FEITA**
 
 - **Onboarding 3 → 2 páginas.** Morre a pergunta "Brasil/exterior" — ela é feita
   de novo, melhor, no passo do regime. Fazer a mesma pergunta duas vezes, a
@@ -207,7 +207,7 @@ para de te dar tarefa por isso.
 
 ---
 
-## 7. Fase 4 — A sensação de usar
+## 7. Fase 4 — A sensação de usar ✅ **FEITA**
 
 - **A microinteração-assinatura: "o cofre fecha".** Ao salvar uma entrada, o
   fio-de-ouro fecha (350ms), nasce a linha `NO COFRE ESTE MÊS`, e o valor conta
@@ -232,6 +232,9 @@ Registrado aqui pra não se perder na conversa.
 | 5 | Jargão "Leão" incompreensível pra leigo | app inteiro |
 
 ### 8.2 Abertos — corrigir nas fases acima
+> Atualizado em 19/07: os itens 10 a 21 foram fechados nas Fases 1–5. Restam
+> os três que dependem de configuração externa (6, 7, 8 e 9 já resolvidos no
+> código; o billing continua em aberto).
 | # | Defeito | Fase |
 |---|---|---|
 | 6 | **Billing do Pro não existe** — é flag local, dá pra virar Pro sem pagar | 6 |
@@ -287,7 +290,7 @@ justificaria preço maior no futuro.
 
 ---
 
-## 10. Fase 5 — Proposta comercial
+## 10. Fase 5 — Proposta comercial ✅ **FEITA**
 
 - **Cor da marca.** Paleta curada + seletor livre. O app calcula o contraste e
   decide sozinho se o texto por cima fica preto ou branco. A cor entra só como

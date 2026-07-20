@@ -35,7 +35,11 @@ class CalcScreen extends ConsumerStatefulWidget {
 }
 
 class _CalcScreenState extends ConsumerState<CalcScreen> {
-  static const int _lastStep = 4;
+  /// Quatro passos, não cinco. O 5º perguntava sobre provisão de férias/13º —
+  /// planejamento de longo prazo feito a quem ainda não sabe quanto cobra por
+  /// hora. Virou toggle no Detalhamento, onde já existe o contexto pra entender
+  /// o que é, e continua LIGADO por default.
+  static const int _lastStep = 3;
 
   late Area _draft;
   int _step = 0;
@@ -223,6 +227,17 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                 ],
               ),
             ),
+
+            // O número VIVO, do passo 3 em diante.
+            //
+            // Antes eram cinco telas de investimento com zero retorno antes do
+            // Resultado — o que transformava os passos finais numa prova. Do
+            // passo 3 o valor-hora já é calculável, então ele aparece e muda
+            // enquanto a pessoa mexe: os passos viram AJUSTE de uma coisa que
+            // já é dela, e a diferença entre "responder" e "ajustar" é a
+            // diferença entre abandonar e terminar.
+            if (_step >= 2) _PreviaValorHora(area: _draft),
+
             Expanded(
               child: AnimatedSwitcher(
                 duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
@@ -285,10 +300,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         return _stepHoras();
       case 2:
         return _stepCustos();
-      case 3:
-        return _stepRegime();
       default:
-        return _stepProvisao();
+        return _stepRegime();
     }
   }
 
@@ -309,8 +322,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     0 => 'Quanto você quer ganhar por mês?',
     1 => 'Quanto você trabalha por semana?',
     2 => 'O que você gasta pra trabalhar?',
-    3 => 'E o imposto, como é pra você?',
-    _ => 'Quer guardar um dinheiro pra férias e 13º?',
+    _ => 'E o imposto, como é pra você?',
   };
 
   // ---------------------------------------------------------------- passo 1
@@ -920,116 +932,6 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   }
 
   // ---------------------------------------------------------------- passo 5
-  Widget _stepProvisao() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        _title('Quer guardar um dinheiro pra férias e 13º?'),
-        _subtitle(
-          'Quem trabalha por conta não recebe férias nem 13º de ninguém. Dá pra separar um pouco todo mês e ter os seus.',
-        ),
-        const SizedBox(height: Space.x4),
-        Card(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          child: SwitchListTile(
-            value: _draft.provisaoOn,
-            onChanged: (bool v) {
-              Haptics.select();
-              setState(() => _draft = _draft.copyWith(provisaoOn: v));
-            },
-            title: Text(_draft.provisaoOn ? 'Sim, quero guardar' : 'Agora não'),
-          ),
-        ),
-        if (_draft.provisaoOn) ...<Widget>[
-          const SizedBox(height: Space.x3),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: <Widget>[
-              MoneyCountUp(
-                _draft.provisaoEfetiva,
-                duration: Motion.quick,
-                style: AppType.valueMd.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                semanticLabel:
-                    '${moneyBRL(_draft.provisaoEfetiva)} por mês a mais no seu preço',
-              ),
-              Flexible(
-                child: Text(
-                  ' /mês a mais no seu preço',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Space.x2),
-          TextButton.icon(
-            onPressed: _editarProvisao,
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Ajustar valor'),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Future<void> _editarProvisao() async {
-    final TextEditingController controller = TextEditingController(
-      text: _draft.provisaoEfetiva.round().toString(),
-    );
-    final double? valor = await showModalBottomSheet<double>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext sheet) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          Space.x6,
-          Space.x2,
-          Space.x6,
-          Space.x6 + MediaQuery.of(sheet).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Quanto guardar por mês',
-              style: Theme.of(sheet).textTheme.titleLarge,
-            ),
-            const SizedBox(height: Space.x2),
-            const Text(
-              'Uma conta boa: 1 mês do seu salário por ano, dividido em 12. Mas quem manda é você.',
-            ),
-            const SizedBox(height: Space.x4),
-            MoneyField(
-              controller: controller,
-              label: 'Valor por mês',
-              prefix: r'R$ ',
-              autofocus: true,
-            ),
-            const SizedBox(height: Space.x4),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () =>
-                    Navigator.pop(sheet, _digits(controller.text).toDouble()),
-                child: const Text('Usar este valor'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-    Future<void>.delayed(const Duration(milliseconds: 600), controller.dispose);
-    if (valor == null || !mounted) return;
-    setState(
-      () => _draft = _draft.copyWith(provisao: valor, provisaoCustom: true),
-    );
-  }
-
   IconData _iconFor(String name) {
     switch (name) {
       case 'calculate':
@@ -1057,5 +959,61 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
       default:
         return Icons.attach_money;
     }
+  }
+}
+
+/// A prévia do valor-hora durante o preenchimento. Discreta de propósito: é a
+/// promessa do que vem, não o clímax — roubar o peso do Resultado aqui apagaria
+/// o único momento de alívio que o app tem pra oferecer.
+class _PreviaValorHora extends ConsumerWidget {
+  const _PreviaValorHora({required this.area});
+
+  final Area area;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final int vh = computeValorHora(area, ref.watch(regimeProvider)).valorHora;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.x4, Space.x2, Space.x4, 0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.x4,
+          vertical: Space.x3,
+        ),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          borderRadius: const BorderRadius.all(Radii.md),
+        ),
+        child: Row(
+          children: <Widget>[
+            Text(
+              'até aqui:',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: Space.x2),
+            MoneyCountUp(
+              vh,
+              duration: Motion.quick,
+              style: AppType.valueMd.copyWith(color: cs.primary),
+              // Sem rótulo semântico: o leitor de tela já acompanha o campo em
+              // edição, e reanunciar o número a cada dígito viraria tagarelice
+              // por cima da digitação.
+              semanticLabel: '',
+            ),
+            Text(
+              '/hora',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

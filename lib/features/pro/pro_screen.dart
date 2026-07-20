@@ -160,7 +160,8 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                           const SnackBar(content: Text('Pro ativado')),
                         );
                       if (!reduceMotionOf(context)) {
-                        await Future<void>.delayed(Motion.countUp);
+                        // Sem espera: segurar 600ms quem acabou de
+                        // pagar é o pior momento pra fazer alguém esperar.
                       }
                       if (!context.mounted) return;
                       GoRouter.of(context).pop();

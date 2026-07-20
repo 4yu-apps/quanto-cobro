@@ -13,9 +13,16 @@ import '../../core/ui/cofre_mark.dart';
 /// herói), o fio-de-ouro passa, e o wordmark sobe. Tap pula. Reduce-motion = um
 /// fade curto do estado final. Total ~1.7s cold-start.
 class SplashOverlay extends StatefulWidget {
-  const SplashOverlay({super.key, required this.onDone});
+  const SplashOverlay({
+    super.key,
+    required this.onDone,
+    this.primeiraAbertura = false,
+  });
 
   final VoidCallback onDone;
+
+  /// Só na primeira abertura o reveal roda inteiro.
+  final bool primeiraAbertura;
 
   @override
   State<SplashOverlay> createState() => _SplashOverlayState();
@@ -23,9 +30,12 @@ class SplashOverlay extends StatefulWidget {
 
 class _SplashOverlayState extends State<SplashOverlay>
     with TickerProviderStateMixin {
+  /// O reveal completo roda só na PRIMEIRA abertura. Da segunda em diante ele
+  /// é curto: 1,5s de marca a cada abertura, num app que abre instantâneo, é
+  /// pedágio — a pessoa vem registrar um pagamento, não ver a logo de novo.
   late final AnimationController _reveal = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1500),
+    duration: Duration(milliseconds: widget.primeiraAbertura ? 1500 : 450),
   );
   late final AnimationController _exit = AnimationController(
     vsync: this,

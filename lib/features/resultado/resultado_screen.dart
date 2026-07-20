@@ -24,6 +24,7 @@ import '../../core/ui/money_count_up.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/stale_banner.dart';
 import '../../core/ui/vitrine_card.dart';
+import '../areas/areas_screen.dart';
 import '../proposta/proposta_flow.dart';
 
 /// Resultado (Blueprint §5.3): o clímax. Regra da casa: resposta de dinheiro
@@ -112,9 +113,16 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
         minimum: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x4),
         child: FilledButton(
           onPressed: () async {
+            // "Salvar como…" e não "Salvar": este toque é o PARTO da área, e
+            // nomear embaixo de um R$ 92/h é comemoração — a mesma pergunta
+            // numa tela em branco seria prova. O nome já vem preenchido.
+            final String? nome = await pedirNomeArea(context, inicial: p.nome);
+            if (nome == null || !context.mounted) return;
             Haptics.commit();
-            announce(context, 'Trabalho salvo. Voltando pro painel.');
-            await ref.read(areasProvider.notifier).saveAndActivate(p);
+            announce(context, 'Salvo como $nome. Voltando pro início.');
+            await ref
+                .read(areasProvider.notifier)
+                .saveAndActivate(p.copyWith(nome: nome));
             telemetry.evento(Evento.areaSalva);
             // Único corte seguro pra um intersticial (fim de tarefa). No-op até
             // ter SDK/chave — ver core/ads/ads.dart. Nunca entre calc→Resultado.
@@ -125,7 +133,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           },
           child: const FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text('Salvar este trabalho'),
+            child: Text('Salvar como…'),
           ),
         ),
       ),
@@ -245,9 +253,9 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           // Teto do MEI: enquadrado como CRESCIMENTO, não erro (terracota calmo).
           if (r.acimaTetoMei) ...<Widget>[
             const SizedBox(height: Space.x3),
-            StaggerIn(
-              index: 2,
-              child: MergeSemantics(
+            // Sem StaggerIn: aviso é verdade JUNTO com o número, não depois.
+            Builder(
+              builder: (BuildContext context) => MergeSemantics(
                 child: Container(
                   padding: const EdgeInsets.all(Space.x4),
                   decoration: BoxDecoration(
@@ -294,9 +302,8 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
 
           if (custoMaiorQueMeta) ...<Widget>[
             const SizedBox(height: Space.x3),
-            StaggerIn(
-              index: 2,
-              child: Container(
+            Builder(
+              builder: (BuildContext context) => Container(
                 padding: const EdgeInsets.all(Space.x3),
                 decoration: BoxDecoration(
                   color: d.alertaContainer,
@@ -354,20 +361,20 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
             ),
           ),
           const SizedBox(height: Space.x2),
-          StaggerIn(
-            index: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const EstimativaSeal(),
-                if (stale) ...<Widget>[
-                  const SizedBox(height: Space.x2),
-                  // Rebaixado a footnote: informa sem carimbar desconfiança
-                  // nem empurrar nada pra baixo da dobra.
-                  StaleBanner(ano: kTabelasAno, footnote: true),
-                ],
+          // Sem StaggerIn: o selo e o aviso de tabela são rodapé, não ato.
+          // Chegar atrasado aqui faz a tela parecer que ainda está carregando
+          // depois de o número já ter nascido.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const EstimativaSeal(),
+              if (stale) ...<Widget>[
+                const SizedBox(height: Space.x2),
+                // Rebaixado a footnote: informa sem carimbar desconfiança
+                // nem empurrar nada pra baixo da dobra.
+                StaleBanner(ano: kTabelasAno, footnote: true),
               ],
-            ),
+            ],
           ),
           const SizedBox(height: Space.x2),
         ],

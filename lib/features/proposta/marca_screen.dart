@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/model/cor_marca.dart';
 import '../../core/model/marca.dart';
 import '../../core/providers.dart';
 import '../../core/theme/motion.dart';
@@ -28,21 +30,28 @@ class MarcaScreen extends ConsumerStatefulWidget {
 
 class _MarcaScreenState extends ConsumerState<MarcaScreen> {
   final TextEditingController _nome = TextEditingController();
-  final TextEditingController _contato = TextEditingController();
+  final TextEditingController _whatsapp = TextEditingController();
+  final TextEditingController _email = TextEditingController();
   String? _erroNome;
+  String _ddi = '+55';
+  late int _cor;
 
   @override
   void initState() {
     super.initState();
     final Marca m = ref.read(marcaProvider);
     _nome.text = m.nome;
-    _contato.text = m.contato;
+    _whatsapp.text = formatarTelefone(m.whatsapp);
+    _email.text = m.email;
+    _ddi = m.ddi;
+    _cor = m.cor;
   }
 
   @override
   void dispose() {
     _nome.dispose();
-    _contato.dispose();
+    _whatsapp.dispose();
+    _email.dispose();
     super.dispose();
   }
 
@@ -82,7 +91,13 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
         .save(
           ref
               .read(marcaProvider)
-              .copyWith(nome: nome, contato: _contato.text.trim()),
+              .copyWith(
+                nome: nome,
+                ddi: _ddi,
+                whatsapp: _whatsapp.text.replaceAll(RegExp(r'[^0-9]'), ''),
+                email: _email.text.trim(),
+                cor: _cor,
+              ),
         );
     if (!mounted) return;
     Navigator.of(context).pop(true);
@@ -126,13 +141,127 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
             },
           ),
           const SizedBox(height: Space.x4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              SizedBox(
+                width: 96,
+                child: DropdownButtonFormField<String>(
+                  initialValue: _ddi,
+                  decoration: const InputDecoration(labelText: 'País'),
+                  items: const <DropdownMenuItem<String>>[
+                    DropdownMenuItem<String>(
+                      value: '+55',
+                      child: Text('🇧🇷 +55'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: '+351',
+                      child: Text('🇵🇹 +351'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: '+1',
+                      child: Text('🇺🇸 +1'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: '+44',
+                      child: Text('🇬🇧 +44'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: '+34',
+                      child: Text('🇪🇸 +34'),
+                    ),
+                  ],
+                  onChanged: (String? v) {
+                    if (v != null) setState(() => _ddi = v);
+                  },
+                ),
+              ),
+              const SizedBox(width: Space.x3),
+              Expanded(
+                child: TextField(
+                  controller: _whatsapp,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: <TextInputFormatter>[_TelefoneFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'WhatsApp (opcional)',
+                    hintText: '(44) 55555-5555',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Space.x4),
           TextField(
-            controller: _contato,
-            keyboardType: TextInputType.text,
-            decoration: const InputDecoration(
-              labelText: 'Contato (WhatsApp ou e-mail)',
-              hintText: 'O que você quer que o cliente use',
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            decoration: InputDecoration(
+              labelText: 'E-mail (opcional)',
+              // AVISA sem bloquear: travar quem digitou certo é pior que
+              // deixar passar quem digitou errado.
+              errorText: emailParecemValido(_email.text)
+                  ? null
+                  : 'Isso não parece um e-mail. Confere?',
             ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: Space.x6),
+
+          Text(
+            'COR DA SUA MARCA',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: cs.onSurfaceVariant,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: Space.x1),
+          Text(
+            'Aparece como detalhe na proposta — no valor e no topo. O texto '
+            'continua sempre legível, seja qual for a cor.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: Space.x3),
+          Wrap(
+            spacing: Space.x3,
+            runSpacing: Space.x3,
+            children: <Widget>[
+              for (final ({String nome, int valor}) c in CorMarca.paleta)
+                Semantics(
+                  button: true,
+                  selected: _cor == c.valor,
+                  label: c.nome,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: () {
+                      Haptics.select();
+                      setState(() => _cor = c.valor);
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Color(c.valor),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _cor == c.valor
+                              ? cs.onSurface
+                              : cs.outlineVariant,
+                          width: _cor == c.valor ? 3 : 1,
+                        ),
+                      ),
+                      child: _cor == c.valor
+                          ? Icon(
+                              Icons.check,
+                              size: 20,
+                              color: CorMarca.textoSobre(c.valor),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: Space.x6),
 
@@ -198,6 +327,25 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
           const SizedBox(height: Space.x4),
         ],
       ),
+    );
+  }
+}
+
+/// Máscara ao vivo do telefone brasileiro: `(44) 55555-5555`.
+class _TelefoneFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final String d = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (d.isEmpty) return const TextEditingValue();
+    // 11 dígitos é o teto do celular BR — digitar além não deve virar lixo.
+    final String limitado = d.length > 11 ? d.substring(0, 11) : d;
+    final String texto = formatarTelefone(limitado);
+    return TextEditingValue(
+      text: texto,
+      selection: TextSelection.collapsed(offset: texto.length),
     );
   }
 }

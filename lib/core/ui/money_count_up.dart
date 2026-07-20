@@ -28,9 +28,17 @@ class MoneyCountUp extends StatelessWidget {
     this.curve = MotionCurves.easeOut,
     this.suffix = '',
     this.endTint,
+    this.from,
   });
 
   final num value;
+
+  /// De onde a contagem parte. `null` = do zero.
+  ///
+  /// A diferença é semântica, não técnica: `0 → 412` diz "você tem 412";
+  /// `344 → 412` diz "você acabou de crescer 68". A segunda frase é a razão de
+  /// voltar mês que vem — e é ela que o acúmulo precisa contar.
+  final num? from;
   final TextStyle style;
   final String? semanticLabel;
   final Duration duration;
@@ -56,14 +64,19 @@ class MoneyCountUp extends StatelessWidget {
       return Text(_fmt(value), style: s, semanticsLabel: label);
     }
     return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: value.toDouble()),
+      tween: Tween<double>(
+        begin: (from ?? 0).toDouble(),
+        end: value.toDouble(),
+      ),
       duration: duration,
       curve: curve,
       builder: (BuildContext context, double v, Widget? child) {
         TextStyle s = style;
         final Color? tint = endTint;
-        if (tint != null && value != 0) {
-          final double p = (v / value).clamp(0.0, 1.0);
+        final double inicio = (from ?? 0).toDouble();
+        final double span = value.toDouble() - inicio;
+        if (tint != null && span != 0) {
+          final double p = ((v - inicio) / span).clamp(0.0, 1.0);
           final double t = ((p - 0.8) / 0.2).clamp(0.0, 1.0);
           s = style.copyWith(color: Color.lerp(style.color, tint, t));
         }

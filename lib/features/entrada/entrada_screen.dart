@@ -51,6 +51,15 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   bool _saved = false;
   Timer? _announceTimer;
 
+  /// Quanto já havia no cofre ANTES desta entrada, e quanto ficou depois.
+  /// É o par que faz o valor contar de 344 pra 412 em vez de zero pra 412 —
+  /// "você cresceu 68", não "você tem 412".
+  int? _cofreAntes;
+  int? _cofreDepois;
+
+  /// A última entrada salva — o que o "Desfazer" remove.
+  Entrada? _ultima;
+
   Trabalho? _trabalho;
 
   @override
@@ -85,6 +94,27 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
         .read(entradasProvider)
         .where((Entrada e) => e.at.year == now.year && e.at.month == now.month)
         .fold<double>(0, (double s, Entrada e) => s + e.separado);
+  }
+
+  int _separadoNoMesAtual() {
+    final DateTime now = DateTime.now();
+    return ref
+        .read(entradasProvider)
+        .where((Entrada e) => e.at.year == now.year && e.at.month == now.month)
+        .fold<int>(0, (int s, Entrada e) => s + e.separado);
+  }
+
+  void _desfazer() {
+    final Entrada? e = _ultima;
+    if (e == null) return;
+    ref.read(entradasProvider.notifier).remove(e);
+    announce(context, 'Desfeito. A entrada foi removida.');
+    setState(() {
+      _saved = false;
+      _ultima = null;
+      _cofreAntes = null;
+      _cofreDepois = null;
+    });
   }
 
   void _anunciar(ReservaResult? r) {
@@ -125,6 +155,7 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       trabalhoId: trabalho?.id,
     );
 
+    final int antes = _separadoNoMesAtual();
     final EntradasNotifier entradasN = ref.read(entradasProvider.notifier);
     await entradasN.add(entrada);
 
@@ -141,30 +172,16 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
     // é anunciada de forma confiável pelo leitor de tela.
     announce(
       context,
-      trabalho == null
-          ? 'Guardado. ${moneyBRL(res.separado)} separados pro imposto.'
-          : 'Guardado. ${moneyBRL(res.separado)} separados do pagamento de ${trabalho.nome}.',
+      'Guardado. ${moneyBRL(res.separado)} separados do imposto'
+      '${trabalho == null ? '' : ' do pagamento de ${trabalho.nome}'}. '
+      'Você já tem ${moneyBRL(antes + res.separado)} separados este mês.',
     );
-    setState(() => _saved = true);
-
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            trabalho == null
-                ? '${moneyBRL(res.separado)} separados pro imposto'
-                : '${moneyBRL(res.separado)} separados — "${trabalho.nome}" em dia',
-          ),
-          action: SnackBarAction(
-            label: 'Desfazer',
-            onPressed: () {
-              entradasN.remove(entrada);
-              if (mounted) setState(() => _saved = false);
-            },
-          ),
-        ),
-      );
+    setState(() {
+      _saved = true;
+      _ultima = entrada;
+      _cofreAntes = antes;
+      _cofreDepois = antes + res.separado;
+    });
   }
 
   double get _valorEmReais => _digits(_valor.text).toDouble();
@@ -318,6 +335,14 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                               sobra: res.sobra,
                             ),
                             const SizedBox(height: Space.x2),
+                            // O cofre FECHA: a linha nasce dentro do mesmo
+                            // card, e o valor conta do total anterior pro
+                            // novo. Herói, barra e campo ficam parados — o
+                            // cofre não pula, ele fecha.
+                            _CofreDoMes(
+                              antes: _cofreAntes,
+                              depois: _cofreDepois,
+                            ),
                             Wrap(
                               spacing: Space.x4,
                               runSpacing: Space.x2,
@@ -345,25 +370,22 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                           children: <Widget>[
                             Expanded(
                               child: FilledButton.tonal(
-                                onPressed: null,
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    Icon(Icons.check, size: 20),
-                                    SizedBox(width: Space.x2),
-                                    Text('Guardado'),
-                                  ],
-                                ),
+                                onPressed: () => setState(() {
+                                  _valor.clear();
+                                  if (widget.trabalhoId == null) {
+                                    _deQuem.clear();
+                                  }
+                                  _saved = false;
+                                  _cofreAntes = null;
+                                  _cofreDepois = null;
+                                }),
+                                child: const Text('Registrar outro'),
                               ),
                             ),
                             const SizedBox(width: Space.x3),
                             TextButton(
-                              onPressed: () => setState(() {
-                                _valor.clear();
-                                if (widget.trabalhoId == null) _deQuem.clear();
-                                _saved = false;
-                              }),
-                              child: const Text('Registrar outro'),
+                              onPressed: _desfazer,
+                              child: const Text('Desfazer'),
                             ),
                           ],
                         )
@@ -448,6 +470,63 @@ class _LinhaRegime extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A linha que nasce quando o cofre fecha: `NO COFRE ESTE MÊS`, com o valor
+/// contando **do total anterior pro novo**.
+///
+/// É a microinteração-assinatura do app. A regra que ela obedece: o último
+/// pixel a parar é o dinheiro que FICA, não o que sai.
+class _CofreDoMes extends StatelessWidget {
+  const _CofreDoMes({required this.antes, required this.depois});
+
+  final int? antes;
+  final int? depois;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final DivisaoColors d = theme.extension<DivisaoColors>()!;
+    final int? total = depois;
+
+    return AnimatedSize(
+      duration: reduceMotionOf(context) ? Duration.zero : Motion.emphasized,
+      curve: MotionCurves.emphasizedDecel,
+      alignment: Alignment.topCenter,
+      child: total == null
+          ? const SizedBox(width: double.infinity)
+          : Padding(
+              padding: const EdgeInsets.only(bottom: Space.x3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'NO COFRE ESTE MÊS',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  MoneyCountUp(
+                    total,
+                    from: antes,
+                    duration: Motion.emphasized,
+                    curve: MotionCurves.landing,
+                    style: theme.textTheme.titleLarge!.copyWith(
+                      color: d.reserva,
+                      fontFamily: AppType.numberFamily,
+                      fontFeatures: AppType.tnum,
+                    ),
+                    // O anúncio do acúmulo já sai no `announce` do save —
+                    // repetir aqui faria o leitor de tela falar duas vezes.
+                    semanticLabel: '',
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }

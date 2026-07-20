@@ -25,6 +25,7 @@ class QuantoCobroApp extends ConsumerStatefulWidget {
 class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
   late final GoRouter _router;
   bool _splashDone = false;
+  late final bool _primeiraAbertura;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
     final bool onboardingDone = ref
         .read(settingsRepositoryProvider)
         .onboardingDone();
+    _primeiraAbertura = !onboardingDone;
     _router = createAppRouter(
       initialLocation: onboardingDone ? Routes.painel : Routes.onboarding,
     );
@@ -75,7 +77,10 @@ class _QuantoCobroAppState extends ConsumerState<QuantoCobroApp> {
           children: <Widget>[
             scaled,
             if (!_splashDone)
-              SplashOverlay(onDone: () => setState(() => _splashDone = true)),
+              SplashOverlay(
+                primeiraAbertura: _primeiraAbertura,
+                onDone: () => setState(() => _splashDone = true),
+              ),
           ],
         );
       },

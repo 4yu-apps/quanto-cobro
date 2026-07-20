@@ -162,17 +162,37 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                     moneyBRL(c.valor),
                     onTap: () => _editarCusto(p, c),
                   ),
-                ListTile(
+                // Esta linha era o 5º passo da calculadora. Virou toggle aqui
+                // (ligado por default) porque era planejamento de longo prazo
+                // perguntado a quem ainda não sabia quanto cobrava por hora —
+                // e aqui existe todo o contexto pra entender o que é.
+                SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('+ Provisão férias/13º'),
+                  value: p.provisaoOn,
+                  onChanged: (bool v) {
+                    Haptics.select();
+                    _edit(p.copyWith(provisaoOn: v));
+                  },
+                  title: const Text('+ Provisão férias/13º'),
                   subtitle: Text(
-                    p.provisaoCustom
-                        ? 'Valor ajustado por você'
-                        : '1 mês da sua renda por ano — toque pra ajustar',
+                    p.provisaoOn
+                        ? (p.provisaoCustom
+                              ? 'Valor ajustado por você · ${moneyBRL(r.provisao)}'
+                              : '1 mês da sua renda por ano · ${moneyBRL(r.provisao)}')
+                        : 'Quem trabalha por conta não recebe de ninguém — dá pra separar os seus.',
                   ),
-                  trailing: Text(moneyBRL(r.provisao)),
-                  onTap: () => _editarProvisao(p),
                 ),
+                if (p.provisaoOn)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Space.x2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => _editarProvisao(p),
+                        child: const Text('Ajustar o valor'),
+                      ),
+                    ),
+                  ),
                 _linha(
                   context,
                   regime == RegimeId.mei
