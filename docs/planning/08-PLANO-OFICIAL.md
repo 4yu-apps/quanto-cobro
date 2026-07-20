@@ -325,6 +325,24 @@ versão junto com o rename.
 
 ---
 
+## 11.5 Onde estamos (19/07/2026, fim do dia)
+
+| Fase | Estado |
+|---|---|
+| 0 · Não lançar cego | ✅ feita — falta só o destino do Firebase ([09](09-HANDOFF-FIREBASE-E-LOJA.md)) |
+| 1 · Esqueleto novo | ✅ feita |
+| 2 · Cortes | ✅ feita |
+| 3 · Caminho do cálculo | ✅ feita |
+| 4 · Sensação de usar | ✅ feita |
+| 5 · Proposta | ✅ feita |
+| 6 · Qualidade | ✅ perf do cofre e transição da entrada; auditoria de a11y da estrutura nova em `ux-revisao/D-*` |
+| 6 · Loja + billing | ⏳ **o único bloco realmente aberto** — ver [09](09-HANDOFF-FIREBASE-E-LOJA.md) |
+
+**O que impede o lançamento hoje, em uma frase:** não existe compra real do Pro
+— ele é uma flag local, e dá pra virar Pro sem pagar.
+
+---
+
 ## 12. A ordem
 
 ```
