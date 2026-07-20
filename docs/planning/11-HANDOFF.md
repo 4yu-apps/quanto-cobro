@@ -6,6 +6,11 @@
 >
 > O que já foi feito está no git, com o porquê em cada mensagem de commit. Este
 > documento é sobre o que **não** foi.
+>
+> **Atualizado ainda em 20/07/2026, na rodada seguinte** (merge + CI + APK). Os
+> trechos vencidos foram corrigidos no lugar em vez de virarem apêndice, pra
+> ninguém ler instrução morta. Onde a rodada nova **contradiz** a antiga, está
+> marcado com ✅ ou ⚠️.
 
 ---
 
@@ -13,16 +18,17 @@
 
 | | |
 |---|---|
-| **Branch do app** | `a11y-e-tablet`, **14 commits à frente da `main`, NÃO mergeada** |
+| **Branch do app** | ✅ `a11y-e-tablet` **mergeada na `main`** (`--no-ff`), branch preservada |
 | **Branch do site** | já mergeada na `main` e **publicada** em `4yu.com.br/quanto-cobro/` |
-| Versão | `0.7.0+9` (não subiu nesta rodada) |
+| Versão | ✅ `0.8.0+10` (promovida no merge) |
 | Testes | 273 passando, 26 arquivos · `flutter analyze` limpo |
+| **CI** | ✅ existe agora: `.github/workflows/` com `ci.yml`, `build-apk.yml`, `build-aab.yml` |
+| **APK** | ✅ buildado no CI **com R8**, 64 MB, 3 ABIs — nunca rodado em aparelho |
 | Docs de referência | [08](08-PLANO-OFICIAL.md) = produto · [10](10-PLANO-A11Y-E-TABLET.md) = execução · [09](09-HANDOFF-FIREBASE-E-LOJA.md) = Firebase/loja |
 
-**Primeira decisão que você tem que tomar:** mergear a `a11y-e-tablet` na `main`
-ou abrir PR e revisar antes. Ela carrega os três P0 de acessibilidade, a
-fundação de tablet, o mestre-detalhe, o ícone novo e a correção da política. Não
-tem nada experimental ali, mas são 14 commits.
+**A primeira decisão já foi tomada:** a `a11y-e-tablet` foi mergeada na `main`
+com `--no-ff`, depois de conferir os 273 testes e o `analyze` limpo. Não houve
+PR — os commits já carregavam o porquê. A branch continua no repo.
 
 ---
 
@@ -34,16 +40,37 @@ Tudo que existe está verificado por 273 testes e por render determinístico. Is
 cobre lógica, semântica e layout, e **não cobre**:
 
 - **R8/minify, que quebra em RUNTIME e não no build.** Compila liso e crasha
-  quando alguém abre a tela da classe removida. O caminho mais exposto aqui é o
-  **PDF da proposta** (`pdf` + `share_plus`): ninguém passa por ele por
-  acidente, então é o candidato natural a só falhar com usuário real.
+  quando alguém abre a tela da classe removida.
 - O comportamento do trilho e do mestre-detalhe **num tablet de verdade**, com
   rotação ao vivo e teclado abrindo.
 - O ícone no lançador (foi conferido em PNG, não em aparelho).
 
+⚠️ **Correção da rodada seguinte, sobre o R8.** Duas coisas que a versão
+original deste doc errou:
+
+1. **R8 não estava sequer ligado.** O `build.gradle.kts` não tinha
+   `isMinifyEnabled`, então o medo acima descrevia um risco que ainda não
+   existia. Agora está ligado (com regras em `android/app/proguard-rules.pro`),
+   porque um APK sem R8 não provaria nada sobre o AAB que vai pra Play.
+2. **O PDF da proposta é imune ao R8.** R8 só mexe em bytecode JVM; o pacote
+   `pdf` é pure-Dart e vira AOT nativo. Quem pode quebrar nesse fluxo é o
+   **`share_plus`** (FileProvider + activity result, lado Kotlin) — ou seja, a
+   hora de **compartilhar**, não a de gerar. Ele tem bloco próprio no
+   `proguard-rules.pro` por isso.
+
+O raciocínio de fundo continua valendo: é um caminho por onde ninguém passa por
+acidente, então é o candidato natural a só falhar com usuário real. Só mudou
+**qual metade** dele é frágil.
+
 O playbook da casa proíbe build local em WSL (derruba a máquina, ~11 GB). O
-caminho é o CI. Enquanto isso não roda, trate a rodada como **"verde nos testes,
-não verificada no aparelho"**.
+caminho é o CI — ✅ que agora existe (`build-apk.yml`, sem secret nenhum).
+
+Se o compartilhamento quebrar no aparelho, rode o mesmo workflow com
+`minify=false`: se aí funcionar, a causa é regra de keep faltando, e você tem o
+culpado isolado em um run.
+
+Até alguém abrir isso num aparelho, trate a rodada como **"verde nos testes e no
+build, não verificada em hardware"**.
 
 ---
 
@@ -53,12 +80,33 @@ não verificada no aparelho"**.
 
 | # | O quê | Destrava |
 |---|---|---|
+| 0 | ⚠️ Gerar a **keystore de upload** e pôr os 4 secrets no GitHub | o AAB da Play |
 | 1 | Criar o projeto **Firebase**, deixando ele criar a própria propriedade GA4 | passos 3 e 4 |
 | 2 | GCP → IAM → `Firebase Admin` pra `claude-automation@yu-automation.iam.gserviceaccount.com` | idem |
 | 3 | Criar o app na **Play Console** | billing, ficha, Data Safety |
 | 4 | Criar a **assinatura** mensal (ID irreversível) + testador de licença | o código do billing |
 
-Detalhe de cada um em [10 §6.2](10-PLANO-A11Y-E-TABLET.md).
+Detalhe de 1 a 4 em [10 §6.2](10-PLANO-A11Y-E-TABLET.md).
+
+**O passo 0 não estava neste doc e é o mais irreversível de todos.** O
+`build.gradle.kts` assinava o release com a **chave de debug** (o `TODO:` do
+template ainda estava no arquivo) e nenhuma keystore existia pra
+`com.fouryuapps.quantocobro`. Hoje o gradle lê `android/key.properties` e só cai
+pro debug quando ele falta — que é o estado atual.
+
+Perder essa keystore **depois** de publicar significa nunca mais conseguir
+atualizar o app. Gere uma vez, e guarde backup fora desta máquina:
+
+```bash
+keytool -genkey -v -keystore ~/.android-keystores/quantocobro-upload.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Depois, em Settings → Secrets and variables → Actions: `KEYSTORE_BASE64`
+(`base64 -w0` do `.jks`), `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS`. O
+`build-aab.yml` falha de propósito, com mensagem explícita, enquanto não
+existirem — e confere no fim se o AAB saiu com chave de debug, porque descobrir
+isso no upload custa uma rodada inteira.
 
 ### 2.2 Código, assim que o humano destravar
 
@@ -91,8 +139,10 @@ muda.
 boot. É o mesmo tipo de crash que o `MobileAdsInitProvider` causou uma vez (está
 registrado no `pubspec.yaml`).
 
-**c) Subir a versão.** Está em `0.7.0+9` e não subiu nesta rodada. Antes de
-qualquer build de teste, promova.
+**c) Subir a versão.** ✅ Feito: `0.8.0+10`. Minor porque a rodada carrega
+feature de usuário (trilho, mestre-detalhe, os P0 de acessibilidade), não só
+correção. Continua valendo pras próximas: promova **antes** de mandar build de
+teste, senão dois APKs diferentes circulam com o mesmo número.
 
 ### 2.3 Polimento que ficou por último, de propósito
 
@@ -167,8 +217,11 @@ o `og.png` pro repo `website` (eles nascem aqui porque a marca mora aqui).
 ## 5. Armadilhas do caminho, curtas
 
 - **`google-services.json` não é segredo.** Versione. Sem ele, clone limpo não
-  compila.
-- **Build local derruba a máquina** (WSL, ~11 GB). O caminho é o CI.
+  compila. ✅ O `.gitignore` **bloqueava** esse arquivo, contradizendo esta
+  linha; a entrada foi removida e trocada por um comentário explicando o porquê.
+- **Build local derruba a máquina** (WSL, ~11 GB). O caminho é o CI — ✅ que
+  agora existe neste repo. Antes não existia: este doc dizia "o caminho é o CI"
+  assumindo a infra do **Deixei Aqui**, e `.github/` aqui estava vazio.
 - **12 testadores × 14 dias é por APP**, não por conta. As mesmas pessoas
   servem, mas precisam entrar na faixa deste app e o relógio zera. **Teste
   interno não conta**, tem que ser fechado.
@@ -199,10 +252,17 @@ telemetria ser **opt-in de verdade**, desligada por padrão.
 
 ## 7. Se você só tem uma hora
 
-1. Merge (ou PR) da `a11y-e-tablet`.
-2. Promove a versão.
-3. Manda pro CI e roda no aparelho: **abra a proposta em PDF**, que é o caminho
-   que o R8 mais provavelmente quebrou.
+Os passos 1 e 2 da versão original (merge e versão) ✅ já foram feitos, e o APK
+já está buildado. Sobrou o que exige mão humana e hardware:
+
+1. **Instale o APK e abra a proposta.** O artefato sai do workflow
+   `build-apk.yml` (aba Actions → Run workflow → baixar o artifact). É assinado
+   com chave de debug, então o aparelho pede "instalar de fontes desconhecidas".
+   Teste **compartilhar** o PDF, não só gerar — ver a correção no §1.
+2. **Tablet de verdade:** trilho e mestre-detalhe, girando ao vivo, com teclado
+   abrindo.
+3. **Gere a keystore** (§2.1 passo 0). É o único item da lista que fica pior
+   quanto mais tarde for feito.
 
 Isso fecha a lacuna do §1, que é a única coisa que separa "verde nos testes" de
 "funciona".
