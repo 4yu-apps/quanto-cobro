@@ -146,10 +146,14 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                SizedBox(
-                  width: 96,
+                // 96dp fixos não cabem "🇵🇹 +351" nem com fonte normal: a
+                // linha estourava 73px em TODA tela, e 185px com fonte 200%.
+                // O seletor passa a pedir a largura que precisa e o campo do
+                // telefone fica com o resto — que é o que ele sabe fazer.
+                Flexible(
                   child: DropdownButtonFormField<String>(
                     initialValue: _ddi,
+                    isExpanded: true,
                     decoration: const InputDecoration(labelText: 'País'),
                     items: const <DropdownMenuItem<String>>[
                       DropdownMenuItem<String>(
@@ -180,6 +184,7 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
                 ),
                 const SizedBox(width: Space.x3),
                 Expanded(
+                  flex: 2,
                   child: TextField(
                     controller: _whatsapp,
                     keyboardType: TextInputType.phone,

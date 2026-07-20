@@ -192,6 +192,7 @@ class _TrabalhoCard extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Expanded(
+                  flex: 3,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -216,24 +217,35 @@ class _TrabalhoCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Space.x3),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Text(
-                      moneyBRL(recebido),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontFamily: AppType.numberFamily,
-                        fontFeatures: AppType.tnum,
-                        color: recebido > 0 ? d.lucro : cs.onSurfaceVariant,
+                // O dinheiro encolhe, nunca vaza. Sem isto o Row estourava
+                // 45px em fonte 200% — e o que saía da tela era justamente o
+                // valor recebido, que é a razão do card existir.
+                Flexible(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          moneyBRL(recebido),
+                          maxLines: 1,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontFamily: AppType.numberFamily,
+                            fontFeatures: AppType.tnum,
+                            color: recebido > 0 ? d.lucro : cs.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      'recebido',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
+                      Text(
+                        'recebido',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

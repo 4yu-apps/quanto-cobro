@@ -81,10 +81,18 @@ class HeroValueCard extends StatelessWidget {
                             color: cs.onSecondaryContainer,
                           ),
                           const SizedBox(width: Space.x1),
-                          Text(
-                            perfilNome!,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: cs.onSecondaryContainer,
+                          // "Design de identidade" já estoura 88px num celular
+                          // de 320dp com fonte NORMAL. O chip é um rótulo, não
+                          // um parágrafo: encolhe com reticências, e o nome
+                          // inteiro continua no rótulo do leitor de tela.
+                          Flexible(
+                            child: Text(
+                              perfilNome!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: cs.onSecondaryContainer,
+                              ),
                             ),
                           ),
                           Icon(

@@ -439,11 +439,18 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
         ),
       ),
       const SizedBox(width: Space.x2),
-      Text(
-        '$label ${moneyBRL(valor)}',
-        style: Theme.of(
-          context,
-        ).textTheme.labelLarge?.copyWith(fontFeatures: AppType.tnum),
+      // Sem o Flexible a legenda estoura 70px já em fonte normal num celular
+      // de 320dp, e 358px em fonte 200%. O que se perde é o TEXTO — e o texto
+      // é o canal que garante a regra "cor nunca sozinha". Em fonte grande
+      // sobrava só o quadradinho colorido, sem nada dizendo o que ele é.
+      Flexible(
+        child: Text(
+          '$label ${moneyBRL(valor)}',
+          softWrap: true,
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontFeatures: AppType.tnum),
+        ),
       ),
     ],
   );
@@ -525,9 +532,19 @@ class _CofreDoMes extends StatelessWidget {
                       fontFamily: AppType.numberFamily,
                       fontFeatures: AppType.tnum,
                     ),
-                    // O anúncio do acúmulo já sai no `announce` do save —
-                    // repetir aqui faria o leitor de tela falar duas vezes.
-                    semanticLabel: '',
+                    // Anuncie a TRANSIÇÃO, rotule o ESTADO — nunca deixe o
+                    // estado sem nome pra evitar repetir a transição.
+                    //
+                    // Aqui estava `semanticLabel: ''`, achando que silenciava
+                    // uma repetição. Não silencia: tira o valor da árvore. O
+                    // `announce` do save é transitório ("você acabou de
+                    // crescer 68") e passa; o rótulo é permanente ("no cofre
+                    // este mês: 412") e responde toda vez que o dedo passa.
+                    // Quem enxerga ouvia o anúncio e podia OLHAR de novo; quem
+                    // não enxerga ouvia uma vez e o número deixava de existir
+                    // — tendo que ir ao Histórico procurar o próprio acúmulo,
+                    // que é justamente a recompensa de voltar mês que vem.
+                    semanticLabel: 'No cofre este mês: ${moneyBRL(total)}',
                   ),
                 ],
               ),

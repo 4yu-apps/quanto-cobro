@@ -201,38 +201,64 @@ class _Mes extends StatelessWidget {
             const SizedBox(height: Space.x3),
             const Divider(height: 1),
             const SizedBox(height: Space.x2),
+            // Três `Text` crus num MergeSemantics viravam uma sopa de números
+            // na fala: "dez barra ago ponto médio Augusto, R cifrão
+            // quatrocentos, ponto médio R cifrão sessenta e oito" — e nada
+            // dizia que o segundo valor é o imposto separado. É a tela que a
+            // pessoa abre pra conferir o próprio dinheiro.
             for (final Entrada e in ordenadas)
-              MergeSemantics(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Space.x1),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          '${dataCurta(e.at)}'
-                          '${_nome(e) == null ? '' : ' · ${_nome(e)}'}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant,
+              Semantics(
+                label:
+                    '${dataPorExtenso(e.at)}'
+                    '${_nome(e) == null ? '' : ', ${_nome(e)}'}: '
+                    'recebeu ${moneyBRL(e.valor)}, '
+                    'separou ${moneyBRL(e.separado)} de imposto.',
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: Space.x1),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            '${dataCurta(e.at)}'
+                            '${_nome(e) == null ? '' : ' · ${_nome(e)}'}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: Space.x2),
-                      Text(
-                        moneyBRL(e.valor),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontFeatures: AppType.tnum,
+                        const SizedBox(width: Space.x2),
+                        // Sem isto a linha estoura 305px em fonte 2.0 num
+                        // celular de 320dp — e o que sai da tela é sempre o
+                        // número, porque o número mora à direita de uma Row.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(
+                                  moneyBRL(e.valor),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontFeatures: AppType.tnum,
+                                  ),
+                                ),
+                                Text(
+                                  ' · ${moneyBRL(e.separado)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: d.reserva,
+                                    fontFeatures: AppType.tnum,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      Text(
-                        ' · ${moneyBRL(e.separado)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: d.reserva,
-                          fontFeatures: AppType.tnum,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

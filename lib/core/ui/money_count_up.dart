@@ -56,6 +56,13 @@ class MoneyCountUp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      semanticLabel == null || semanticLabel!.isNotEmpty,
+      'semanticLabel vazio APAGA o número do leitor de tela — ele não silencia '
+      'a animação, ele tira o valor da árvore. Se for de propósito (outro nó '
+      'já diz este número), envolva o MoneyCountUp em ExcludeSemantics: a '
+      'intenção fica legível e o motivo fica no código.',
+    );
     final String label = semanticLabel ?? _fmt(value);
     if (reduceMotionOf(context)) {
       final TextStyle s = endTint == null

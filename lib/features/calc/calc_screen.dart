@@ -649,18 +649,25 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                   ),
                 ),
               const SizedBox(height: Space.x2),
-              Row(
-                children: <Widget>[
-                  Text('Total: ', style: theme.textTheme.titleMedium),
-                  MoneyCountUp(
-                    _draft.custosTotal,
-                    duration: Motion.quick,
-                    style: theme.textTheme.titleMedium ?? const TextStyle(),
-                    semanticLabel:
-                        'Total de custos: ${moneyBRL(_draft.custosTotal)} por mês',
-                  ),
-                  Text('/mês', style: theme.textTheme.titleMedium),
-                ],
+              // O total é o número que a pessoa veio conferir. Sem o FittedBox
+              // ele vaza pela direita — 2,6px num celular de 320dp com fonte
+              // normal, e muito mais em fonte grande. Encolhe, nunca sai.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: <Widget>[
+                    Text('Total: ', style: theme.textTheme.titleMedium),
+                    MoneyCountUp(
+                      _draft.custosTotal,
+                      duration: Motion.quick,
+                      style: theme.textTheme.titleMedium ?? const TextStyle(),
+                      semanticLabel:
+                          'Total de custos: ${moneyBRL(_draft.custosTotal)} por mês',
+                    ),
+                    Text('/mês', style: theme.textTheme.titleMedium),
+                  ],
+                ),
               ),
               const SizedBox(height: Space.x5),
               if (faltam.isNotEmpty) ...<Widget>[
@@ -989,31 +996,47 @@ class _PreviaValorHora extends ConsumerWidget {
           color: cs.surfaceContainerLow,
           borderRadius: const BorderRadius.all(Radii.md),
         ),
-        child: Row(
-          children: <Widget>[
-            Text(
-              'até aqui:',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
+        // Uma parada de leitura, uma frase falável — em vez de três nós
+        // ("até aqui:", o número, "/hora") que virariam três swipes pra ler
+        // quatro palavras, com "/hora" saindo como "barra hora".
+        //
+        // O `semanticLabel: ''` que estava no número não silenciava nada: ele
+        // TIRAVA o valor da árvore. E o medo que motivou aquilo — tagarelice a
+        // cada dígito — não se realiza: `Text` não fala sozinho quando muda, só
+        // quando recebe foco. Quem enxerga tinha a promessa no topo da tela;
+        // quem não enxerga tinha nada, justamente quem mais precisa saber que
+        // os ajustes estão surtindo efeito.
+        child: Semantics(
+          container: true,
+          label: 'Até aqui, sua hora vale ${moneyBRL(vh)}',
+          child: ExcludeSemantics(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    'até aqui:',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: Space.x2),
+                  MoneyCountUp(
+                    vh,
+                    duration: Motion.quick,
+                    style: AppType.valueMd.copyWith(color: cs.primary),
+                  ),
+                  Text(
+                    '/hora',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: Space.x2),
-            MoneyCountUp(
-              vh,
-              duration: Motion.quick,
-              style: AppType.valueMd.copyWith(color: cs.primary),
-              // Sem rótulo semântico: o leitor de tela já acompanha o campo em
-              // edição, e reanunciar o número a cada dígito viraria tagarelice
-              // por cima da digitação.
-              semanticLabel: '',
-            ),
-            Text(
-              '/hora',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
