@@ -15,6 +15,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/breakpoints.dart';
 import '../../core/ui/help_dot.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
@@ -201,94 +202,129 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         title: Text('Passo ${_step + 1} de ${_lastStep + 1}'),
       ),
       body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Space.x4,
-                vertical: Space.x2,
-              ),
-              child: Row(
+        child: WindowClass.of(context).isExpanded
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  for (int i = 0; i <= _lastStep; i++)
-                    AnimatedContainer(
-                      duration: reduceMotionOf(context)
-                          ? Duration.zero
-                          : Motion.base,
-                      curve: MotionCurves.standard,
-                      margin: const EdgeInsets.only(right: 6),
-                      width: i == _step ? 20 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radii.full),
-                        color: i <= _step ? cs.primary : cs.outlineVariant,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // O número VIVO, do passo 3 em diante.
-            //
-            // Antes eram cinco telas de investimento com zero retorno antes do
-            // Resultado — o que transformava os passos finais numa prova. Do
-            // passo 3 o valor-hora já é calculável, então ele aparece e muda
-            // enquanto a pessoa mexe: os passos viram AJUSTE de uma coisa que
-            // já é dela, e a diferença entre "responder" e "ajustar" é a
-            // diferença entre abandonar e terminar.
-            if (_step >= 2) _PreviaValorHora(area: _draft),
-
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
-                switchInCurve: MotionCurves.standard,
-                switchOutCurve: MotionCurves.standard,
-                transitionBuilder: (Widget child, Animation<double> anim) {
-                  final bool forward = _step >= _prevStep;
-                  return FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: Offset(forward ? 0.12 : -0.12, 0),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: child,
-                    ),
-                  );
-                },
-                layoutBuilder: (Widget? current, List<Widget> previous) =>
-                    Stack(
-                      alignment: Alignment.topLeft,
-                      children: <Widget>[...previous, ?current],
-                    ),
-                child: SingleChildScrollView(
-                  key: ValueKey<int>(_step),
-                  padding: const EdgeInsets.all(Space.x6),
-                  child: _buildStep(),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(Space.x4),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _next,
-                  child: AnimatedSwitcher(
-                    duration: reduceMotionOf(context)
-                        ? Duration.zero
-                        : Motion.base,
-                    child: Text(
-                      _step == _lastStep ? 'Ver resultado' : 'Continuar',
-                      key: ValueKey<int>(_step == _lastStep ? 1 : 0),
+                  // Em tela larga a pergunta fica à esquerda e o valor-hora
+                  // vivo à direita, PARADO. Ele deixa de ser uma faixa que
+                  // rola junto e vira o número sempre à vista, mudando
+                  // enquanto a pessoa digita — que é a alma da calculadora de
+                  // 4 passos: os passos viram ajuste de uma coisa que já é
+                  // dela, não prova.
+                  Expanded(
+                    flex: 3,
+                    child: ContentWidth(
+                      child: _corpo(context, cs, previaNoTopo: false),
                     ),
                   ),
+                  SizedBox(
+                    width: 320,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: Space.x6,
+                        right: Space.x4,
+                      ),
+                      child: _step >= 2
+                          ? _PreviaValorHora(area: _draft)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              )
+            : _corpo(context, cs, previaNoTopo: true),
+      ),
+    );
+  }
+
+  Widget _corpo(
+    BuildContext context,
+    ColorScheme cs, {
+    required bool previaNoTopo,
+  }) {
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.x4,
+            vertical: Space.x2,
+          ),
+          child: Row(
+            children: <Widget>[
+              for (int i = 0; i <= _lastStep; i++)
+                AnimatedContainer(
+                  duration: reduceMotionOf(context)
+                      ? Duration.zero
+                      : Motion.base,
+                  curve: MotionCurves.standard,
+                  margin: const EdgeInsets.only(right: 6),
+                  width: i == _step ? 20 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radii.full),
+                    color: i <= _step ? cs.primary : cs.outlineVariant,
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // O número VIVO, do passo 3 em diante.
+        //
+        // Antes eram cinco telas de investimento com zero retorno antes do
+        // Resultado — o que transformava os passos finais numa prova. Do
+        // passo 3 o valor-hora já é calculável, então ele aparece e muda
+        // enquanto a pessoa mexe: os passos viram AJUSTE de uma coisa que
+        // já é dela, e a diferença entre "responder" e "ajustar" é a
+        // diferença entre abandonar e terminar.
+        if (previaNoTopo && _step >= 2) _PreviaValorHora(area: _draft),
+
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+            switchInCurve: MotionCurves.standard,
+            switchOutCurve: MotionCurves.standard,
+            transitionBuilder: (Widget child, Animation<double> anim) {
+              final bool forward = _step >= _prevStep;
+              return FadeTransition(
+                opacity: anim,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(forward ? 0.12 : -0.12, 0),
+                    end: Offset.zero,
+                  ).animate(anim),
+                  child: child,
+                ),
+              );
+            },
+            layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
+              alignment: Alignment.topLeft,
+              children: <Widget>[...previous, ?current],
+            ),
+            child: SingleChildScrollView(
+              key: ValueKey<int>(_step),
+              padding: const EdgeInsets.all(Space.x6),
+              child: _buildStep(),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(Space.x4),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _next,
+              child: AnimatedSwitcher(
+                duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+                child: Text(
+                  _step == _lastStep ? 'Ver resultado' : 'Continuar',
+                  key: ValueKey<int>(_step == _lastStep ? 1 : 0),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

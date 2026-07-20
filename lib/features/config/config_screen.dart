@@ -46,7 +46,10 @@ class ConfigScreen extends ConsumerWidget {
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
+      // A aba se chama "Ajustes"; a tela se anunciava "Configurações". Quem
+      // navega por fala confere o nome pra saber que chegou no lugar certo
+      // (WCAG 3.2.4) — dois nomes pro mesmo destino quebram essa conferência.
+      appBar: AppBar(title: const Text('Ajustes')),
       body: ContentWidth(
         child: ListView(
           padding: const EdgeInsets.all(Space.x4),

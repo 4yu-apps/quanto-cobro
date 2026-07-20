@@ -81,7 +81,11 @@ void main() {
 
         await tester.tap(find.text('Ajustes'));
         await tester.pumpAndSettle();
-        expect(find.text('Configurações'), findsOneWidget);
+        // A aba e a tela têm que dizer o MESMO nome: quem navega por fala
+        // confere o título pra saber que chegou no lugar certo (WCAG 3.2.4).
+        // Antes a aba dizia "Ajustes" e a tela se anunciava "Configurações".
+        expect(find.text('Configurações'), findsNothing);
+        expect(find.widgetWithText(AppBar, 'Ajustes'), findsOneWidget);
       });
     },
   );

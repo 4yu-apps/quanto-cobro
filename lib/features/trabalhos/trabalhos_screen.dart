@@ -51,6 +51,10 @@ class TrabalhosScreen extends ConsumerWidget {
         ],
       ),
       body: ContentWidth(
+        // A régua de leitura é 600dp, mas aqui não se lê um texto corrido: são
+        // cards lado a lado. Com 600 as duas colunas ficariam com ~290dp cada,
+        // que é mais estreito que o celular — pior que uma coluna só.
+        maxWidth: WindowClass.of(context).isExpanded ? 960 : null,
         child: ordenados.isEmpty
             ? const _Vazio()
             : ListView(
@@ -85,24 +89,61 @@ class TrabalhosScreen extends ConsumerWidget {
   }
 
   /// Lista plana — o caso de 99% das pessoas.
+  ///
+  /// Em `expanded` os cards vão de dois em dois. A lista de trabalhos é o
+  /// objeto que mais cresce no app, e é ela que a pessoa varre pra achar um
+  /// nome: em tela larga, duas colunas cortam a varredura pela metade. Abaixo
+  /// disso continua uma coluna — dois cards de 300dp não são melhores que um
+  /// de 600.
   List<Widget> _planos(
     BuildContext context,
     List<Trabalho> trabalhos,
     Map<String, double> recebido,
     Map<String, DateTime> ultima,
-  ) => <Widget>[
-    for (int i = 0; i < trabalhos.length; i++) ...<Widget>[
-      if (i > 0) const SizedBox(height: Space.x3),
-      StaggerIn(
-        index: i.clamp(0, 4),
-        child: _TrabalhoCard(
-          trabalho: trabalhos[i],
-          recebido: recebido[trabalhos[i].id] ?? 0,
-          ultima: ultima[trabalhos[i].id],
-        ),
+  ) {
+    final int colunas = WindowClass.of(context).isExpanded ? 2 : 1;
+    Widget card(int i) => StaggerIn(
+      index: i.clamp(0, 4),
+      child: _TrabalhoCard(
+        trabalho: trabalhos[i],
+        recebido: recebido[trabalhos[i].id] ?? 0,
+        ultima: ultima[trabalhos[i].id],
       ),
-    ],
-  ];
+    );
+
+    if (colunas == 1) {
+      return <Widget>[
+        for (int i = 0; i < trabalhos.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(height: Space.x3),
+          card(i),
+        ],
+      ];
+    }
+
+    return <Widget>[
+      for (int i = 0; i < trabalhos.length; i += colunas) ...<Widget>[
+        if (i > 0) const SizedBox(height: Space.x3),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (int c = 0; c < colunas; c++) ...<Widget>[
+                if (c > 0) const SizedBox(width: Space.x3),
+                // A última linha pode vir incompleta: o vão vazio mantém o
+                // card sobrevivente com a mesma largura dos de cima, em vez
+                // de deixá-lo esticar sozinho e quebrar a grade.
+                Expanded(
+                  child: i + c < trabalhos.length
+                      ? card(i + c)
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    ];
+  }
 
   /// Agrupado por área — só pra quem tem mais de uma.
   List<Widget> _porArea(

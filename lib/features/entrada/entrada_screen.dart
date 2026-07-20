@@ -394,9 +394,13 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                                 spacing: Space.x4,
                                 runSpacing: Space.x2,
                                 children: <Widget>[
+                                  // Acompanha a barra: "Pra usar" é o que É
+                                  // SEU, e isso é esmeralda em todo o resto do
+                                  // app. `d.custo` aqui fazia a mesma ideia ter
+                                  // duas cores em duas telas.
                                   _legenda(
                                     context,
-                                    d.custo,
+                                    d.lucro,
                                     'Pra usar',
                                     res.sobra,
                                   ),

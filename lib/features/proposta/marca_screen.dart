@@ -12,6 +12,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/money_field.dart';
 
 /// "Sua marca — só uma vez" (07 §A.2/§F).
 ///
@@ -381,9 +382,18 @@ class _TelefoneFormatter extends TextInputFormatter {
     // 11 dígitos é o teto do celular BR — digitar além não deve virar lixo.
     final String limitado = d.length > 11 ? d.substring(0, 11) : d;
     final String texto = formatarTelefone(limitado);
+    // `offset: texto.length` teleportava o cursor pro fim a cada tecla: errou
+    // um dígito no meio do número, não dava pra corrigir. O cálculo já existia
+    // no formatador de milhar; agora ele é compartilhado.
     return TextEditingValue(
       text: texto,
-      selection: TextSelection.collapsed(offset: texto.length),
+      selection: TextSelection.collapsed(
+        offset: offsetPreservandoDigitos(
+          newValue.text,
+          newValue.selection.baseOffset,
+          texto,
+        ),
+      ),
     );
   }
 }
