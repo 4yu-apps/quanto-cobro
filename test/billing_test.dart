@@ -10,10 +10,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('sem loja, init é seguro e nao concede nada', () async {
+  test('sem loja, init é seguro: nao concede E nao revoga', () async {
     bool concedeu = false;
+    bool revogou = false;
     final BillingService b = BillingService(
       onEntitled: () async => concedeu = true,
+      onNotEntitled: () async => revogou = true,
     );
 
     // Sem plataforma de billing (ambiente de teste): nada lança no boot.
@@ -22,7 +24,10 @@ void main() {
     expect(b.disponivel, isFalse);
     expect(await b.comprar(), isFalse); // nao abre compra
     expect(await b.precoFormatado(), isNull); // sem preco da loja
-    expect(concedeu, isFalse); // e o mais importante: nada concede sozinho
+    expect(concedeu, isFalse); // nada concede sozinho
+    // A garantia critica: checagem inconclusiva (offline/sem loja) NUNCA revoga
+    // — senao trancaria quem pagou num boot sem rede.
+    expect(revogou, isFalse);
     b.dispose();
   });
 

@@ -16,17 +16,27 @@ const String kProProductId = 'pro_mensal';
 /// revogar trancaria um assinante que pagou. Revogação real de renovação falha
 /// exige as notificações em tempo real da Play + servidor, que não temos ainda.
 class BillingService {
-  BillingService({required this.onEntitled, InAppPurchase? iap})
-    : _iap = iap ?? InAppPurchase.instance;
+  BillingService({
+    required this.onEntitled,
+    this.onNotEntitled,
+    InAppPurchase? iap,
+  }) : _iap = iap ?? InAppPurchase.instance;
 
   final InAppPurchase _iap;
 
   /// Chamado quando uma compra válida de [kProProductId] é vista.
   final Future<void> Function() onEntitled;
 
+  /// Chamado quando a loja CONFIRMA (online, sem erro) que não há assinatura
+  /// ativa — pra revogar o Pro de quem cancelou. Null = nunca revoga.
+  final Future<void> Function()? onNotEntitled;
+
   StreamSubscription<List<PurchaseDetails>>? _sub;
   bool _disponivel = false;
   bool get disponivel => _disponivel;
+
+  /// Marca, durante uma sincronização, se alguma assinatura ativa apareceu.
+  bool _ativoNaSync = false;
 
   /// Liga o ouvinte de compras e restaura no boot (best-effort — precisa de
   /// rede). Idempotente. Blindado: sem plataforma de billing (loja ausente,
@@ -40,9 +50,25 @@ class BillingService {
     }
     if (!_disponivel) return;
     _sub = _iap.purchaseStream.listen(_aoAtualizar, onError: (_) {});
+    await _sincronizar();
+  }
+
+  /// Restaura o estado real da loja e RECONCILIA: liga o Pro se a assinatura
+  /// está ativa, revoga se a loja confirma que não está. Só revoga quando a
+  /// checagem foi conclusiva (loja disponível, restore sem erro) — offline ou
+  /// com falha, mantém o que estava, pra nunca trancar quem pagou. É o que faz
+  /// "cancelar" valer: na próxima abertura online, o Pro cai.
+  Future<void> _sincronizar() async {
+    if (!_disponivel) return;
+    _ativoNaSync = false;
     try {
       await _iap.restorePurchases();
-    } catch (_) {}
+    } catch (_) {
+      return; // checagem falhou: não mexe no estado atual
+    }
+    // O restore emite pelo stream de forma assíncrona; espera ele assentar.
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (!_ativoNaSync) await onNotEntitled?.call();
   }
 
   Future<void> _aoAtualizar(List<PurchaseDetails> compras) async {
@@ -50,6 +76,7 @@ class BillingService {
       if (p.productID != kProProductId) continue;
       if (p.status == PurchaseStatus.purchased ||
           p.status == PurchaseStatus.restored) {
+        _ativoNaSync = true;
         await onEntitled();
       }
       // A loja exige confirmar o consumo/entrega, senão ela reembolsa em ~3 dias.
@@ -88,9 +115,9 @@ class BillingService {
   /// REAL — não um "R$ 6,90" chumbado que mente pra quem está no exterior.
   Future<String?> precoFormatado() async => (await _produto())?.price;
 
-  Future<void> restaurar() async {
-    if (_disponivel) await _iap.restorePurchases();
-  }
+  /// "Restaurar compras" da tela Pro — reconcilia igual ao boot (liga se ativa,
+  /// revoga se a loja disser que não está).
+  Future<void> restaurar() async => _sincronizar();
 
   void dispose() {
     _sub?.cancel();

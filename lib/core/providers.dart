@@ -430,6 +430,9 @@ final Provider<BillingService> billingServiceProvider =
     Provider<BillingService>((Ref ref) {
       return BillingService(
         onEntitled: () => ref.read(proProvider.notifier).grant(),
+        // Revoga quando a loja confirma (online) que a assinatura caiu — é o
+        // que faz "cancelar" valer. Nunca revoga em falha/offline.
+        onNotEntitled: () => ref.read(proProvider.notifier).revoke(),
       );
     });
 
