@@ -1,0 +1,33 @@
+name: CI (analyze + testes)
+
+# Guarda a main. Roda o que da pra rodar sem aparelho: analise estatica e a
+# suite de testes. NAO cobre R8 nem comportamento em aparelho — ver
+# docs/planning/11-HANDOFF.md §1.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: analyze
+        run: flutter analyze
+
+      # test/ferramentas/ nao entra: os arquivos nao terminam em _test.dart, entao
+      # o glob do flutter test nao pega. Sao geradores de arte (icone, prints da
+      # loja, og do site), nao assercoes — quebrariam a cada pixel mudado.
+      - name: testes
+        run: flutter test

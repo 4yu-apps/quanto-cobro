@@ -1,0 +1,56 @@
+name: Build APK (teste em aparelho)
+
+# APK de release pra INSTALAR NO APARELHO e fechar a lacuna do §1 do handoff:
+# nada deste app foi rodado em hardware real ate agora.
+#
+# Assinado com a chave de DEBUG (nao existe keystore ainda). Instala em aparelho
+# normalmente; a Play recusa. Pra artefato de loja use o build-aab.yml.
+#
+# Build local nao e opcao: WSL derruba a maquina (~11 GB). Por isso CI.
+#
+# Nao precisa de nenhum secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      minify:
+        description: 'R8/minify ligado (desligue so pra isolar quebra de runtime)'
+        required: false
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # R8 nao quebra o build, quebra a tela. Se a proposta em PDF falhar no
+      # aparelho, rode de novo com minify=false: se passar, a causa e regra de
+      # keep faltando em android/app/proguard-rules.pro.
+      - name: build apk
+        run: |
+          flutter build apk --release \
+            -Pminify=${{ github.event.inputs.minify }}
+
+      - name: tamanho do artefato
+        run: ls -lh build/app/outputs/flutter-apk/app-release.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk-minify-${{ github.event.inputs.minify }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

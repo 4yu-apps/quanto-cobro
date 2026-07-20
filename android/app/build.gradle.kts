@@ -1,7 +1,19 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Assinatura de release: le android/key.properties (gitignored, fora do repo).
+// Ausente = build cai na chave de debug, que instala em aparelho mas a Play
+// recusa. O CI recria esse arquivo a partir dos secrets.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -26,11 +38,38 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                // Sem keystore: chave de debug. Instala em aparelho pra teste,
+                // a Play recusa. E o estado atual ate a keystore existir.
+                signingConfigs.getByName("debug")
+            }
+
+            // R8 ligado por padrao: encolhe o artefato e conta na nota de
+            // "Otimizacao" da Play. Desligavel com -Pminify=false pra isolar
+            // uma quebra de runtime — R8 nao falha o build, falha na tela.
+            // As regras de keep estao em proguard-rules.pro.
+            val minify = (project.findProperty("minify") as String?) != "false"
+            isMinifyEnabled = minify
+            isShrinkResources = minify
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
