@@ -26,6 +26,7 @@ import '../../core/ui/hero_value_card.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/tool_action_card.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/pro_selo.dart';
 
 /// **Início** — o hub, e o objetivo nº 1 do app: responder *"quanto custa a
 /// minha hora?"*.
@@ -44,16 +45,28 @@ class PainelScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AreaState state = ref.watch(areaAtivaProvider);
+    final bool isPro = ref.watch(proProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Builder(
-          builder: (BuildContext context) => Text(
-            AppConfig.appName,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontFamily: AppType.numberFamily,
-              fontWeight: FontWeight.w700,
+        // O selo Pro entra à direita do nome. Flexible no título pra ele nunca
+        // empurrar o selo pra fora nem estourar em fonte grande.
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Flexible(
+              child: Text(
+                AppConfig.appName,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontFamily: AppType.numberFamily,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          ),
+            if (isPro) ...<Widget>[
+              const SizedBox(width: 8),
+              const ProSelo(),
+            ],
+          ],
         ),
       ),
       body: switch (state) {

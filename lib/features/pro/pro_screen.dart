@@ -6,9 +6,12 @@ import '../../core/providers.dart';
 import '../../core/telemetry/eventos.dart';
 import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/motion.dart';
+import '../../core/theme/pro_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/panel_card.dart';
+import '../../core/ui/pro_selo.dart';
 
 /// Tela Pro (Blueprint §11): oferta transparente, no momento de valor. Preço e
 /// o que é Pro aparecem ANTES de o usuário investir trabalho (anti-★1 R2). O
@@ -46,6 +49,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
     final bool isPro = ref.watch(proProvider);
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
+    final ProColors pc = theme.extension<ProColors>()!;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Pro')),
@@ -54,18 +58,66 @@ class _ProScreenState extends ConsumerState<ProScreen> {
           padding: const EdgeInsets.all(Space.x4),
           children: <Widget>[
             if (isPro)
-              Card(
-                color: cs.surfaceContainer,
-                child: const ListTile(
-                  leading: Icon(Icons.check_circle),
-                  title: Text('Pro ativo'),
-                  subtitle: Text(
-                    'Obrigado! Todos os recursos Pro estão liberados.',
-                  ),
+              // O recibo: cartão de membro, não aviso de sistema. Selo circular
+              // preenchido (aqui a medalha cabe), glow roxo do PanelCard, e a
+              // mesma pílula "PRO" da home fechando a rima.
+              PanelCard(
+                accent: pc.pro,
+                padding: const EdgeInsets.all(Space.x5),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[
+                            Color.alphaBlend(
+                              Colors.white.withValues(alpha: 0.06),
+                              pc.proSolid,
+                            ),
+                            pc.proSolid,
+                          ],
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.workspace_premium,
+                        color: pc.onProSolid,
+                      ),
+                    ),
+                    const SizedBox(width: Space.x4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Pro ativo',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: pc.pro,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Todos os recursos liberados. Obrigado por apoiar o 4YU.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: Space.x3),
+                    const ProSelo(animar: false),
+                  ],
                 ),
               )
             else ...<Widget>[
-              // Header de venda: presença, não recibo.
+              // Header de venda: presença, não recibo. Convite roxo suave — a
+              // faísca da marca, não a medalha corporativa.
               Center(
                 child: AnimatedScale(
                   duration: reduceMotionOf(context)
@@ -76,13 +128,14 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: cs.primaryContainer,
+                      color: pc.proContainer,
                       shape: BoxShape.circle,
+                      border: Border.all(color: pc.proSolid, width: 2),
                     ),
                     child: Icon(
-                      Icons.workspace_premium,
-                      size: 40,
-                      color: cs.onPrimaryContainer,
+                      Icons.auto_awesome,
+                      size: 36,
+                      color: pc.pro,
                     ),
                   ),
                 ),
@@ -141,6 +194,12 @@ class _ProScreenState extends ConsumerState<ProScreen> {
               ),
               const SizedBox(height: Space.x4),
               FilledButton(
+                // Roxo = "a coisa Pro". No app inteiro, a compra é roxa e as
+                // ações grátis são verdes — o botão diz de que lado ele está.
+                style: FilledButton.styleFrom(
+                  backgroundColor: pc.proSolid,
+                  foregroundColor: pc.onProSolid,
+                ),
                 onPressed: _activating
                     ? null
                     : () async {

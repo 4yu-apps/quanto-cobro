@@ -20,8 +20,10 @@ import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
+import '../../core/theme/pro_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/pro_selo.dart';
 import '../../core/ui/text_scale.dart';
 import '../../core/ui/breakpoints.dart';
 import '../../core/ui/secao_titulo.dart';
@@ -45,6 +47,7 @@ class ConfigScreen extends ConsumerWidget {
     final AreasData areas = ref.watch(areasProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
+    final ProColors pc = theme.extension<ProColors>()!;
 
     return Scaffold(
       // A aba se chama "Ajustes"; a tela se anunciava "Configurações". Quem
@@ -165,14 +168,20 @@ class ConfigScreen extends ConsumerWidget {
             Card(
               color: theme.colorScheme.surfaceContainer,
               child: ListTile(
+                // A faísca roxa é o convite inteiro — sem badge "novo!" nem CTA
+                // gritado. Num app de decisão de preço o convite chama pela cor,
+                // não pelo volume. Pro ativo: a mesma pílula da home vira uma
+                // micro-recompensa cada vez que se abre Ajustes.
                 leading: Icon(
-                  isPro
-                      ? Icons.workspace_premium
-                      : Icons.workspace_premium_outlined,
+                  isPro ? Icons.workspace_premium : Icons.auto_awesome,
+                  color: pc.pro,
                 ),
                 title: Text(isPro ? 'Pro ativo' : 'Conhecer o Pro'),
+                subtitle: isPro
+                    ? null
+                    : const Text('Recursos extras, sem anúncios'),
                 trailing: isPro
-                    ? const Icon(Icons.check)
+                    ? const ProSelo(animar: false)
                     : const Icon(Icons.chevron_right),
                 onTap: () => context.push(Routes.pro),
               ),
