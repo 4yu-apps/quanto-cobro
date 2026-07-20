@@ -11,6 +11,44 @@
 
 ---
 
+## 0. Estado — 20/07/2026, fim da rodada de código
+
+Os blocos 1 a 6 do §7 estão **feitos**, em seis commits na branch
+`a11y-e-tablet`. A suíte saiu de 112 para **273 testes**, `flutter analyze`
+limpo.
+
+| Bloco | Estado |
+|---|---|
+| P0 de a11y (§2) | ✅ os três, com teste que falha no código antigo |
+| Fundação de tablet (§4.1–4.3) | ✅ breakpoints, trilho, clamp, tema |
+| Matriz de layout (§5) | ✅ 144 casos — **achou 9 sítios de estouro, 6 deles em fonte normal** |
+| P1 lote 1 — caminho de ouro (§3) | ✅ P1-1, P1-2, P1-12 |
+| P1 lote 2 — rótulos (§3) | ✅ P1-3, P1-4, P1-5, P1-6, P1-7, P1-10 |
+| Ganhos de tela larga (§4.4) | ✅ grade 2 colunas, calc em duas colunas |
+| P1 restantes | ✅ P1-8, P1-9, P1-11, P1-13 |
+| P2 | ✅ P2-1 (`bodySmall`), P2-4 (Ajustes) · ⏳ P2-2, P2-5, P2-6, P2-7 |
+| Manifest large-screen | ✅ declarado |
+| **Infra e loja (§6)** | ⏳ **intocado — depende de passo humano** |
+
+**O que sobrou de código, e por quê:**
+
+1. **O painel mestre-detalhe** (§4.4). Único item que mexe em roteamento
+   (`StatefulShellRoute`). O próprio §4.4 dizia "se custar caro, corta e fica só
+   a grade" — a grade foi feita e já entrega o ganho de varredura. Cortado com
+   consciência, não esquecido.
+2. **P2-2, P2-5, P2-6, P2-7.** São polimento, e o §7 já os colocava por último.
+   O P2-6 (`SecaoTitulo` pros sobrolhos virarem `header`) é o de maior retorno
+   dos quatro: ele dá o "sumário" que quem não vê usa pra pular entre seções.
+
+**O achado que mais mudou a leitura do problema:** a matriz encontrou nove
+sítios de estouro, e **seis quebram em fonte normal** — no Moto E de 320dp, que
+é o público. Não era um defeito de acessibilidade que só aparece no extremo de
+200%: era layout quebrado no aparelho do público-alvo, todos os dias, e ninguém
+tinha olhado. O onboarding — a primeira tela que a pessoa vê — estourava 24px
+em pé e 148px deitado.
+
+---
+
 ## 1. Onde estamos, sem eufemismo
 
 As Fases 0 a 5 estão feitas. O que resta são três blocos, e eles são de
@@ -21,6 +59,9 @@ naturezas diferentes — vale não misturar:
 | **A11y** | 3 P0 + 13 P1 auditados, nenhum corrigido ainda | código, hoje |
 | **Tablet e paisagem** | o app não tem **nenhum** breakpoint, e a rotação está destravada nas duas plataformas | código, hoje |
 | **Loja e billing** | compra real do Pro, ficha, Data Safety, Firebase | passo humano + código |
+
+> **Nota de 20/07:** este diagnóstico é o de antes da rodada. Ele fica como
+> está, porque é o que justifica as decisões — mas leia o §0 pro estado atual.
 
 **A frase que resume o risco novo:** o `AndroidManifest.xml` não declara
 `screenOrientation`, e o `Info.plist:62-68` anuncia as quatro orientações no
