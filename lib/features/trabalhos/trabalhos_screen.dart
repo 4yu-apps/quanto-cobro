@@ -16,18 +16,30 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
 import '../../core/ui/panel_card.dart';
+import '../../core/ui/breakpoints.dart';
+import 'trabalho_detalhe_screen.dart';
 
 /// Aba **Trabalhos** — os freelas da pessoa.
 ///
 /// A hierarquia é LATENTE: com uma área só, a palavra "área" não aparece em
 /// lugar nenhum e a lista é plana. O nível de cima só se revela pra quem tem a
 /// segunda — que é o power user, e o único que precisa dele.
-class TrabalhosScreen extends ConsumerWidget {
+class TrabalhosScreen extends ConsumerStatefulWidget {
   const TrabalhosScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TrabalhosScreen> createState() => _TrabalhosScreenState();
+}
+
+class _TrabalhosScreenState extends ConsumerState<TrabalhosScreen> {
+  /// O trabalho aberto no painel direito. Só existe em tela larga — no celular
+  /// tocar num card continua empilhando a tela, como sempre.
+  String? _selecionado;
+
+  @override
+  Widget build(BuildContext context) {
     final AreasData areas = ref.watch(areasProvider);
     final List<Trabalho> todos = ref.watch(trabalhosProvider);
     final List<Entrada> entradas = ref.watch(entradasProvider);
@@ -48,29 +60,86 @@ class TrabalhosScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: ordenados.isEmpty
-          ? const _Vazio()
-          : ListView(
-              padding: EdgeInsets.fromLTRB(
-                Space.x4,
-                Space.x4,
-                Space.x4,
-                kFloatingNavReserve + MediaQuery.viewPaddingOf(context).bottom,
-              ),
-              children: <Widget>[
-                if (areas.hierarquiaVisivel)
-                  ..._porArea(context, ref, areas, ordenados, recebido, ultima)
-                else
-                  ..._planos(context, ordenados, recebido, ultima),
-                const SizedBox(height: Space.x4),
-                OutlinedButton.icon(
-                  onPressed: () => context.push(Routes.trabalhoForm),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Novo trabalho'),
-                ),
-              ],
+      body: mestreDetalhe
+          ? _mestreDetalhe(context, areas, ordenados, recebido, ultima)
+          : ContentWidth(
+              child: _lista(context, areas, ordenados, recebido, ultima),
             ),
     );
+  }
+
+  /// Lista à esquerda, trabalho aberto à direita — o padrão que o tablet
+  /// inventou, e o ganho real da tela larga: tocar num trabalho deixa de fazer
+  /// a tela inteira dar um pulo.
+  ///
+  /// Substituiu a grade de duas colunas que existia aqui. A grade era o plano
+  /// B do §4.4 do plano ("se o mestre-detalhe custar caro, corta e fica só a
+  /// grade") — não custou, e as duas juntas não fazem sentido: com a lista
+  /// ocupando 380dp, duas colunas de card virariam duas tiras de 180dp.
+  Widget _mestreDetalhe(
+    BuildContext context,
+    AreasData areas,
+    List<Trabalho> ordenados,
+    Map<String, double> recebido,
+    Map<String, DateTime> ultima,
+  ) {
+    // O selecionado pode ter sido apagado no painel — sem isto o painel fica
+    // preso num id que não existe mais.
+    final bool valido =
+        _selecionado != null &&
+        ordenados.any((Trabalho t) => t.id == _selecionado);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(
+          width: 380,
+          child: ordenados.isEmpty
+              ? const _Vazio()
+              : _lista(context, areas, ordenados, recebido, ultima),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(
+          child: valido
+              ? TrabalhoDetalheScreen.painel(
+                  key: ValueKey<String>(_selecionado!),
+                  trabalhoId: _selecionado!,
+                )
+              : _PainelVazio(temTrabalhos: ordenados.isNotEmpty),
+        ),
+      ],
+    );
+  }
+
+  Widget _lista(
+    BuildContext context,
+    AreasData areas,
+    List<Trabalho> ordenados,
+    Map<String, double> recebido,
+    Map<String, DateTime> ultima,
+  ) {
+    return ordenados.isEmpty
+        ? const _Vazio()
+        : ListView(
+            padding: EdgeInsets.fromLTRB(
+              Space.x4,
+              Space.x4,
+              Space.x4,
+              reservaDaNavbar(context),
+            ),
+            children: <Widget>[
+              if (areas.hierarquiaVisivel)
+                ..._porArea(context, ref, areas, ordenados, recebido, ultima)
+              else
+                ..._planos(context, ordenados, recebido, ultima),
+              const SizedBox(height: Space.x4),
+              OutlinedButton.icon(
+                onPressed: () => context.push(Routes.trabalhoForm),
+                icon: const Icon(Icons.add),
+                label: const Text('Novo trabalho'),
+              ),
+            ],
+          );
   }
 
   /// Lista plana — o caso de 99% das pessoas.
@@ -88,10 +157,18 @@ class TrabalhosScreen extends ConsumerWidget {
           trabalho: trabalhos[i],
           recebido: recebido[trabalhos[i].id] ?? 0,
           ultima: ultima[trabalhos[i].id],
+          // No mestre-detalhe tocar SELECIONA (o painel troca ao lado); no
+          // celular continua empilhando a tela.
+          selecionado: mestreDetalhe && trabalhos[i].id == _selecionado,
+          onSelecionar: mestreDetalhe
+              ? () => setState(() => _selecionado = trabalhos[i].id)
+              : null,
         ),
       ),
     ],
   ];
+
+  bool get mestreDetalhe => WindowClass.of(context).isExpanded;
 
   /// Agrupado por área — só pra quem tem mais de uma.
   List<Widget> _porArea(
@@ -110,18 +187,7 @@ class TrabalhosScreen extends ConsumerWidget {
           .toList();
       if (daArea.isEmpty) continue;
       out
-        ..add(
-          Padding(
-            padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
-            child: Text(
-              area.nome.toUpperCase(),
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        )
+        ..add(_cabecalhoDeGrupo(theme, area.nome, daArea.length))
         ..addAll(_planos(context, daArea, recebido, ultima));
       out.add(const SizedBox(height: Space.x4));
     }
@@ -132,22 +198,52 @@ class TrabalhosScreen extends ConsumerWidget {
         .toList();
     if (orfaos.isNotEmpty) {
       out
-        ..add(
-          Padding(
-            padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
-            child: Text(
-              'SEM ÁREA',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        )
+        ..add(_cabecalhoDeGrupo(theme, 'Sem área', orfaos.length, area: false))
         ..addAll(_planos(context, orfaos, recebido, ultima));
     }
     return out;
   }
+
+  /// O cabeçalho de grupo — e ele precisa SER um cabeçalho.
+  ///
+  /// A hierarquia latente (só aparece com 2+ áreas) é uma boa ideia, mas tinha
+  /// sido implementada só no canal visual: caixa alta, cinza, menor,
+  /// `letterSpacing`. Todos esses sinais são TIPOGRÁFICOS. Na árvore de
+  /// semântica isto era um `Text` como outro qualquer, então:
+  ///
+  /// - não dava pra pular de grupo em grupo (o gesto de navegar por cabeçalhos
+  ///   é *o* jeito de varrer uma lista longa sem visão);
+  /// - "DESIGN" é ambíguo — pode ser um trabalho chamado Design. A palavra
+  ///   "área" não era falada em lugar nenhum;
+  /// - caixa alta é armadilha à parte: alguns motores de TTS soletram palavras
+  ///   curtas em maiúsculas ("D-E-S-I-G-N"). O visual em caixa alta é decisão
+  ///   de tipografia; o rótulo vai na grafia natural.
+  ///
+  /// A contagem é o que substitui, na fala, o "bater o olho e ver que são
+  /// três" — sem ela a pessoa varre o grupo inteiro só pra saber o tamanho.
+  static Widget _cabecalhoDeGrupo(
+    ThemeData theme,
+    String nome,
+    int quantos, {
+    bool area = true,
+  }) => Padding(
+    padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
+    child: Semantics(
+      header: true,
+      label:
+          '${area ? 'Área $nome' : nome}. '
+          '$quantos ${quantos == 1 ? 'trabalho' : 'trabalhos'}.',
+      child: ExcludeSemantics(
+        child: Text(
+          nome.toUpperCase(),
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _TrabalhoCard extends StatelessWidget {
@@ -155,11 +251,19 @@ class _TrabalhoCard extends StatelessWidget {
     required this.trabalho,
     required this.recebido,
     required this.ultima,
+    this.selecionado = false,
+    this.onSelecionar,
   });
 
   final Trabalho trabalho;
   final double recebido;
   final DateTime? ultima;
+
+  /// Aberto no painel ao lado — só existe no mestre-detalhe.
+  final bool selecionado;
+
+  /// Quando presente, tocar SELECIONA em vez de empilhar a tela.
+  final VoidCallback? onSelecionar;
 
   @override
   Widget build(BuildContext context) {
@@ -167,55 +271,77 @@ class _TrabalhoCard extends StatelessWidget {
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
-    return Semantics(
-      button: true,
+    void abrir() {
+      if (onSelecionar != null) {
+        onSelecionar!();
+      } else {
+        context.push(Routes.trabalhoDetalhe, extra: trabalho.id);
+      }
+    }
+
+    return SemanticButton(
       label: _semantica(),
-      onTapHint: 'abrir o trabalho',
-      child: ExcludeSemantics(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () =>
-                context.push(Routes.trabalhoDetalhe, extra: trabalho.id),
-            borderRadius: const BorderRadius.all(Radii.lg),
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x4),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          trabalho.nome,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: trabalho.encerrado
-                                ? cs.onSurfaceVariant
-                                : cs.onSurface,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: Space.x1),
-                        Text(
-                          _linhaApoio(),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: Space.x3),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+      tapHint: onSelecionar == null ? 'abrir o trabalho' : 'abrir ao lado',
+      // No mestre-detalhe o card é uma ESCOLHA de um-entre-N, e o leitor de
+      // tela precisa saber qual está aberto — senão a pessoa não tem como
+      // descobrir o que o painel ao lado está mostrando.
+      selected: onSelecionar == null ? null : selecionado,
+      onTap: abrir,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: abrir,
+          borderRadius: const BorderRadius.all(Radii.lg),
+          child: PanelCard(
+            selecionado: selecionado,
+            padding: const EdgeInsets.all(Space.x4),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        moneyBRL(recebido),
+                        trabalho.nome,
                         style: theme.textTheme.titleMedium?.copyWith(
-                          fontFamily: AppType.numberFamily,
-                          fontFeatures: AppType.tnum,
-                          color: recebido > 0 ? d.lucro : cs.onSurfaceVariant,
+                          color: trabalho.encerrado
+                              ? cs.onSurfaceVariant
+                              : cs.onSurface,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: Space.x1),
+                      Text(
+                        _linhaApoio(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Space.x3),
+                // O dinheiro encolhe, nunca vaza. Sem isto o Row estourava
+                // 45px em fonte 200% — e o que saía da tela era justamente o
+                // valor recebido, que é a razão do card existir.
+                Flexible(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          moneyBRL(recebido),
+                          maxLines: 1,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontFamily: AppType.numberFamily,
+                            fontFeatures: AppType.tnum,
+                            color: recebido > 0 ? d.lucro : cs.onSurfaceVariant,
+                          ),
                         ),
                       ),
                       Text(
@@ -226,8 +352,8 @@ class _TrabalhoCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -264,11 +390,11 @@ class _Vazio extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           Space.x6,
           Space.x6,
           Space.x6,
-          kFloatingNavReserve,
+          reservaDaNavbar(context),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -304,6 +430,47 @@ class _Vazio extends StatelessWidget {
             TextButton(
               onPressed: () => context.push(Routes.trabalhoForm),
               child: const Text('Ou cadastrar um trabalho'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// O painel direito antes de a pessoa escolher um trabalho.
+///
+/// Uma tela larga com metade em branco parece defeito. Dizer o que fazer ali
+/// custa uma frase e resolve.
+class _PainelVazio extends StatelessWidget {
+  const _PainelVazio({required this.temTrabalhos});
+
+  final bool temTrabalhos;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Space.x8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              Icons.work_outline,
+              size: 40,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: Space.x3),
+            Text(
+              temTrabalhos
+                  ? 'Escolha um trabalho pra ver os pagamentos dele aqui.'
+                  : 'Registre uma entrada e diga de quem veio — o trabalho '
+                        'aparece aqui sozinho.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

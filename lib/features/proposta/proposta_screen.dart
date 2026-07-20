@@ -10,6 +10,8 @@ import '../../core/ui/a11y.dart';
 import '../../core/ui/money_field.dart';
 import 'proposta_flow.dart';
 import 'proposta_preview_screen.dart';
+import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// O formulário da proposta (07 §A.3): curto, com tudo que dá já preenchido.
 /// Sete campos, três deles opcionais — a pessoa acabou de validar um preço e
@@ -124,162 +126,158 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          TextField(
-            controller: _servico,
-            autofocus: _servico.text.isEmpty,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: 'O que você vai entregar',
-              hintText:
-                  'Ex.: Identidade visual completa — logo, cores e manual de marca',
-              errorText: _erroServico,
-            ),
-            onChanged: (_) {
-              if (_erroServico != null) setState(() => _erroServico = null);
-            },
-          ),
-          const SizedBox(height: Space.x4),
-          TextField(
-            controller: _descricao,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 5,
-            minLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Detalhes (opcional)',
-              hintText: 'O que está incluso, quantas revisões, o que não entra',
-            ),
-          ),
-          const SizedBox(height: Space.x4),
-          MoneyField(
-            controller: _valor,
-            label: 'Valor',
-            prefix: r'R$ ',
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: Space.x4),
-          TextField(
-            controller: _prazo,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Prazo de entrega',
-              hintText: 'Ex.: 15 dias úteis',
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-
-          Text(
-            'VALIDADE DA PROPOSTA',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: Space.x1),
-          Text(
-            'Depois disso o preço pode mudar — é o que te protege de honrar '
-            'orçamento velho.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: Space.x3),
-          Wrap(
-            spacing: Space.x2,
-            children: <Widget>[
-              for (final int dias in <int>[7, 15, 30])
-                ChoiceChip(
-                  label: Text('$dias dias'),
-                  selected: _validadeDias == dias,
-                  backgroundColor: cs.surfaceContainerLow,
-                  selectedColor: cs.secondaryContainer,
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(
-                    color: _validadeDias == dias
-                        ? cs.onSecondaryContainer
-                        : cs.onSurfaceVariant,
-                  ),
-                  side: _validadeDias == dias
-                      ? BorderSide(color: cs.primary, width: 1.5)
-                      : BorderSide(color: cs.outlineVariant),
-                  onSelected: (_) {
-                    Haptics.select();
-                    setState(() => _validadeDias = dias);
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: Space.x6),
-
-          TextField(
-            controller: _pagamento,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 2,
-            minLines: 1,
-            decoration: const InputDecoration(
-              labelText: 'Forma de pagamento',
-              helperText: 'O sinal é padrão de mercado — e te protege.',
-            ),
-          ),
-          const SizedBox(height: Space.x4),
-          TextField(
-            controller: _cliente,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Para (cliente) — opcional',
-              hintText: 'Nome de quem vai receber',
-            ),
-          ),
-          const SizedBox(height: Space.x4),
-          TextField(
-            controller: _observacoes,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 4,
-            minLines: 1,
-            decoration: const InputDecoration(
-              labelText: 'Observações (opcional)',
-            ),
-          ),
-
-          if (temHoras) ...<Widget>[
-            const SizedBox(height: Space.x4),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _mostrarHoras,
-              onChanged: (bool v) {
-                Haptics.select();
-                setState(() => _mostrarHoras = v);
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            TextField(
+              controller: _servico,
+              autofocus: _servico.text.isEmpty,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: 'O que você vai entregar',
+                hintText:
+                    'Ex.: Identidade visual completa — logo, cores e manual de marca',
+                errorText: _erroServico,
+              ),
+              onChanged: (_) {
+                if (_erroServico != null) setState(() => _erroServico = null);
               },
-              title: const Text('Mostrar as horas no orçamento'),
-              // Desligado por default (07 §A.6): cliente que vê "40h × R$ 92"
-              // ancora na hora e pechincha a hora, não o trabalho.
-              subtitle: Text(
-                'Desligado, o cliente vê o preço do trabalho — não o preço da '
-                'sua hora.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+            ),
+            const SizedBox(height: Space.x4),
+            TextField(
+              controller: _descricao,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 5,
+              minLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Detalhes (opcional)',
+                hintText:
+                    'O que está incluso, quantas revisões, o que não entra',
               ),
             ),
-          ],
-
-          const SizedBox(height: Space.x8),
-          FilledButton.icon(
-            onPressed: _verComoFica,
-            icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Ver como fica'),
-          ),
-          const SizedBox(height: Space.x2),
-          Text(
-            'Você vê o documento pronto antes de mandar.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: _valor,
+              label: 'Valor',
+              prefix: r'R$ ',
+              onChanged: (_) => setState(() {}),
             ),
-          ),
-          const SizedBox(height: Space.x4),
-        ],
+            const SizedBox(height: Space.x4),
+            TextField(
+              controller: _prazo,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Prazo de entrega',
+                hintText: 'Ex.: 15 dias úteis',
+              ),
+            ),
+            const SizedBox(height: Space.x6),
+
+            SecaoTitulo('Validade da proposta', bottom: Space.x1),
+            Text(
+              'Depois disso o preço pode mudar — é o que te protege de honrar '
+              'orçamento velho.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.x3),
+            Wrap(
+              spacing: Space.x2,
+              children: <Widget>[
+                for (final int dias in <int>[7, 15, 30])
+                  ChoiceChip(
+                    label: Text('$dias dias'),
+                    selected: _validadeDias == dias,
+                    backgroundColor: cs.surfaceContainerLow,
+                    selectedColor: cs.secondaryContainer,
+                    labelStyle: theme.textTheme.labelMedium?.copyWith(
+                      color: _validadeDias == dias
+                          ? cs.onSecondaryContainer
+                          : cs.onSurfaceVariant,
+                    ),
+                    side: _validadeDias == dias
+                        ? BorderSide(color: cs.primary, width: 1.5)
+                        : BorderSide(color: cs.outlineVariant),
+                    onSelected: (_) {
+                      Haptics.select();
+                      setState(() => _validadeDias = dias);
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: Space.x6),
+
+            TextField(
+              controller: _pagamento,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 2,
+              minLines: 1,
+              decoration: const InputDecoration(
+                labelText: 'Forma de pagamento',
+                helperText: 'O sinal é padrão de mercado — e te protege.',
+              ),
+            ),
+            const SizedBox(height: Space.x4),
+            TextField(
+              controller: _cliente,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Para (cliente) — opcional',
+                hintText: 'Nome de quem vai receber',
+              ),
+            ),
+            const SizedBox(height: Space.x4),
+            TextField(
+              controller: _observacoes,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 4,
+              minLines: 1,
+              decoration: const InputDecoration(
+                labelText: 'Observações (opcional)',
+              ),
+            ),
+
+            if (temHoras) ...<Widget>[
+              const SizedBox(height: Space.x4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _mostrarHoras,
+                onChanged: (bool v) {
+                  Haptics.select();
+                  setState(() => _mostrarHoras = v);
+                },
+                title: const Text('Mostrar as horas no orçamento'),
+                // Desligado por default (07 §A.6): cliente que vê "40h × R$ 92"
+                // ancora na hora e pechincha a hora, não o trabalho.
+                subtitle: Text(
+                  'Desligado, o cliente vê o preço do trabalho — não o preço da '
+                  'sua hora.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: Space.x8),
+            FilledButton.icon(
+              onPressed: _verComoFica,
+              icon: const Icon(Icons.visibility_outlined),
+              label: const Text('Ver como fica'),
+            ),
+            const SizedBox(height: Space.x2),
+            Text(
+              'Você vê o documento pronto antes de mandar.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.x4),
+          ],
+        ),
       ),
     );
   }

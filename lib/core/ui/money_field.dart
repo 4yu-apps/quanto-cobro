@@ -101,34 +101,45 @@ class _MilharFormatter extends TextInputFormatter {
     if (digits.isEmpty) return const TextEditingValue();
     final String formatted = _fmt.format(int.parse(digits));
 
-    // Quantos dígitos existem antes do cursor no texto novo cru:
-    final int rawOffset = newValue.selection.baseOffset.clamp(
-      0,
-      newValue.text.length,
-    );
-    int digitsBefore = 0;
-    for (int i = 0; i < rawOffset; i++) {
-      if (RegExp(r'[0-9]').hasMatch(newValue.text[i])) digitsBefore++;
-    }
-    // Reposiciona após o mesmo número de dígitos no texto formatado:
-    int offset = formatted.length;
-    int seen = 0;
-    for (int i = 0; i < formatted.length; i++) {
-      if (RegExp(r'[0-9]').hasMatch(formatted[i])) {
-        seen++;
-        if (seen == digitsBefore) {
-          offset = i + 1;
-          break;
-        }
-      }
-      if (digitsBefore == 0) {
-        offset = 0;
-        break;
-      }
-    }
     return TextEditingValue(
       text: formatted,
-      selection: TextSelection.collapsed(offset: offset),
+      selection: TextSelection.collapsed(
+        offset: offsetPreservandoDigitos(
+          newValue.text,
+          newValue.selection.baseOffset,
+          formatted,
+        ),
+      ),
     );
   }
+}
+
+/// Onde o cursor deve ficar depois que uma máscara reescreveu o texto.
+///
+/// A regra é: conte quantos DÍGITOS existem antes do cursor no texto cru e
+/// reposicione depois do mesmo número de dígitos no texto formatado. Sem isso,
+/// a saída natural é `offset: texto.length` — que teleporta o cursor pro fim a
+/// cada tecla e torna impossível corrigir um erro no meio do número. Quem tem
+/// tremor, dislexia, ou está no ônibus com uma mão erra no meio o tempo todo, e
+/// a alternativa vira "apaga tudo e digita de novo".
+///
+/// Isto vive aqui, público, porque nasceu privado no formatador de milhar — e
+/// foi por isso que a máscara de telefone, escrita depois, não reaproveitou.
+int offsetPreservandoDigitos(String bruto, int rawOffset, String formatado) {
+  final RegExp digito = RegExp(r'[0-9]');
+  final int corte = rawOffset.clamp(0, bruto.length);
+  int digitosAntes = 0;
+  for (int i = 0; i < corte; i++) {
+    if (digito.hasMatch(bruto[i])) digitosAntes++;
+  }
+  if (digitosAntes == 0) return 0;
+
+  int vistos = 0;
+  for (int i = 0; i < formatado.length; i++) {
+    if (digito.hasMatch(formatado[i])) {
+      vistos++;
+      if (vistos == digitosAntes) return i + 1;
+    }
+  }
+  return formatado.length;
 }

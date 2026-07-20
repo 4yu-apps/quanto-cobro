@@ -3,10 +3,19 @@
          o build de release não tem rede nenhuma e a busca falha em silêncio. -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- Tela grande e janela livre: o app roda em tablet, dobravel e modo
+         multi-janela, e o layout responde a isso (core/ui/breakpoints.dart).
+         Os dois ja sao o default hoje, mas default e o tipo de coisa que uma
+         versao do Gradle muda por voce — e o preco de descobrir e a Play
+         Console marcando o app como "nao otimizado para telas grandes". -->
     <application
         android:label="Quanto Cobro?"
         android:name="${applicationName}"
+        android:resizeableActivity="true"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="android.supports_size_changes"
+            android:value="true"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -4,6 +4,7 @@ import '../common/money.dart';
 import '../theme/app_typography.dart';
 import '../theme/motion.dart';
 import '../theme/tokens.dart';
+import 'a11y.dart';
 import 'money_count_up.dart';
 import 'stale_banner.dart';
 import 'vitrine_card.dart';
@@ -52,45 +53,54 @@ class HeroValueCard extends StatelessWidget {
           if (perfilNome != null) ...<Widget>[
             Align(
               alignment: Alignment.centerLeft,
-              child: Semantics(
-                button: true,
-                label: 'Trabalho ativo: $perfilNome',
-                hint: 'Toque duas vezes pra trocar de trabalho',
-                child: ExcludeSemantics(
-                  child: Material(
-                    color: cs.secondaryContainer,
+              // O chip mostra `area.nome` e leva pra "Meus preços". Chamá-lo de
+              // "Trabalho" mandava a pessoa pro modelo mental errado — e
+              // "Trabalho" é o nome da OUTRA aba. E a dica descreve o que
+              // acontece, nunca o gesto: o leitor de tela já diz "toque duas
+              // vezes" sozinho, e pra Switch Access ou teclado isso é falso.
+              child: SemanticButton(
+                label: 'Área ativa: $perfilNome',
+                tapHint: 'trocar a área e o valor-hora do Início',
+                onTap: onPerfilTap ?? () {},
+                child: Material(
+                  color: cs.secondaryContainer,
+                  borderRadius: const BorderRadius.all(Radii.full),
+                  child: InkWell(
                     borderRadius: const BorderRadius.all(Radii.full),
-                    child: InkWell(
-                      borderRadius: const BorderRadius.all(Radii.full),
-                      onTap: onPerfilTap,
-                      // Alvo ≥48dp (DS §7); a pintura interna continua compacta.
-                      child: Container(
-                        constraints: const BoxConstraints(minHeight: 48),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Space.x3,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(
-                              Icons.work_outline,
-                              size: 14,
-                              color: cs.onSecondaryContainer,
-                            ),
-                            const SizedBox(width: Space.x1),
-                            Text(
+                    onTap: onPerfilTap,
+                    // Alvo ≥48dp (DS §7); a pintura interna continua compacta.
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.x3),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(
+                            Icons.work_outline,
+                            size: 14,
+                            color: cs.onSecondaryContainer,
+                          ),
+                          const SizedBox(width: Space.x1),
+                          // "Design de identidade" já estoura 88px num celular
+                          // de 320dp com fonte NORMAL. O chip é um rótulo, não
+                          // um parágrafo: encolhe com reticências, e o nome
+                          // inteiro continua no rótulo do leitor de tela.
+                          Flexible(
+                            child: Text(
                               perfilNome!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: cs.onSecondaryContainer,
                               ),
                             ),
-                            Icon(
-                              Icons.keyboard_arrow_down,
-                              size: 16,
-                              color: cs.onSecondaryContainer,
-                            ),
-                          ],
-                        ),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 16,
+                            color: cs.onSecondaryContainer,
+                          ),
+                        ],
                       ),
                     ),
                   ),

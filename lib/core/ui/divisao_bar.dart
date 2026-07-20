@@ -5,6 +5,7 @@ import '../theme/app_typography.dart';
 import '../theme/divisao_colors.dart';
 import '../theme/motion.dart';
 import '../theme/tokens.dart';
+import 'texturas.dart';
 
 /// Qual segmento é o herói na tela (muda o peso do rótulo, nunca a ordem).
 enum DivisaoEmphasis { none, lucro, reserva, custo }
@@ -243,7 +244,7 @@ class _AnimatedSegments extends StatelessWidget {
                     curve: MotionCurves.standard,
                     width: w * fReserva * p,
                     color: reservaColor,
-                    child: CustomPaint(painter: _DotPainter(hatch)),
+                    child: CustomPaint(painter: DotPainter(hatch)),
                   ),
                   const SizedBox(width: gap),
                   AnimatedContainer(
@@ -251,7 +252,7 @@ class _AnimatedSegments extends StatelessWidget {
                     curve: MotionCurves.standard,
                     width: w * fCusto * p,
                     color: custoColor,
-                    child: CustomPaint(painter: _HatchPainter(hatch)),
+                    child: CustomPaint(painter: HatchPainter(hatch)),
                   ),
                 ],
               ),
@@ -261,46 +262,4 @@ class _AnimatedSegments extends StatelessWidget {
       },
     );
   }
-}
-
-/// Hachura diagonal sutil (sinal não-cromático do segmento de Custos, DS §6.2).
-class _HatchPainter extends CustomPainter {
-  const _HatchPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint p = Paint()
-      ..color = color
-      ..strokeWidth = 1.5;
-    const double step = 6;
-    for (double x = -size.height; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, size.height), Offset(x + size.height, 0), p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HatchPainter oldDelegate) => oldDelegate.color != color;
-}
-
-/// Pontilhado fino (sinal não-cromático do segmento de Reserva — ouro).
-class _DotPainter extends CustomPainter {
-  const _DotPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint p = Paint()..color = color;
-    const double step = 6;
-    int row = 0;
-    for (double y = 3; y < size.height; y += step, row++) {
-      final double x0 = row.isOdd ? 3 + step / 2 : 3;
-      for (double x = x0; x < size.width; x += step) {
-        canvas.drawCircle(Offset(x, y), 1.1, p);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DotPainter oldDelegate) => oldDelegate.color != color;
 }

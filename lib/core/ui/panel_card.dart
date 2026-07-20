@@ -14,6 +14,7 @@ class PanelCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(Space.x4),
     this.accent,
     this.radius = Radii.lg,
+    this.selecionado = false,
   });
 
   final Widget child;
@@ -23,10 +24,14 @@ class PanelCard extends StatelessWidget {
   final Color? accent;
   final Radius radius;
 
+  /// Aberto no painel ao lado (mestre-detalhe). Ganha um contorno em `primary`
+  /// — **além** do `selected: true` no leitor de tela, nunca no lugar dele.
+  final bool selecionado;
+
   @override
   Widget build(BuildContext context) {
     final Materials m = Theme.of(context).extension<Materials>()!;
-    return RepaintBoundary(
+    final Widget corpo = RepaintBoundary(
       child: ClipRRect(
         borderRadius: BorderRadius.all(radius),
         child: CustomPaint(
@@ -41,6 +46,21 @@ class PanelCard extends StatelessWidget {
           child: Padding(padding: padding, child: child),
         ),
       ),
+    );
+    if (!selecionado) return corpo;
+    // `foreground`: o DecoratedBox pinta ATRÁS por padrão, e o preenchimento
+    // opaco do card cobriria a borda inteira — o contorno existiria no código
+    // e não na tela. Só apareceu numa captura.
+    return DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(radius),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary,
+          width: 2,
+        ),
+      ),
+      child: corpo,
     );
   }
 }

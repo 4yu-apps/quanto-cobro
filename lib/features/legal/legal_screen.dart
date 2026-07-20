@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'legal_texts.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// Política de Privacidade + Termos, mostrados no app (PADRÃO 4YU §Legal).
 class LegalScreen extends StatelessWidget {
@@ -11,13 +12,15 @@ class LegalScreen extends StatelessWidget {
     final TextTheme t = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Privacidade e Termos')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: <Widget>[
-          Text(LegalTexts.privacidade, style: t.bodyMedium),
-          const Divider(height: 32),
-          Text(LegalTexts.termos, style: t.bodyMedium),
-        ],
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: <Widget>[
+            Text(LegalTexts.privacidade, style: t.bodyMedium),
+            const Divider(height: 32),
+            Text(LegalTexts.termos, style: t.bodyMedium),
+          ],
+        ),
       ),
     );
   }

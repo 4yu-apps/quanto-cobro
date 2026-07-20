@@ -9,6 +9,8 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/money_field.dart';
+import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// Cadastrar/editar um trabalho — **três campos**, e dois deles opcionais.
 ///
@@ -99,87 +101,82 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
       appBar: AppBar(
         title: Text(_editando ? 'Editar trabalho' : 'Novo trabalho'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          TextField(
-            controller: _nome,
-            autofocus: !_editando,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              labelText: 'Nome do trabalho',
-              hintText: 'Ex.: Augusto, Loja da Ana, Site da Padaria',
-              errorText: _erroNome,
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            TextField(
+              controller: _nome,
+              autofocus: !_editando,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: 'Nome do trabalho',
+                hintText: 'Ex.: Augusto, Loja da Ana, Site da Padaria',
+                errorText: _erroNome,
+              ),
+              onChanged: (_) {
+                if (_erroNome != null) setState(() => _erroNome = null);
+              },
             ),
-            onChanged: (_) {
-              if (_erroNome != null) setState(() => _erroNome = null);
-            },
-          ),
-          const SizedBox(height: Space.x4),
-          MoneyField(
-            controller: _valor,
-            label: 'Valor combinado (opcional)',
-            prefix: r'R$ ',
-            helper: 'Serve só pra já vir preenchido quando você registrar.',
-          ),
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: _valor,
+              label: 'Valor combinado (opcional)',
+              prefix: r'R$ ',
+              helper: 'Serve só pra já vir preenchido quando você registrar.',
+            ),
 
-          // O seletor de área só existe pra quem TEM mais de uma. Pra todo o
-          // resto, a palavra "área" nunca aparece no app.
-          if (areas.hierarquiaVisivel) ...<Widget>[
+            // O seletor de área só existe pra quem TEM mais de uma. Pra todo o
+            // resto, a palavra "área" nunca aparece no app.
+            if (areas.hierarquiaVisivel) ...<Widget>[
+              const SizedBox(height: Space.x6),
+              SecaoTitulo('Área', bottom: Space.x2),
+              Wrap(
+                spacing: Space.x2,
+                runSpacing: Space.x2,
+                children: <Widget>[
+                  for (final Area a in areas.areas)
+                    ChoiceChip(
+                      label: Text(a.nome),
+                      selected: _areaId == a.id,
+                      backgroundColor: cs.surfaceContainerLow,
+                      selectedColor: cs.secondaryContainer,
+                      labelStyle: theme.textTheme.labelMedium?.copyWith(
+                        color: _areaId == a.id
+                            ? cs.onSecondaryContainer
+                            : cs.onSurfaceVariant,
+                      ),
+                      side: _areaId == a.id
+                          ? BorderSide(color: cs.primary, width: 1.5)
+                          : BorderSide(color: cs.outlineVariant),
+                      onSelected: (_) {
+                        Haptics.select();
+                        setState(() => _areaId = a.id);
+                      },
+                    ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: Space.x6),
-            Text(
-              'ÁREA',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.5,
+            TextField(
+              controller: _observacoes,
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 3,
+              minLines: 1,
+              decoration: const InputDecoration(
+                labelText: 'Anotações (opcional)',
+                hintText: 'O que só você precisa lembrar',
               ),
             ),
-            const SizedBox(height: Space.x2),
-            Wrap(
-              spacing: Space.x2,
-              runSpacing: Space.x2,
-              children: <Widget>[
-                for (final Area a in areas.areas)
-                  ChoiceChip(
-                    label: Text(a.nome),
-                    selected: _areaId == a.id,
-                    backgroundColor: cs.surfaceContainerLow,
-                    selectedColor: cs.secondaryContainer,
-                    labelStyle: theme.textTheme.labelMedium?.copyWith(
-                      color: _areaId == a.id
-                          ? cs.onSecondaryContainer
-                          : cs.onSurfaceVariant,
-                    ),
-                    side: _areaId == a.id
-                        ? BorderSide(color: cs.primary, width: 1.5)
-                        : BorderSide(color: cs.outlineVariant),
-                    onSelected: (_) {
-                      Haptics.select();
-                      setState(() => _areaId = a.id);
-                    },
-                  ),
-              ],
+            const SizedBox(height: Space.x8),
+            FilledButton(
+              onPressed: _salvar,
+              child: Text(_editando ? 'Salvar' : 'Criar trabalho'),
             ),
+            const SizedBox(height: Space.x4),
           ],
-
-          const SizedBox(height: Space.x6),
-          TextField(
-            controller: _observacoes,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 3,
-            minLines: 1,
-            decoration: const InputDecoration(
-              labelText: 'Anotações (opcional)',
-              hintText: 'O que só você precisa lembrar',
-            ),
-          ),
-          const SizedBox(height: Space.x8),
-          FilledButton(
-            onPressed: _salvar,
-            child: Text(_editando ? 'Salvar' : 'Criar trabalho'),
-          ),
-          const SizedBox(height: Space.x4),
-        ],
+        ),
       ),
     );
   }

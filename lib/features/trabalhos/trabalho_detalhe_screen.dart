@@ -16,6 +16,8 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/panel_card.dart';
 import '../proposta/proposta_flow.dart';
+import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// O detalhe de um trabalho — **a tela que o dono descreveu literalmente**:
 /// *"o Augusto me pagou 400 num mês, 600 no outro, 200 no outro — e quanto eu
@@ -24,9 +26,18 @@ import '../proposta/proposta_flow.dart';
 /// Tocar no card abre AQUI. Editar é o ⋮ — porque abrir é o que a pessoa quer
 /// fazer dez vezes, e editar é o que ela faz uma.
 class TrabalhoDetalheScreen extends ConsumerWidget {
-  const TrabalhoDetalheScreen({super.key, required this.trabalhoId});
+  const TrabalhoDetalheScreen({super.key, required this.trabalhoId})
+    : embutido = false;
+
+  /// A mesma tela, sem `Scaffold` — pra viver no painel direito do
+  /// mestre-detalhe em tela larga. Nada do conteúdo muda: o que sai é só a
+  /// casca (AppBar e barra de baixo), porque quem já tem a lista à esquerda
+  /// não precisa de um botão "voltar" nem de um segundo título de tela.
+  const TrabalhoDetalheScreen.painel({super.key, required this.trabalhoId})
+    : embutido = true;
 
   final String trabalhoId;
+  final bool embutido;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,17 +49,19 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
         .byId(trabalhoId);
 
     if (trabalho == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Trabalho')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(Space.x6),
-            child: Text(
-              'Esse trabalho não existe mais.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+      final Widget vazio = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(Space.x6),
+          child: Text(
+            'Esse trabalho não existe mais.',
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
+      );
+      if (embutido) return vazio;
+      return Scaffold(
+        appBar: AppBar(title: const Text('Trabalho')),
+        body: vazio,
       );
     }
 
@@ -68,56 +81,45 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
         .expand((List<Entrada> l) => l)
         .fold(0, (int s, Entrada e) => s + e.separado);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(trabalho.nome, overflow: TextOverflow.ellipsis),
-        actions: <Widget>[
-          PopupMenuButton<String>(
-            tooltip: 'Opções',
-            onSelected: (String op) => _menu(context, ref, trabalho, op),
-            itemBuilder: (BuildContext c) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'editar',
-                child: Text('Editar trabalho'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'proposta',
-                child: Text('Fazer proposta'),
-              ),
-              PopupMenuItem<String>(
-                value: 'encerrar',
-                child: Text(
-                  trabalho.encerrado ? 'Reabrir trabalho' : 'Encerrar trabalho',
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'apagar',
-                child: Text('Apagar trabalho'),
-              ),
-            ],
+    final Widget menu = PopupMenuButton<String>(
+      tooltip: 'Opções de ${trabalho.nome}',
+      onSelected: (String op) => _menu(context, ref, trabalho, op),
+      itemBuilder: (BuildContext c) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'editar',
+          child: Text('Editar trabalho'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'proposta',
+          child: Text('Fazer proposta'),
+        ),
+        PopupMenuItem<String>(
+          value: 'encerrar',
+          child: Text(
+            trabalho.encerrado ? 'Reabrir trabalho' : 'Encerrar trabalho',
           ),
-        ],
-      ),
-      bottomNavigationBar: trabalho.encerrado
-          ? null
-          : SafeArea(
-              minimum: const EdgeInsets.fromLTRB(
-                Space.x4,
-                Space.x2,
-                Space.x4,
-                Space.x4,
-              ),
-              child: FilledButton.icon(
-                onPressed: () {
-                  Haptics.select();
-                  context.push(Routes.entrada, extra: trabalho.id);
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Nova entrada'),
-              ),
-            ),
-      body: ListView(
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem<String>(
+          value: 'apagar',
+          child: Text('Apagar trabalho'),
+        ),
+      ],
+    );
+
+    final Widget? botao = trabalho.encerrado
+        ? null
+        : FilledButton.icon(
+            onPressed: () {
+              Haptics.select();
+              context.push(Routes.entrada, extra: trabalho.id);
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Nova entrada'),
+          );
+
+    final Widget corpo = ContentWidth(
+      child: ListView(
         padding: const EdgeInsets.all(Space.x4),
         children: <Widget>[
           PanelCard(
@@ -170,26 +172,12 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
 
           if (trabalho.observacoes != null) ...<Widget>[
             const SizedBox(height: Space.x5),
-            Text(
-              'ANOTAÇÕES',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: cs.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: Space.x2),
+            SecaoTitulo('Anotações', bottom: Space.x2),
             Text(trabalho.observacoes!, style: theme.textTheme.bodyMedium),
           ],
 
           const SizedBox(height: Space.x6),
-          Text(
-            'ENTRADAS',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: Space.x2),
+          SecaoTitulo('Entradas', bottom: Space.x2),
 
           if (porMes.isEmpty)
             Text(
@@ -208,6 +196,65 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
           const SizedBox(height: Space.x8),
         ],
       ),
+    );
+
+    // No painel: sem AppBar nem barra de baixo. O nome do trabalho vira um
+    // cabeçalho dentro do painel — quem já enxerga a lista à esquerda não
+    // precisa de um segundo título de tela nem de um "voltar".
+    if (embutido) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x2, 0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      trabalho.nome,
+                      style: theme.textTheme.titleLarge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                menu,
+              ],
+            ),
+          ),
+          Expanded(child: corpo),
+          if (botao != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.x4,
+                0,
+                Space.x4,
+                Space.x4,
+              ),
+              child: botao,
+            ),
+        ],
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(trabalho.nome, overflow: TextOverflow.ellipsis),
+        actions: <Widget>[menu],
+      ),
+      bottomNavigationBar: botao == null
+          ? null
+          : SafeArea(
+              minimum: const EdgeInsets.fromLTRB(
+                Space.x4,
+                Space.x2,
+                Space.x4,
+                Space.x4,
+              ),
+              child: botao,
+            ),
+      body: corpo,
     );
   }
 
@@ -298,64 +345,90 @@ class _BlocoDoMes extends StatelessWidget {
     );
     final int separado = entradas.fold(0, (int s, Entrada e) => s + e.separado);
 
+    // O ExcludeSemantics cobria o PanelCard INTEIRO — inclusive a lista de
+    // pagamentos individuais. Ou seja: a tela que o dono descreveu como "o
+    // Augusto me pagou 400 num mês, 600 no outro" dava o total do mês e nunca
+    // os pagamentos, pra quem usa leitor de tela. E o rótulo não dizia nem
+    // quantos foram.
+    //
+    // Agora o Exclude cobre só o que o rótulo conta; cada pagamento fica fora,
+    // porque pagamento é conteúdo, não decoração.
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x3),
-      child: MergeSemantics(
-        child: Semantics(
-          label:
-              'Em ${mesAno(mes)}: recebeu ${moneyBRL(total)}, '
-              'separou ${moneyBRL(separado)} de imposto.',
-          child: ExcludeSemantics(
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
+      child: PanelCard(
+        padding: const EdgeInsets.all(Space.x4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            MergeSemantics(
+              child: Semantics(
+                header: true,
+                label:
+                    'Em ${mesAno(mes)}: recebeu ${moneyBRL(total)}, '
+                    'separou ${moneyBRL(separado)} de imposto'
+                    '${entradas.length > 1 ? ', em ${entradas.length} pagamentos' : ''}.',
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          mesAno(mes),
-                          style: theme.textTheme.titleSmall,
-                        ),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              mesAno(mes),
+                              style: theme.textTheme.titleSmall,
+                            ),
+                          ),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                moneyBRL(total),
+                                maxLines: 1,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontFamily: AppType.numberFamily,
+                                  fontFeatures: AppType.tnum,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: Space.x1),
                       Text(
-                        moneyBRL(total),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontFamily: AppType.numberFamily,
+                        'separou ${moneyBRL(separado)} de imposto',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: d.reserva,
                           fontFeatures: AppType.tnum,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    'separou ${moneyBRL(separado)} de imposto',
+                ),
+              ),
+            ),
+            // Só detalha quando houve mais de um pagamento no mês —
+            // repetir a mesma linha embaixo do total seria ruído.
+            if (entradas.length > 1) ...<Widget>[
+              const SizedBox(height: Space.x2),
+              for (final Entrada e in entradas)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    '${dataCurta(e.at)} · ${moneyBRL(e.valor)}',
+                    // "10/ago" na fala vira "dez barra ago". O helper que
+                    // resolve isso já existia e não estava sendo usado aqui.
+                    semanticsLabel:
+                        '${dataPorExtenso(e.at)}: ${moneyBRL(e.valor)}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: d.reserva,
+                      color: cs.onSurfaceVariant,
                       fontFeatures: AppType.tnum,
                     ),
                   ),
-                  // Só detalha quando houve mais de um pagamento no mês —
-                  // repetir a mesma linha embaixo do total seria ruído.
-                  if (entradas.length > 1) ...<Widget>[
-                    const SizedBox(height: Space.x2),
-                    for (final Entrada e in entradas)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          '${dataCurta(e.at)} · ${moneyBRL(e.valor)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontFeatures: AppType.tnum,
-                          ),
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+                ),
+            ],
+          ],
         ),
       ),
     );

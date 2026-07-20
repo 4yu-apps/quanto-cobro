@@ -4,6 +4,7 @@ import '../../core/common/money.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/texturas.dart';
 
 /// Barra "Pra usar × Reserva" da tela de Reserva (auditoria Joana/cega). Mesma
 /// regra da [DivisaoBar]: um rótulo semântico conta tudo numa parada só de
@@ -32,6 +33,11 @@ class EntradaBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
+    // Mesma tinta de textura da DivisaoBar: visível o bastante pra dar forma,
+    // discreta o bastante pra não virar ruído sobre a cor.
+    final Color hatch = Theme.of(
+      context,
+    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.24);
     final double fR = total <= 0 ? 0 : separado / total;
     final String semantica =
         'Pra usar ${moneyBRL(sobra)}. Reserva ${moneyBRL(separado)}.';
@@ -50,18 +56,26 @@ class EntradaBar extends StatelessWidget {
                 final double w = c.maxWidth - 2;
                 return Row(
                   children: <Widget>[
+                    // "Pra usar" estava pintado de `d.custo` — a cor que
+                    // significa CUSTO em todas as outras telas —, enquanto
+                    // `d.lucro` (esmeralda, "é seu") não aparecia. A mesma
+                    // ideia tinha duas cores em duas telas.
                     AnimatedContainer(
                       duration: reduce ? Duration.zero : Motion.quick,
                       curve: MotionCurves.standard,
                       width: w * (1 - fR),
-                      color: d.custo,
+                      color: d.lucro,
                     ),
                     const SizedBox(width: 2),
+                    // Reserva leva pontilhado, como na DivisaoBar. Sem forma,
+                    // os dois segmentos ficavam a 1,16:1 de contraste entre si
+                    // no tema claro — na prática, um bloco só.
                     AnimatedContainer(
                       duration: reduce ? Duration.zero : Motion.quick,
                       curve: MotionCurves.standard,
                       width: w * fR,
                       color: d.reserva,
+                      child: CustomPaint(painter: DotPainter(hatch)),
                     ),
                   ],
                 );

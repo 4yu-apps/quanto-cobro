@@ -15,6 +15,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// **Meus preços** — as áreas de trabalho, cada uma com o seu valor-hora.
 ///
@@ -42,73 +43,75 @@ class AreasScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: data.areas.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.calculate_outlined,
-                      size: 40,
-                      color: cs.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: Space.x3),
-                    Text(
-                      'Faça seu cálculo pra descobrir quanto vale a sua hora.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
+      body: ContentWidth(
+        child: data.areas.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.x6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.calculate_outlined,
+                        size: 40,
                         color: cs.onSurfaceVariant,
                       ),
-                    ),
-                    const SizedBox(height: Space.x6),
-                    FilledButton(
-                      onPressed: () => context.push(Routes.calc),
-                      child: const Text('Calcular agora'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(Space.x4),
-              children: <Widget>[
-                Text(
-                  data.hierarquiaVisivel
-                      ? 'Toque pra ativar. O Início e a entrada passam a usar a área ativa.'
-                      : 'É daqui que sai o seu valor-hora.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: Space.x4),
-                Card(
-                  color: cs.surfaceContainer,
-                  child: Column(
-                    children: <Widget>[
-                      for (int i = 0; i < data.areas.length; i++) ...<Widget>[
-                        if (i > 0) const Divider(height: 1, indent: Space.x4),
-                        _tile(
-                          context,
-                          ref,
-                          data.areas[i],
-                          regime,
-                          ativa: data.areas[i].id == data.active?.id,
-                          unica: data.areas.length == 1,
+                      const SizedBox(height: Space.x3),
+                      Text(
+                        'Faça seu cálculo pra descobrir quanto vale a sua hora.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: cs.onSurfaceVariant,
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: Space.x6),
+                      FilledButton(
+                        onPressed: () => context.push(Routes.calc),
+                        child: const Text('Calcular agora'),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: Space.x4),
-                OutlinedButton.icon(
-                  onPressed: () => novaArea(context, ref),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Nova área de trabalho'),
-                ),
-              ],
-            ),
+              )
+            : ListView(
+                padding: const EdgeInsets.all(Space.x4),
+                children: <Widget>[
+                  Text(
+                    data.hierarquiaVisivel
+                        ? 'Toque pra ativar. O Início e a entrada passam a usar a área ativa.'
+                        : 'É daqui que sai o seu valor-hora.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: Space.x4),
+                  Card(
+                    color: cs.surfaceContainer,
+                    child: Column(
+                      children: <Widget>[
+                        for (int i = 0; i < data.areas.length; i++) ...<Widget>[
+                          if (i > 0) const Divider(height: 1, indent: Space.x4),
+                          _tile(
+                            context,
+                            ref,
+                            data.areas[i],
+                            regime,
+                            ativa: data.areas[i].id == data.active?.id,
+                            unica: data.areas.length == 1,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: Space.x4),
+                  OutlinedButton.icon(
+                    onPressed: () => novaArea(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nova área de trabalho'),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -122,94 +125,103 @@ class AreasScreen extends ConsumerWidget {
   }) {
     final ThemeData theme = Theme.of(context);
     final int vh = computeValorHora(a, regime).valorHora;
-    return MergeSemantics(
-      child: Semantics(
-        button: !ativa,
-        selected: ativa,
-        child: ListTile(
-          leading: Icon(
-            ativa ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: ativa
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline,
-          ),
-          title: Text(a.nome),
-          subtitle: Text(ativa ? 'Ativa' : 'Toque pra ativar'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                '${moneyBRL(vh)}/h',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontFeatures: AppType.tnum,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              PopupMenuButton<String>(
-                tooltip: 'Opções',
-                onSelected: (String op) async {
-                  if (op == 'editar') {
-                    await ref.read(areasProvider.notifier).select(a.id);
-                    if (context.mounted) context.push(Routes.calc);
-                  } else if (op == 'renomear') {
-                    final String? nome = await pedirNomeArea(
-                      context,
-                      inicial: a.nome,
-                    );
-                    if (nome != null) {
-                      await ref.read(areasProvider.notifier).rename(a.id, nome);
-                    }
-                  } else if (op == 'apagar') {
-                    if (unica) {
-                      ScaffoldMessenger.of(context)
-                        ..clearSnackBars()
-                        ..showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Essa é a sua única área. Pra zerar tudo, use Apagar meus dados.',
-                            ),
-                          ),
-                        );
-                      return;
-                    }
-                    Haptics.select();
-                    final AreasNotifier n = ref.read(areasProvider.notifier);
-                    await n.remove(a.id);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context)
-                      ..clearSnackBars()
-                      ..showSnackBar(
-                        SnackBar(
-                          content: Text('"${a.nome}" apagada'),
-                          action: SnackBarAction(
-                            label: 'Desfazer',
-                            onPressed: () => n.saveAndActivate(a),
-                          ),
-                        ),
-                      );
-                  }
-                },
-                itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'editar',
-                    child: Text('Editar cálculo'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'renomear',
-                    child: Text('Renomear'),
-                  ),
-                  PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
-                ],
-              ),
-            ],
-          ),
-          onTap: ativa
-              ? null
-              : () {
-                  Haptics.select();
-                  ref.read(areasProvider.notifier).select(a.id);
-                },
+    // SEM MergeSemantics: ele funde o tile e o ⋮ num nó só, e o gesto do nó
+    // fundido cai sempre no PRIMEIRO da árvore — o onTap do tile. Com leitor de
+    // tela, o menu (Editar · Renomear · Apagar) fica inalcançável: nem é falado,
+    // nem abre. O ListTile já funde título + subtítulo sozinho; o merge só
+    // existia pra juntar o "R$ 92/h", e isso se resolve no próprio rótulo dele.
+    return Semantics(
+      button: !ativa,
+      selected: ativa,
+      child: ListTile(
+        leading: Icon(
+          ativa ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+          color: ativa ? theme.colorScheme.primary : theme.colorScheme.outline,
         ),
+        title: Text(a.nome),
+        // O preço morava no `trailing`, ao lado do ⋮. Em fonte 200% ele sozinho
+        // passava a largura do tile e o ListTile abortava com "Trailing widget
+        // consumes the entire tile width" — e `Flexible` não resolve, porque o
+        // slot do trailing é irrestrito e nada ali tem o que apertar.
+        //
+        // A saída não é encolher: é reflow. O preço desce pro subtítulo, onde
+        // tem a linha inteira pra crescer, e o trailing fica só com o ⋮ — que
+        // é a única porta pra renomear e apagar, e por isso nunca pode sumir.
+        subtitle: Wrap(
+          spacing: Space.x2,
+          children: <Widget>[
+            Text(ativa ? 'Ativa' : 'Toque pra ativar'),
+            Text(
+              '${moneyBRL(vh)}/h',
+              // "/h" na fala vira "barra agá".
+              semanticsLabel: '${moneyBRL(vh)} por hora',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontFeatures: AppType.tnum,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          // "Opções" sozinho, numa lista de três áreas, não diz de quê.
+          tooltip: 'Opções de ${a.nome}',
+          onSelected: (String op) async {
+            if (op == 'editar') {
+              await ref.read(areasProvider.notifier).select(a.id);
+              if (context.mounted) context.push(Routes.calc);
+            } else if (op == 'renomear') {
+              final String? nome = await pedirNomeArea(
+                context,
+                inicial: a.nome,
+              );
+              if (nome != null) {
+                await ref.read(areasProvider.notifier).rename(a.id, nome);
+              }
+            } else if (op == 'apagar') {
+              if (unica) {
+                ScaffoldMessenger.of(context)
+                  ..clearSnackBars()
+                  ..showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Essa é a sua única área. Pra zerar tudo, use Apagar meus dados.',
+                      ),
+                    ),
+                  );
+                return;
+              }
+              Haptics.select();
+              final AreasNotifier n = ref.read(areasProvider.notifier);
+              await n.remove(a.id);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text('"${a.nome}" apagada'),
+                    action: SnackBarAction(
+                      label: 'Desfazer',
+                      onPressed: () => n.saveAndActivate(a),
+                    ),
+                  ),
+                );
+            }
+          },
+          itemBuilder: (BuildContext c) => const <PopupMenuEntry<String>>[
+            PopupMenuItem<String>(
+              value: 'editar',
+              child: Text('Editar cálculo'),
+            ),
+            PopupMenuItem<String>(value: 'renomear', child: Text('Renomear')),
+            PopupMenuItem<String>(value: 'apagar', child: Text('Apagar')),
+          ],
+        ),
+        onTap: ativa
+            ? null
+            : () {
+                Haptics.select();
+                ref.read(areasProvider.notifier).select(a.id);
+              },
       ),
     );
   }

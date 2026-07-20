@@ -17,6 +17,7 @@ import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/panel_card.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// O histórico completo, mês a mês. **Deixou de ser aba** em 19/07/2026: era o
 /// mesmo balde do card do Início, só que num zoom maior — e um slot de aba é
@@ -56,45 +57,47 @@ class HistoricoScreen extends ConsumerWidget {
                 ),
               ],
       ),
-      body: todas.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.savings_outlined,
-                      size: 40,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: Space.x3),
-                    Text(
-                      'Nada registrado ainda. Quando um pagamento cair, ele '
-                      'aparece aqui — com o imposto já separado.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
+      body: ContentWidth(
+        child: todas.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.x6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.savings_outlined,
+                        size: 40,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(Space.x4),
-              children: <Widget>[
-                for (final DateTime mes in meses)
-                  _Mes(
-                    mes: mes,
-                    entradas: porMes[mes]!,
-                    nomePorTrabalho: nomePorTrabalho,
+                      const SizedBox(height: Space.x3),
+                      Text(
+                        'Nada registrado ainda. Quando um pagamento cair, ele '
+                        'aparece aqui — com o imposto já separado.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
-                const SizedBox(height: Space.x4),
-                const EstimativaSeal(short: true),
-                const SizedBox(height: Space.x8),
-              ],
-            ),
+                ),
+              )
+            : ListView(
+                padding: const EdgeInsets.all(Space.x4),
+                children: <Widget>[
+                  for (final DateTime mes in meses)
+                    _Mes(
+                      mes: mes,
+                      entradas: porMes[mes]!,
+                      nomePorTrabalho: nomePorTrabalho,
+                    ),
+                  const SizedBox(height: Space.x4),
+                  const EstimativaSeal(short: true),
+                  const SizedBox(height: Space.x8),
+                ],
+              ),
+      ),
     );
   }
 
@@ -198,38 +201,64 @@ class _Mes extends StatelessWidget {
             const SizedBox(height: Space.x3),
             const Divider(height: 1),
             const SizedBox(height: Space.x2),
+            // Três `Text` crus num MergeSemantics viravam uma sopa de números
+            // na fala: "dez barra ago ponto médio Augusto, R cifrão
+            // quatrocentos, ponto médio R cifrão sessenta e oito" — e nada
+            // dizia que o segundo valor é o imposto separado. É a tela que a
+            // pessoa abre pra conferir o próprio dinheiro.
             for (final Entrada e in ordenadas)
-              MergeSemantics(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Space.x1),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          '${dataCurta(e.at)}'
-                          '${_nome(e) == null ? '' : ' · ${_nome(e)}'}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant,
+              Semantics(
+                label:
+                    '${dataPorExtenso(e.at)}'
+                    '${_nome(e) == null ? '' : ', ${_nome(e)}'}: '
+                    'recebeu ${moneyBRL(e.valor)}, '
+                    'separou ${moneyBRL(e.separado)} de imposto.',
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: Space.x1),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            '${dataCurta(e.at)}'
+                            '${_nome(e) == null ? '' : ' · ${_nome(e)}'}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: Space.x2),
-                      Text(
-                        moneyBRL(e.valor),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontFeatures: AppType.tnum,
+                        const SizedBox(width: Space.x2),
+                        // Sem isto a linha estoura 305px em fonte 2.0 num
+                        // celular de 320dp — e o que sai da tela é sempre o
+                        // número, porque o número mora à direita de uma Row.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(
+                                  moneyBRL(e.valor),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontFeatures: AppType.tnum,
+                                  ),
+                                ),
+                                Text(
+                                  ' · ${moneyBRL(e.separado)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: d.reserva,
+                                    fontFeatures: AppType.tnum,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      Text(
-                        ' · ${moneyBRL(e.separado)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: d.reserva,
-                          fontFeatures: AppType.tnum,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

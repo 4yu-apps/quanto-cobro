@@ -18,12 +18,14 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/ui/a11y.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/empty_state_hero.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/hero_value_card.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/tool_action_card.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// **Início** — o hub, e o objetivo nº 1 do app: responder *"quanto custa a
 /// minha hora?"*.
@@ -134,131 +136,135 @@ class _Corpo extends ConsumerWidget {
 
     return _ambientWash(
       context,
-      ListView(
-        padding: EdgeInsets.fromLTRB(
-          Space.x4,
-          Space.x4,
-          Space.x4,
-          kFloatingNavReserve + MediaQuery.viewPaddingOf(context).bottom,
-        ),
-        children: <Widget>[
-          StaggerIn(
-            index: 0,
-            child: HeroValueCard(
-              valorHora: r.valorHora,
-              subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
-              // O chip da área só aparece pra quem tem mais de uma — pro resto,
-              // a palavra "área" não existe no app.
-              perfilNome: areas.hierarquiaVisivel ? area.nome : null,
-              onPerfilTap: areas.hierarquiaVisivel
-                  ? () => context.push(Routes.areas)
-                  : null,
-              onVerComoCheguei: () => context.push(Routes.detalhe),
-              staleAno: stale ? kTabelasAno : null,
-            ),
+      // A lavagem ambiente segue sangrando ate a borda — fundo nao se le. So a
+      // coluna de conteudo clampa.
+      ContentWidth(
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+            Space.x4,
+            Space.x4,
+            Space.x4,
+            reservaDaNavbar(context),
           ),
-          const SizedBox(height: Space.x6),
-
-          // As duas ações recorrentes.
-          StaggerIn(
-            index: 1,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Expanded(
-                    child: ToolActionCard(
-                      icon: Icons.payments_outlined,
-                      title: 'Recebi um pagamento',
-                      subtitle: 'separa o imposto na hora',
-                      accent: d.reserva,
-                      onTap: () => context.push(Routes.entrada),
-                    ),
-                  ),
-                  const SizedBox(width: Space.x3),
-                  Expanded(
-                    child: ToolActionCard(
-                      icon: Icons.request_quote_outlined,
-                      title: 'Vou orçar um projeto',
-                      subtitle: 'esse preço vale a pena?',
-                      accent: theme.colorScheme.secondary,
-                      onTap: () => context.push(Routes.simulador),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-
-          // O card do mês — o que era a aba "Guardado", agora no zoom certo.
-          if (entrou > 0) ...<Widget>[
+          children: <Widget>[
             StaggerIn(
-              index: 2,
-              child: _CardDoMes(entrou: entrou, separado: separado, mes: now),
+              index: 0,
+              child: HeroValueCard(
+                valorHora: r.valorHora,
+                subtitle: 'pra ganhar ${moneyBRL(r.lucro)}/mês',
+                // O chip da área só aparece pra quem tem mais de uma — pro resto,
+                // a palavra "área" não existe no app.
+                perfilNome: areas.hierarquiaVisivel ? area.nome : null,
+                onPerfilTap: areas.hierarquiaVisivel
+                    ? () => context.push(Routes.areas)
+                    : null,
+                onVerComoCheguei: () => context.push(Routes.detalhe),
+                staleAno: stale ? kTabelasAno : null,
+              ),
             ),
             const SizedBox(height: Space.x6),
-          ],
 
-          StaggerIn(
-            index: 3,
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'DE CADA MÊS',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: Space.x3),
-                  DivisaoBar(
-                    lucro: div.lucro,
-                    reserva: div.reserva,
-                    custo: div.custo,
-                  ),
-                  const SizedBox(height: Space.x2),
-                  Row(
-                    children: <Widget>[
-                      Icon(Icons.lock_outline, size: 16, color: d.reserva),
-                      const SizedBox(width: Space.x2),
-                      Expanded(
-                        child: Text(
-                          impostoTexto,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: d.reserva,
-                            fontFeatures: AppType.tnum,
-                          ),
-                        ),
+            // As duas ações recorrentes.
+            StaggerIn(
+              index: 1,
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Expanded(
+                      child: ToolActionCard(
+                        icon: Icons.payments_outlined,
+                        title: 'Recebi um pagamento',
+                        subtitle: 'separa o imposto na hora',
+                        accent: d.reserva,
+                        onTap: () => context.push(Routes.entrada),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: Space.x2),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => context.push(Routes.detalhe),
-                      icon: const Icon(Icons.receipt_long_outlined),
-                      label: const Text('Ver detalhamento'),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: Space.x3),
+                    Expanded(
+                      child: ToolActionCard(
+                        icon: Icons.request_quote_outlined,
+                        title: 'Vou orçar um projeto',
+                        subtitle: 'esse preço vale a pena?',
+                        accent: theme.colorScheme.secondary,
+                        onTap: () => context.push(Routes.simulador),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: Space.x6),
+            const SizedBox(height: Space.x6),
 
-          FilledButton.icon(
-            onPressed: () => context.push(Routes.calc),
-            icon: const Icon(Icons.calculate_outlined),
-            label: const Text('Recalcular'),
-          ),
-          const SizedBox(height: Space.x4),
-          const EstimativaSeal(),
-        ],
+            // O card do mês — o que era a aba "Guardado", agora no zoom certo.
+            if (entrou > 0) ...<Widget>[
+              StaggerIn(
+                index: 2,
+                child: _CardDoMes(entrou: entrou, separado: separado, mes: now),
+              ),
+              const SizedBox(height: Space.x6),
+            ],
+
+            StaggerIn(
+              index: 3,
+              child: PanelCard(
+                padding: const EdgeInsets.all(Space.x5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'DE CADA MÊS',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: Space.x3),
+                    DivisaoBar(
+                      lucro: div.lucro,
+                      reserva: div.reserva,
+                      custo: div.custo,
+                    ),
+                    const SizedBox(height: Space.x2),
+                    Row(
+                      children: <Widget>[
+                        Icon(Icons.lock_outline, size: 16, color: d.reserva),
+                        const SizedBox(width: Space.x2),
+                        Expanded(
+                          child: Text(
+                            impostoTexto,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: d.reserva,
+                              fontFeatures: AppType.tnum,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Space.x2),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => context.push(Routes.detalhe),
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        label: const Text('Ver detalhamento'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: Space.x6),
+
+            FilledButton.icon(
+              onPressed: () => context.push(Routes.calc),
+              icon: const Icon(Icons.calculate_outlined),
+              label: const Text('Recalcular'),
+            ),
+            const SizedBox(height: Space.x4),
+            const EstimativaSeal(),
+          ],
+        ),
       ),
     );
   }
@@ -282,61 +288,60 @@ class _CardDoMes extends StatelessWidget {
     final ColorScheme cs = theme.colorScheme;
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
 
-    return Semantics(
-      button: true,
+    return SemanticButton(
       label:
           'Em ${mesAno(mes)} entraram ${moneyBRL(entrou)}, e você separou '
-          '${moneyBRL(separado)} de imposto. Ver o histórico.',
-      child: ExcludeSemantics(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () => context.push(Routes.historico),
-            borderRadius: const BorderRadius.all(Radii.lg),
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x5),
-              accent: d.reserva,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          'ESTE MÊS',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            letterSpacing: 0.5,
-                          ),
+          '${moneyBRL(separado)} de imposto.',
+      tapHint: 'abre o histórico',
+      onTap: () => context.push(Routes.historico),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => context.push(Routes.historico),
+          borderRadius: const BorderRadius.all(Radii.lg),
+          child: PanelCard(
+            padding: const EdgeInsets.all(Space.x5),
+            accent: d.reserva,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        'ESTE MÊS',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 18,
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Space.x1),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      moneyBRL(entrou),
-                      maxLines: 1,
-                      style: AppType.valueXl.copyWith(color: d.lucro),
                     ),
-                  ),
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    'e você separou ${moneyBRL(separado)} de imposto',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: d.reserva,
-                      fontFeatures: AppType.tnum,
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
                     ),
+                  ],
+                ),
+                const SizedBox(height: Space.x1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    moneyBRL(entrou),
+                    maxLines: 1,
+                    style: AppType.valueXl.copyWith(color: d.lucro),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: Space.x1),
+                Text(
+                  'e você separou ${moneyBRL(separado)} de imposto',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: d.reserva,
+                    fontFeatures: AppType.tnum,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

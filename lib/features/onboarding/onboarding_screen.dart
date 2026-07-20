@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// Onboarding (Blueprint §2.3): curto. Fisga a dor, ensina "A Divisão" uma vez,
 /// promete privacidade e captura o modo (Brasil x exterior). Mostrado uma vez.
@@ -122,6 +123,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     required String body,
     Widget? extra,
   }) {
+    // Este corpo era uma Column NÃO-ROLÁVEL entre um "Pular" fixo e um botão
+    // fixo. Contas: 360dp de altura menos a moldura deixavam ~170dp pra um
+    // círculo de 96 mais dois blocos de texto. Estourava 148px no celular
+    // deitado — e 972px com fonte 200%, que é o público que mais precisa
+    // desta tela. Em 320×640 com fonte normal já estourava 24px.
+    //
+    // A rolagem resolve sem tirar nada. O `minHeight` da altura do viewport é
+    // o que preserva o enquadramento: em tela alta a Column continua centrada
+    // como antes, e em tela baixa ela cresce além do viewport e a pessoa rola
+    // — em vez de perder conteúdo pra sempre.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) =>
+          SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: c.maxHeight),
+              child: ContentWidth(
+                child: _pageColumn(theme, icon, title, body, extra),
+              ),
+            ),
+          ),
+    );
+  }
+
+  Widget _pageColumn(
+    ThemeData theme,
+    IconData? icon,
+    String title,
+    String body,
+    Widget? extra,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(Space.x8),
       child: Column(

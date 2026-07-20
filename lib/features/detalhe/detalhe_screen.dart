@@ -15,6 +15,8 @@ import '../../core/theme/tokens.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
+import '../../core/ui/breakpoints.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// Detalhamento ("como cheguei aqui", Blueprint §5.4): a conta linha a linha,
 /// custo a custo, com renda e horas editáveis inline e recálculo ao vivo.
@@ -73,24 +75,26 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
     final Area? p = _area;
     return Scaffold(
       appBar: AppBar(title: const Text('Como cheguei nesse número')),
-      body: p == null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(Space.x6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const Text('Você ainda não tem um cálculo salvo.'),
-                    const SizedBox(height: Space.x4),
-                    FilledButton(
-                      onPressed: () => context.push(Routes.calc),
-                      child: const Text('Fazer meu cálculo'),
-                    ),
-                  ],
+      body: ContentWidth(
+        child: p == null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(Space.x6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Text('Você ainda não tem um cálculo salvo.'),
+                      const SizedBox(height: Space.x4),
+                      FilledButton(
+                        onPressed: () => context.push(Routes.calc),
+                        child: const Text('Fazer meu cálculo'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            )
-          : _body(context, p, ref.watch(regimeProvider)),
+              )
+            : _body(context, p, ref.watch(regimeProvider)),
+      ),
     );
   }
 
@@ -123,14 +127,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           ],
         ),
         const SizedBox(height: Space.x6),
-        Text(
-          'COMO VOCÊ RECEBE',
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: Space.x2),
+        SecaoTitulo('Como você recebe', bottom: Space.x2),
         Wrap(
           spacing: Space.x2,
           runSpacing: Space.x2,

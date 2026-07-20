@@ -11,6 +11,9 @@ import '../../core/providers.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/breakpoints.dart';
+import '../../core/ui/money_field.dart';
+import '../../core/ui/secao_titulo.dart';
 
 /// "Sua marca — só uma vez" (07 §A.2/§F).
 ///
@@ -33,12 +36,29 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
   final TextEditingController _whatsapp = TextEditingController();
   final TextEditingController _email = TextEditingController();
   String? _erroNome;
+
+  /// Só nasce quando o campo perde o foco — ver o comentário no TextField.
+  String? _erroEmail;
+  final FocusNode _focoEmail = FocusNode();
   String _ddi = '+55';
   late int _cor;
 
   @override
   void initState() {
     super.initState();
+    // "Erro visível" não é "erro percebido": o MoneyField já anuncia o dele
+    // (money_field.dart), e este campo era o único que mostrava a mensagem sem
+    // nunca falar — quem não vê a tela nunca soube que digitou errado.
+    _focoEmail.addListener(() {
+      if (_focoEmail.hasFocus) return;
+      final String texto = _email.text.trim();
+      final String? erro = texto.isEmpty || emailParecemValido(texto)
+          ? null
+          : 'Isso não parece um e-mail. Confere?';
+      if (erro == _erroEmail) return;
+      setState(() => _erroEmail = erro);
+      if (erro != null) announce(context, erro);
+    });
     final Marca m = ref.read(marcaProvider);
     _nome.text = m.nome;
     _whatsapp.text = formatarTelefone(m.whatsapp);
@@ -52,6 +72,7 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
     _nome.dispose();
     _whatsapp.dispose();
     _email.dispose();
+    _focoEmail.dispose();
     super.dispose();
   }
 
@@ -75,6 +96,14 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
           ),
         );
     }
+  }
+
+  /// Vibrar diz "algo aconteceu". Só a fala diz O QUÊ — e sem visão,
+  /// "escolhi alguma coisa" não é "escolhi Roxo".
+  void _escolherCor(({String nome, int valor}) c) {
+    Haptics.select();
+    setState(() => _cor = c.valor);
+    announce(context, 'Cor ${c.nome} escolhida.');
   }
 
   Future<void> _salvar() async {
@@ -116,216 +145,237 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
           widget.primeiraVez ? 'Sua marca — só uma vez' : 'Minha marca',
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(Space.x4),
-        children: <Widget>[
-          Text(
-            'Isso aparece no topo de toda proposta que você mandar. Capriche; '
-            'dá pra mudar depois.',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: Space.x6),
-          TextField(
-            controller: _nome,
-            autofocus: widget.primeiraVez,
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              labelText: 'Seu nome ou do negócio',
-              hintText: 'Ex.: Ana Ribeiro · Estúdio Corvo',
-              errorText: _erroNome,
-            ),
-            onChanged: (_) {
-              if (_erroNome != null) setState(() => _erroNome = null);
-            },
-          ),
-          const SizedBox(height: Space.x4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              SizedBox(
-                width: 96,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _ddi,
-                  decoration: const InputDecoration(labelText: 'País'),
-                  items: const <DropdownMenuItem<String>>[
-                    DropdownMenuItem<String>(
-                      value: '+55',
-                      child: Text('🇧🇷 +55'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: '+351',
-                      child: Text('🇵🇹 +351'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: '+1',
-                      child: Text('🇺🇸 +1'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: '+44',
-                      child: Text('🇬🇧 +44'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: '+34',
-                      child: Text('🇪🇸 +34'),
-                    ),
-                  ],
-                  onChanged: (String? v) {
-                    if (v != null) setState(() => _ddi = v);
-                  },
-                ),
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.all(Space.x4),
+          children: <Widget>[
+            Text(
+              'Isso aparece no topo de toda proposta que você mandar. Capriche; '
+              'dá pra mudar depois.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: cs.onSurfaceVariant,
               ),
-              const SizedBox(width: Space.x3),
-              Expanded(
-                child: TextField(
-                  controller: _whatsapp,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: <TextInputFormatter>[_TelefoneFormatter()],
-                  decoration: const InputDecoration(
-                    labelText: 'WhatsApp (opcional)',
-                    hintText: '(44) 55555-5555',
-                  ),
-                ),
+            ),
+            const SizedBox(height: Space.x6),
+            TextField(
+              controller: _nome,
+              autofocus: widget.primeiraVez,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: 'Seu nome ou do negócio',
+                hintText: 'Ex.: Ana Ribeiro · Estúdio Corvo',
+                errorText: _erroNome,
               ),
-            ],
-          ),
-          const SizedBox(height: Space.x4),
-          TextField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            decoration: InputDecoration(
-              labelText: 'E-mail (opcional)',
-              // AVISA sem bloquear: travar quem digitou certo é pior que
-              // deixar passar quem digitou errado.
-              errorText: emailParecemValido(_email.text)
-                  ? null
-                  : 'Isso não parece um e-mail. Confere?',
+              onChanged: (_) {
+                if (_erroNome != null) setState(() => _erroNome = null);
+              },
             ),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: Space.x6),
-
-          Text(
-            'COR DA SUA MARCA',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: Space.x1),
-          Text(
-            'Aparece como detalhe na proposta — no valor e no topo. O texto '
-            'continua sempre legível, seja qual for a cor.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: Space.x3),
-          Wrap(
-            spacing: Space.x3,
-            runSpacing: Space.x3,
-            children: <Widget>[
-              for (final ({String nome, int valor}) c in CorMarca.paleta)
-                Semantics(
-                  button: true,
-                  selected: _cor == c.valor,
-                  label: c.nome,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(999),
-                    onTap: () {
-                      Haptics.select();
-                      setState(() => _cor = c.valor);
-                    },
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Color(c.valor),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _cor == c.valor
-                              ? cs.onSurface
-                              : cs.outlineVariant,
-                          width: _cor == c.valor ? 3 : 1,
-                        ),
-                      ),
-                      child: _cor == c.valor
-                          ? Icon(
-                              Icons.check,
-                              size: 20,
-                              color: CorMarca.textoSobre(c.valor),
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: Space.x6),
-
-          Text(
-            'SUA LOGO (OPCIONAL)',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: Space.x3),
-          if (logoPath != null && File(logoPath).existsSync())
+            const SizedBox(height: Space.x4),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.all(Space.x2),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerLow,
-                    borderRadius: const BorderRadius.all(Radii.md),
-                    border: Border.all(color: cs.outlineVariant),
-                  ),
-                  child: Image.file(
-                    File(logoPath),
-                    height: 48,
-                    fit: BoxFit.contain,
-                    // Imagem que some do disco não pode derrubar a tela.
-                    errorBuilder: (_, _, _) =>
-                        const Icon(Icons.broken_image_outlined),
-                    semanticLabel: 'Sua logo',
+                // 96dp fixos não cabem "🇵🇹 +351" nem com fonte normal: a
+                // linha estourava 73px em TODA tela, e 185px com fonte 200%.
+                // O seletor passa a pedir a largura que precisa e o campo do
+                // telefone fica com o resto — que é o que ele sabe fazer.
+                Flexible(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _ddi,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'País'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem<String>(
+                        value: '+55',
+                        child: Text('🇧🇷 +55'),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: '+351',
+                        child: Text('🇵🇹 +351'),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: '+1',
+                        child: Text('🇺🇸 +1'),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: '+44',
+                        child: Text('🇬🇧 +44'),
+                      ),
+                      DropdownMenuItem<String>(
+                        value: '+34',
+                        child: Text('🇪🇸 +34'),
+                      ),
+                    ],
+                    onChanged: (String? v) {
+                      if (v != null) setState(() => _ddi = v);
+                    },
                   ),
                 ),
-                const SizedBox(width: Space.x4),
-                TextButton(
-                  onPressed: _escolherLogo,
-                  child: const Text('Trocar'),
-                ),
-                TextButton(
-                  onPressed: () =>
-                      ref.read(marcaProvider.notifier).removerLogo(),
-                  child: const Text('Tirar'),
+                const SizedBox(width: Space.x3),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _whatsapp,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: <TextInputFormatter>[_TelefoneFormatter()],
+                    decoration: const InputDecoration(
+                      labelText: 'WhatsApp (opcional)',
+                      hintText: '(44) 55555-5555',
+                    ),
+                  ),
                 ),
               ],
-            )
-          else
-            OutlinedButton.icon(
-              onPressed: _escolherLogo,
-              icon: const Icon(Icons.image_outlined),
-              label: const Text('Escolher uma imagem'),
             ),
+            const SizedBox(height: Space.x4),
+            TextField(
+              controller: _email,
+              focusNode: _focoEmail,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              decoration: InputDecoration(
+                labelText: 'E-mail (opcional)',
+                // AVISA sem bloquear: travar quem digitou certo é pior que
+                // deixar passar quem digitou errado.
+                //
+                // Mas o aviso nascia no PRIMEIRO caractere digitado — "a" já
+                // não parece um e-mail —, então ele acusava erro a tela toda
+                // enquanto a pessoa escrevia certo. Agora só aparece quando ela
+                // termina (perda de foco), que é quando a frase faz sentido.
+                errorText: _erroEmail,
+              ),
+              onChanged: (_) {
+                if (_erroEmail != null) setState(() => _erroEmail = null);
+              },
+            ),
+            const SizedBox(height: Space.x6),
 
-          const SizedBox(height: Space.x8),
-          FilledButton(
-            onPressed: _salvar,
-            child: Text(widget.primeiraVez ? 'Pronto, continuar' : 'Salvar'),
-          ),
-          if (widget.primeiraVez) ...<Widget>[
-            const SizedBox(height: Space.x2),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Agora não'),
+            SecaoTitulo('Cor da sua marca', bottom: Space.x1),
+            Text(
+              'Aparece como detalhe na proposta — no valor e no topo. O texto '
+              'continua sempre legível, seja qual for a cor.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
             ),
+            const SizedBox(height: Space.x3),
+            Wrap(
+              spacing: Space.x3,
+              runSpacing: Space.x3,
+              children: <Widget>[
+                for (final ({String nome, int valor}) c in CorMarca.paleta)
+                  Semantics(
+                    // Escolha de um-entre-N é RÁDIO, não botão: assim o leitor
+                    // de tela anuncia "Roxo, marcado" e a posição no grupo, em
+                    // vez de "Roxo, selecionado, botão".
+                    inMutuallyExclusiveGroup: true,
+                    checked: _cor == c.valor,
+                    label: 'Cor ${c.nome}',
+                    onTap: () => _escolherCor(c),
+                    child: ExcludeSemantics(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: () => _escolherCor(c),
+                        // Alvo de 48dp (a régua da casa e do Material); a joia
+                        // continua com 44. 44 passa em WCAG 2.5.8 e reprova
+                        // aqui — com 12dp entre eles, dedo grande em ônibus
+                        // balançando erra de cor.
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Center(
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Color(c.valor),
+                                shape: BoxShape.circle,
+                                // `outlineVariant` dá 1.41:1 contra o fundo
+                                // escuro — e o tema padrão do app É o escuro.
+                                // Com ele, "Grafite" (1.94:1) era um buraco
+                                // preto sobre fundo preto, com contorno
+                                // invisível: pra baixa visão, essa opção não
+                                // existia. Azul, Roxo, Vermelho e Magenta
+                                // ficavam abaixo de 3:1, reprovando em WCAG
+                                // 1.4.11. `outline` dá 4.55:1 e é o que faz
+                                // cada opção existir.
+                                border: Border.all(
+                                  color: _cor == c.valor
+                                      ? cs.onSurface
+                                      : cs.outline,
+                                  width: _cor == c.valor ? 3 : 1.5,
+                                ),
+                              ),
+                              child: _cor == c.valor
+                                  ? Icon(
+                                      Icons.check,
+                                      size: 20,
+                                      color: CorMarca.textoSobre(c.valor),
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: Space.x6),
+
+            SecaoTitulo('Sua logo (opcional)', bottom: Space.x3),
+            if (logoPath != null && File(logoPath).existsSync())
+              Row(
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(Space.x2),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerLow,
+                      borderRadius: const BorderRadius.all(Radii.md),
+                      border: Border.all(color: cs.outlineVariant),
+                    ),
+                    child: Image.file(
+                      File(logoPath),
+                      height: 48,
+                      fit: BoxFit.contain,
+                      // Imagem que some do disco não pode derrubar a tela.
+                      errorBuilder: (_, _, _) =>
+                          const Icon(Icons.broken_image_outlined),
+                      semanticLabel: 'Sua logo',
+                    ),
+                  ),
+                  const SizedBox(width: Space.x4),
+                  TextButton(
+                    onPressed: _escolherLogo,
+                    child: const Text('Trocar'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        ref.read(marcaProvider.notifier).removerLogo(),
+                    child: const Text('Tirar'),
+                  ),
+                ],
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: _escolherLogo,
+                icon: const Icon(Icons.image_outlined),
+                label: const Text('Escolher uma imagem'),
+              ),
+
+            const SizedBox(height: Space.x8),
+            FilledButton(
+              onPressed: _salvar,
+              child: Text(widget.primeiraVez ? 'Pronto, continuar' : 'Salvar'),
+            ),
+            if (widget.primeiraVez) ...<Widget>[
+              const SizedBox(height: Space.x2),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Agora não'),
+              ),
+            ],
+            const SizedBox(height: Space.x4),
           ],
-          const SizedBox(height: Space.x4),
-        ],
+        ),
       ),
     );
   }
@@ -343,9 +393,18 @@ class _TelefoneFormatter extends TextInputFormatter {
     // 11 dígitos é o teto do celular BR — digitar além não deve virar lixo.
     final String limitado = d.length > 11 ? d.substring(0, 11) : d;
     final String texto = formatarTelefone(limitado);
+    // `offset: texto.length` teleportava o cursor pro fim a cada tecla: errou
+    // um dígito no meio do número, não dava pra corrigir. O cálculo já existia
+    // no formatador de milhar; agora ele é compartilhado.
     return TextEditingValue(
       text: texto,
-      selection: TextSelection.collapsed(offset: texto.length),
+      selection: TextSelection.collapsed(
+        offset: offsetPreservandoDigitos(
+          newValue.text,
+          newValue.selection.baseOffset,
+          texto,
+        ),
+      ),
     );
   }
 }

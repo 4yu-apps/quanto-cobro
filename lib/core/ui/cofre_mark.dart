@@ -24,12 +24,22 @@ class CofreMark extends StatelessWidget {
     this.esmeralda,
     this.ouro,
     this.coreColor,
+    this.coreScale = 1,
   });
 
   final double size;
   final double ring;
   final double core;
   final double sheen;
+
+  /// Tamanho do `R$` em relação ao anel. 1 é a marca como ela nasceu.
+  ///
+  /// Existe por causa do ÍCONE: no tamanho de lançador, o `$` encostava no
+  /// arco esmeralda e os dois viravam uma mancha só. A folga geométrica era
+  /// real mas mínima — ~4% do raio interno —, e 4% some no antialiasing de um
+  /// ícone de 48dp. O splash e o cabeçalho continuam em 1: quem precisa de ar
+  /// é o ícone, não a marca grande.
+  final double coreScale;
 
   /// Cores; default puxa do tema (primary/tertiary/onSurface).
   final Color? esmeralda;
@@ -47,6 +57,7 @@ class CofreMark extends StatelessWidget {
           ring: ring,
           core: core,
           sheen: sheen,
+          coreScale: coreScale,
           esmeralda: esmeralda ?? cs.primary,
           ouro: ouro ?? cs.tertiary,
           coreColor: coreColor ?? cs.onSurface,
@@ -64,11 +75,13 @@ class CofreMarkPainter extends CustomPainter {
     required this.esmeralda,
     required this.ouro,
     required this.coreColor,
+    this.coreScale = 1,
   });
 
   final double ring;
   final double core;
   final double sheen;
+  final double coreScale;
   final Color esmeralda;
   final Color ouro;
   final Color coreColor;
@@ -101,7 +114,18 @@ class CofreMarkPainter extends CustomPainter {
       ouroPaint,
     );
 
-    // Arco ESMERALDA ("é seu"): 2:30 dando a volta até 10:30, sweep 260°.
+    // Arco ESMERALDA ("é seu"): 2:30 dando a volta até ~10h.
+    //
+    // Sweep 240, não 260. Com 260 o ouro ENCOSTAVA no esmeralda do lado
+    // esquerdo, e os dois viravam uma peça só — o oposto da ideia, que é um
+    // arco de ouro FLUTUANDO na fresta.
+    //
+    // A conta que faltava era a das pontas redondas: `StrokeCap.round` estende
+    // cada extremidade em meia espessura (5,5 de 100), o que no raio 34 vale
+    // ~9,3° de arco. Cada fresta perde ~18,6° só de ponta. A da esquerda tinha
+    // 12° de folga bruta — ou seja, fechava 6° ANTES de existir. Com 240 ela
+    // abre 32° brutos (~13° visíveis) e casa com a da direita, que tem 33
+    // brutos (~14° visíveis).
     final Paint esmPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
@@ -110,7 +134,7 @@ class CofreMarkPainter extends CustomPainter {
     canvas.drawArc(
       ringRect,
       _rad(-12),
-      _rad(260 * ring.clamp(0, 1)),
+      _rad(240 * ring.clamp(0, 1)),
       false,
       esmPaint,
     );
@@ -118,7 +142,7 @@ class CofreMarkPainter extends CustomPainter {
     // Núcleo "R$": nasce depois do anel (opacity + innerScale).
     final double coreT = core.clamp(0, 1);
     if (coreT > 0.01) {
-      final double scale = 0.92 + 0.08 * coreT;
+      final double scale = (0.92 + 0.08 * coreT) * coreScale;
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: r'R$',
@@ -180,5 +204,6 @@ class CofreMarkPainter extends CustomPainter {
       old.sheen != sheen ||
       old.esmeralda != esmeralda ||
       old.ouro != ouro ||
-      old.coreColor != coreColor;
+      old.coreColor != coreColor ||
+      old.coreScale != coreScale;
 }

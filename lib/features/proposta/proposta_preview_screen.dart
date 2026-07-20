@@ -20,6 +20,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import 'proposta_papel.dart';
+import '../../core/ui/breakpoints.dart';
 
 /// A pré-visualização — e a única parede Pro do fluxo (07 §A.5).
 ///
@@ -207,40 +208,42 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Como o cliente vai ver')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Space.x4,
-          Space.x4,
-          Space.x4,
-          Space.x6,
-        ),
-        children: <Widget>[
-          PropostaPapel(
-            proposta: widget.proposta,
-            marca: marca,
-            emitidaEm: _emitidaEm,
+      body: ContentWidth(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            Space.x4,
+            Space.x4,
+            Space.x4,
+            Space.x6,
           ),
-          const SizedBox(height: Space.x4),
-          Row(
-            children: <Widget>[
-              Icon(
-                Icons.lock_outline,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: Space.x2),
-              Expanded(
-                child: Text(
-                  'Seu cliente vê só isso. A Divisão, a reserva e o imposto '
-                  'ficam com você.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+          children: <Widget>[
+            PropostaPapel(
+              proposta: widget.proposta,
+              marca: marca,
+              emitidaEm: _emitidaEm,
+            ),
+            const SizedBox(height: Space.x4),
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.lock_outline,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: Space.x2),
+                Expanded(
+                  child: Text(
+                    'Seu cliente vê só isso. A Divisão, a reserva e o imposto '
+                    'ficam com você.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(

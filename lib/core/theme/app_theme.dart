@@ -103,6 +103,14 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radii.sm)),
         insetPadding: EdgeInsets.all(Space.x4),
       ),
+      // Sem teto, uma folha em tablet nasce com a largura inteira da tela — e
+      // uma folha de 1000dp pra escolher uma moeda não é uma folha, é uma
+      // tela. O teto vale pras sete do app de uma vez; em celular ele não
+      // aperta nada, porque a tela já é mais estreita que isso.
+      bottomSheetTheme: const BottomSheetThemeData(
+        constraints: BoxConstraints(maxWidth: 640),
+        showDragHandle: true,
+      ),
       // Transparente: a superfície real vem da pílula de vidro que envolve a
       // NavigationBar em nav_shell.dart. Indicador "abraça" a aba ativa.
       navigationBarTheme: NavigationBarThemeData(
@@ -134,6 +142,12 @@ abstract final class AppTheme {
       titleSmall: s(14, 20, FontWeight.w500),
       bodyLarge: s(16, 24, FontWeight.w400),
       bodyMedium: s(14, 20, FontWeight.w400),
+      // Faltava, e o buraco não era cosmético: sem definição, `bodySmall` caía
+      // no default do M3 — 12sp em **Roboto**, no meio de um app em Inter — e
+      // ele carrega informação real em três telas ("Última entrada em…",
+      // "separou X de imposto", a explicação da cor da marca). 12sp em
+      // onSurfaceVariant é o piso do legível pra baixa visão; 13 tira do piso.
+      bodySmall: s(13, 18, FontWeight.w400),
       labelLarge: s(16, 20, FontWeight.w600),
       labelMedium: s(13, 16, FontWeight.w500),
       labelSmall: s(11, 16, FontWeight.w500),

@@ -15,6 +15,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
+import '../../core/ui/breakpoints.dart';
 import '../../core/ui/help_dot.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
@@ -201,94 +202,129 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         title: Text('Passo ${_step + 1} de ${_lastStep + 1}'),
       ),
       body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Space.x4,
-                vertical: Space.x2,
-              ),
-              child: Row(
+        child: WindowClass.of(context).isExpanded
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  for (int i = 0; i <= _lastStep; i++)
-                    AnimatedContainer(
-                      duration: reduceMotionOf(context)
-                          ? Duration.zero
-                          : Motion.base,
-                      curve: MotionCurves.standard,
-                      margin: const EdgeInsets.only(right: 6),
-                      width: i == _step ? 20 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radii.full),
-                        color: i <= _step ? cs.primary : cs.outlineVariant,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // O número VIVO, do passo 3 em diante.
-            //
-            // Antes eram cinco telas de investimento com zero retorno antes do
-            // Resultado — o que transformava os passos finais numa prova. Do
-            // passo 3 o valor-hora já é calculável, então ele aparece e muda
-            // enquanto a pessoa mexe: os passos viram AJUSTE de uma coisa que
-            // já é dela, e a diferença entre "responder" e "ajustar" é a
-            // diferença entre abandonar e terminar.
-            if (_step >= 2) _PreviaValorHora(area: _draft),
-
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
-                switchInCurve: MotionCurves.standard,
-                switchOutCurve: MotionCurves.standard,
-                transitionBuilder: (Widget child, Animation<double> anim) {
-                  final bool forward = _step >= _prevStep;
-                  return FadeTransition(
-                    opacity: anim,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: Offset(forward ? 0.12 : -0.12, 0),
-                        end: Offset.zero,
-                      ).animate(anim),
-                      child: child,
-                    ),
-                  );
-                },
-                layoutBuilder: (Widget? current, List<Widget> previous) =>
-                    Stack(
-                      alignment: Alignment.topLeft,
-                      children: <Widget>[...previous, ?current],
-                    ),
-                child: SingleChildScrollView(
-                  key: ValueKey<int>(_step),
-                  padding: const EdgeInsets.all(Space.x6),
-                  child: _buildStep(),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(Space.x4),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _next,
-                  child: AnimatedSwitcher(
-                    duration: reduceMotionOf(context)
-                        ? Duration.zero
-                        : Motion.base,
-                    child: Text(
-                      _step == _lastStep ? 'Ver resultado' : 'Continuar',
-                      key: ValueKey<int>(_step == _lastStep ? 1 : 0),
+                  // Em tela larga a pergunta fica à esquerda e o valor-hora
+                  // vivo à direita, PARADO. Ele deixa de ser uma faixa que
+                  // rola junto e vira o número sempre à vista, mudando
+                  // enquanto a pessoa digita — que é a alma da calculadora de
+                  // 4 passos: os passos viram ajuste de uma coisa que já é
+                  // dela, não prova.
+                  Expanded(
+                    flex: 3,
+                    child: ContentWidth(
+                      child: _corpo(context, cs, previaNoTopo: false),
                     ),
                   ),
+                  SizedBox(
+                    width: 320,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: Space.x6,
+                        right: Space.x4,
+                      ),
+                      child: _step >= 2
+                          ? _PreviaValorHora(area: _draft)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              )
+            : _corpo(context, cs, previaNoTopo: true),
+      ),
+    );
+  }
+
+  Widget _corpo(
+    BuildContext context,
+    ColorScheme cs, {
+    required bool previaNoTopo,
+  }) {
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.x4,
+            vertical: Space.x2,
+          ),
+          child: Row(
+            children: <Widget>[
+              for (int i = 0; i <= _lastStep; i++)
+                AnimatedContainer(
+                  duration: reduceMotionOf(context)
+                      ? Duration.zero
+                      : Motion.base,
+                  curve: MotionCurves.standard,
+                  margin: const EdgeInsets.only(right: 6),
+                  width: i == _step ? 20 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radii.full),
+                    color: i <= _step ? cs.primary : cs.outlineVariant,
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // O número VIVO, do passo 3 em diante.
+        //
+        // Antes eram cinco telas de investimento com zero retorno antes do
+        // Resultado — o que transformava os passos finais numa prova. Do
+        // passo 3 o valor-hora já é calculável, então ele aparece e muda
+        // enquanto a pessoa mexe: os passos viram AJUSTE de uma coisa que
+        // já é dela, e a diferença entre "responder" e "ajustar" é a
+        // diferença entre abandonar e terminar.
+        if (previaNoTopo && _step >= 2) _PreviaValorHora(area: _draft),
+
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+            switchInCurve: MotionCurves.standard,
+            switchOutCurve: MotionCurves.standard,
+            transitionBuilder: (Widget child, Animation<double> anim) {
+              final bool forward = _step >= _prevStep;
+              return FadeTransition(
+                opacity: anim,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(forward ? 0.12 : -0.12, 0),
+                    end: Offset.zero,
+                  ).animate(anim),
+                  child: child,
+                ),
+              );
+            },
+            layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
+              alignment: Alignment.topLeft,
+              children: <Widget>[...previous, ?current],
+            ),
+            child: SingleChildScrollView(
+              key: ValueKey<int>(_step),
+              padding: const EdgeInsets.all(Space.x6),
+              child: _buildStep(),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(Space.x4),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _next,
+              child: AnimatedSwitcher(
+                duration: reduceMotionOf(context) ? Duration.zero : Motion.base,
+                child: Text(
+                  _step == _lastStep ? 'Ver resultado' : 'Continuar',
+                  key: ValueKey<int>(_step == _lastStep ? 1 : 0),
                 ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -649,18 +685,25 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                   ),
                 ),
               const SizedBox(height: Space.x2),
-              Row(
-                children: <Widget>[
-                  Text('Total: ', style: theme.textTheme.titleMedium),
-                  MoneyCountUp(
-                    _draft.custosTotal,
-                    duration: Motion.quick,
-                    style: theme.textTheme.titleMedium ?? const TextStyle(),
-                    semanticLabel:
-                        'Total de custos: ${moneyBRL(_draft.custosTotal)} por mês',
-                  ),
-                  Text('/mês', style: theme.textTheme.titleMedium),
-                ],
+              // O total é o número que a pessoa veio conferir. Sem o FittedBox
+              // ele vaza pela direita — 2,6px num celular de 320dp com fonte
+              // normal, e muito mais em fonte grande. Encolhe, nunca sai.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: <Widget>[
+                    Text('Total: ', style: theme.textTheme.titleMedium),
+                    MoneyCountUp(
+                      _draft.custosTotal,
+                      duration: Motion.quick,
+                      style: theme.textTheme.titleMedium ?? const TextStyle(),
+                      semanticLabel:
+                          'Total de custos: ${moneyBRL(_draft.custosTotal)} por mês',
+                    ),
+                    Text('/mês', style: theme.textTheme.titleMedium),
+                  ],
+                ),
               ),
               const SizedBox(height: Space.x5),
               if (faltam.isNotEmpty) ...<Widget>[
@@ -872,16 +915,18 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               color: selected
                   ? theme.colorScheme.primaryContainer
                   : theme.colorScheme.surfaceContainerLow,
-              borderRadius: const BorderRadius.all(Radii.md),
-              shape: selected
-                  ? RoundedRectangleBorder(
-                      borderRadius: const BorderRadius.all(Radii.md),
-                      side: BorderSide(
-                        color: theme.colorScheme.primary,
-                        width: 1.5,
-                      ),
-                    )
-                  : null,
+              // Um só: o `shape` carrega o raio E a borda. `borderRadius` junto
+              // de `shape` estoura assert do Material — e como um regime está
+              // sempre selecionado (MEI é o default), o passo 4 morria em
+              // debug SEMPRE. Em release o assert some e ninguém vê; mas
+              // nenhum widget test conseguia chegar aqui, e é por isso que
+              // nenhum existia.
+              shape: RoundedRectangleBorder(
+                borderRadius: const BorderRadius.all(Radii.md),
+                side: selected
+                    ? BorderSide(color: theme.colorScheme.primary, width: 1.5)
+                    : BorderSide.none,
+              ),
               child: InkWell(
                 borderRadius: const BorderRadius.all(Radii.md),
                 onTap: () {
@@ -987,31 +1032,47 @@ class _PreviaValorHora extends ConsumerWidget {
           color: cs.surfaceContainerLow,
           borderRadius: const BorderRadius.all(Radii.md),
         ),
-        child: Row(
-          children: <Widget>[
-            Text(
-              'até aqui:',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
+        // Uma parada de leitura, uma frase falável — em vez de três nós
+        // ("até aqui:", o número, "/hora") que virariam três swipes pra ler
+        // quatro palavras, com "/hora" saindo como "barra hora".
+        //
+        // O `semanticLabel: ''` que estava no número não silenciava nada: ele
+        // TIRAVA o valor da árvore. E o medo que motivou aquilo — tagarelice a
+        // cada dígito — não se realiza: `Text` não fala sozinho quando muda, só
+        // quando recebe foco. Quem enxerga tinha a promessa no topo da tela;
+        // quem não enxerga tinha nada, justamente quem mais precisa saber que
+        // os ajustes estão surtindo efeito.
+        child: Semantics(
+          container: true,
+          label: 'Até aqui, sua hora vale ${moneyBRL(vh)}',
+          child: ExcludeSemantics(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: <Widget>[
+                  Text(
+                    'até aqui:',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: Space.x2),
+                  MoneyCountUp(
+                    vh,
+                    duration: Motion.quick,
+                    style: AppType.valueMd.copyWith(color: cs.primary),
+                  ),
+                  Text(
+                    '/hora',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: Space.x2),
-            MoneyCountUp(
-              vh,
-              duration: Motion.quick,
-              style: AppType.valueMd.copyWith(color: cs.primary),
-              // Sem rótulo semântico: o leitor de tela já acompanha o campo em
-              // edição, e reanunciar o número a cada dígito viraria tagarelice
-              // por cima da digitação.
-              semanticLabel: '',
-            ),
-            Text(
-              '/hora',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

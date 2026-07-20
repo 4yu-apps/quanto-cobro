@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantocobro/core/model/cor_marca.dart';
 import 'package:quantocobro/core/model/marca.dart';
+import 'package:quantocobro/core/ui/money_field.dart';
 
 /// A marca do freelancer: cor, contraste e contato.
 ///
 /// A regra que estes testes protegem: **nenhuma escolha da pessoa pode produzir
 /// um documento que o cliente dela não consegue ler.**
 void main() {
+  _cursor();
   group('contraste da cor da marca', () {
     test('toda cor da paleta serve como fundo de texto (WCAG AA)', () {
       for (final ({String nome, int valor}) c in CorMarca.paleta) {
@@ -126,6 +128,33 @@ void main() {
       final Marca volta = Marca.fromJson(<String, dynamic>{'nome': 'Ana'});
       expect(volta.cor, CorMarca.padrao);
       expect(volta.ddi, '+55');
+    });
+  });
+}
+
+/// P1-13. A máscara jogava o cursor pro fim a cada tecla: errou um dígito no
+/// meio do número, não dava pra corrigir — a saída virava "apaga tudo e digita
+/// de novo". Quem tem tremor, dislexia, ou está no ônibus com uma mão erra no
+/// meio o tempo todo.
+void _cursor() {
+  group('cursor da máscara', () {
+    test('editar no meio não teleporta o cursor pro fim', () {
+      // "(44) 9555-5555" com o cursor logo depois do 4º dígito do bruto.
+      const String bruto = '4495555555';
+      const String formatado = '(44) 9555-5555';
+      // 5 caracteres do bruto = 5 dígitos. No formatado os dígitos estão nos
+      // índices 1, 2, 5, 6 e 7 — o 5º é o do índice 7, então o cursor pousa
+      // logo DEPOIS dele: "(44) 955|5-5555".
+      expect(offsetPreservandoDigitos(bruto, 5, formatado), 8);
+    });
+
+    test('cursor no início continua no início', () {
+      expect(offsetPreservandoDigitos('4499', 0, '(44) 99'), 0);
+    });
+
+    test('cursor no fim vai pro fim', () {
+      const String f = '(44) 99';
+      expect(offsetPreservandoDigitos('4499', 4, f), f.length);
     });
   });
 }
