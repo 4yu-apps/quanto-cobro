@@ -121,18 +121,7 @@ class TrabalhosScreen extends ConsumerWidget {
           .toList();
       if (daArea.isEmpty) continue;
       out
-        ..add(
-          Padding(
-            padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
-            child: Text(
-              area.nome.toUpperCase(),
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        )
+        ..add(_cabecalhoDeGrupo(theme, area.nome, daArea.length))
         ..addAll(_planos(context, daArea, recebido, ultima));
       out.add(const SizedBox(height: Space.x4));
     }
@@ -143,22 +132,52 @@ class TrabalhosScreen extends ConsumerWidget {
         .toList();
     if (orfaos.isNotEmpty) {
       out
-        ..add(
-          Padding(
-            padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
-            child: Text(
-              'SEM ÁREA',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        )
+        ..add(_cabecalhoDeGrupo(theme, 'Sem área', orfaos.length, area: false))
         ..addAll(_planos(context, orfaos, recebido, ultima));
     }
     return out;
   }
+
+  /// O cabeçalho de grupo — e ele precisa SER um cabeçalho.
+  ///
+  /// A hierarquia latente (só aparece com 2+ áreas) é uma boa ideia, mas tinha
+  /// sido implementada só no canal visual: caixa alta, cinza, menor,
+  /// `letterSpacing`. Todos esses sinais são TIPOGRÁFICOS. Na árvore de
+  /// semântica isto era um `Text` como outro qualquer, então:
+  ///
+  /// - não dava pra pular de grupo em grupo (o gesto de navegar por cabeçalhos
+  ///   é *o* jeito de varrer uma lista longa sem visão);
+  /// - "DESIGN" é ambíguo — pode ser um trabalho chamado Design. A palavra
+  ///   "área" não era falada em lugar nenhum;
+  /// - caixa alta é armadilha à parte: alguns motores de TTS soletram palavras
+  ///   curtas em maiúsculas ("D-E-S-I-G-N"). O visual em caixa alta é decisão
+  ///   de tipografia; o rótulo vai na grafia natural.
+  ///
+  /// A contagem é o que substitui, na fala, o "bater o olho e ver que são
+  /// três" — sem ela a pessoa varre o grupo inteiro só pra saber o tamanho.
+  static Widget _cabecalhoDeGrupo(
+    ThemeData theme,
+    String nome,
+    int quantos, {
+    bool area = true,
+  }) => Padding(
+    padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
+    child: Semantics(
+      header: true,
+      label:
+          '${area ? 'Área $nome' : nome}. '
+          '$quantos ${quantos == 1 ? 'trabalho' : 'trabalhos'}.',
+      child: ExcludeSemantics(
+        child: Text(
+          nome.toUpperCase(),
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _TrabalhoCard extends StatelessWidget {

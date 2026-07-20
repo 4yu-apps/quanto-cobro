@@ -78,6 +78,14 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
     }
   }
 
+  /// Vibrar diz "algo aconteceu". Só a fala diz O QUÊ — e sem visão,
+  /// "escolhi alguma coisa" não é "escolhi Roxo".
+  void _escolherCor(({String nome, int valor}) c) {
+    Haptics.select();
+    setState(() => _cor = c.valor);
+    announce(context, 'Cor ${c.nome} escolhida.');
+  }
+
   Future<void> _salvar() async {
     final String nome = _nome.text.trim();
     if (nome.isEmpty) {
@@ -236,35 +244,57 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
               children: <Widget>[
                 for (final ({String nome, int valor}) c in CorMarca.paleta)
                   Semantics(
-                    button: true,
-                    selected: _cor == c.valor,
-                    label: c.nome,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(999),
-                      onTap: () {
-                        Haptics.select();
-                        setState(() => _cor = c.valor);
-                      },
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Color(c.valor),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: _cor == c.valor
-                                ? cs.onSurface
-                                : cs.outlineVariant,
-                            width: _cor == c.valor ? 3 : 1,
+                    // Escolha de um-entre-N é RÁDIO, não botão: assim o leitor
+                    // de tela anuncia "Roxo, marcado" e a posição no grupo, em
+                    // vez de "Roxo, selecionado, botão".
+                    inMutuallyExclusiveGroup: true,
+                    checked: _cor == c.valor,
+                    label: 'Cor ${c.nome}',
+                    onTap: () => _escolherCor(c),
+                    child: ExcludeSemantics(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: () => _escolherCor(c),
+                        // Alvo de 48dp (a régua da casa e do Material); a joia
+                        // continua com 44. 44 passa em WCAG 2.5.8 e reprova
+                        // aqui — com 12dp entre eles, dedo grande em ônibus
+                        // balançando erra de cor.
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Center(
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Color(c.valor),
+                                shape: BoxShape.circle,
+                                // `outlineVariant` dá 1.41:1 contra o fundo
+                                // escuro — e o tema padrão do app É o escuro.
+                                // Com ele, "Grafite" (1.94:1) era um buraco
+                                // preto sobre fundo preto, com contorno
+                                // invisível: pra baixa visão, essa opção não
+                                // existia. Azul, Roxo, Vermelho e Magenta
+                                // ficavam abaixo de 3:1, reprovando em WCAG
+                                // 1.4.11. `outline` dá 4.55:1 e é o que faz
+                                // cada opção existir.
+                                border: Border.all(
+                                  color: _cor == c.valor
+                                      ? cs.onSurface
+                                      : cs.outline,
+                                  width: _cor == c.valor ? 3 : 1.5,
+                                ),
+                              ),
+                              child: _cor == c.valor
+                                  ? Icon(
+                                      Icons.check,
+                                      size: 20,
+                                      color: CorMarca.textoSobre(c.valor),
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
-                        child: _cor == c.valor
-                            ? Icon(
-                                Icons.check,
-                                size: 20,
-                                color: CorMarca.textoSobre(c.valor),
-                              )
-                            : null,
                       ),
                     ),
                   ),

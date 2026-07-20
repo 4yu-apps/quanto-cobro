@@ -302,64 +302,90 @@ class _BlocoDoMes extends StatelessWidget {
     );
     final int separado = entradas.fold(0, (int s, Entrada e) => s + e.separado);
 
+    // O ExcludeSemantics cobria o PanelCard INTEIRO — inclusive a lista de
+    // pagamentos individuais. Ou seja: a tela que o dono descreveu como "o
+    // Augusto me pagou 400 num mês, 600 no outro" dava o total do mês e nunca
+    // os pagamentos, pra quem usa leitor de tela. E o rótulo não dizia nem
+    // quantos foram.
+    //
+    // Agora o Exclude cobre só o que o rótulo conta; cada pagamento fica fora,
+    // porque pagamento é conteúdo, não decoração.
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x3),
-      child: MergeSemantics(
-        child: Semantics(
-          label:
-              'Em ${mesAno(mes)}: recebeu ${moneyBRL(total)}, '
-              'separou ${moneyBRL(separado)} de imposto.',
-          child: ExcludeSemantics(
-            child: PanelCard(
-              padding: const EdgeInsets.all(Space.x4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
+      child: PanelCard(
+        padding: const EdgeInsets.all(Space.x4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            MergeSemantics(
+              child: Semantics(
+                header: true,
+                label:
+                    'Em ${mesAno(mes)}: recebeu ${moneyBRL(total)}, '
+                    'separou ${moneyBRL(separado)} de imposto'
+                    '${entradas.length > 1 ? ', em ${entradas.length} pagamentos' : ''}.',
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          mesAno(mes),
-                          style: theme.textTheme.titleSmall,
-                        ),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              mesAno(mes),
+                              style: theme.textTheme.titleSmall,
+                            ),
+                          ),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                moneyBRL(total),
+                                maxLines: 1,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontFamily: AppType.numberFamily,
+                                  fontFeatures: AppType.tnum,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: Space.x1),
                       Text(
-                        moneyBRL(total),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontFamily: AppType.numberFamily,
+                        'separou ${moneyBRL(separado)} de imposto',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: d.reserva,
                           fontFeatures: AppType.tnum,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    'separou ${moneyBRL(separado)} de imposto',
+                ),
+              ),
+            ),
+            // Só detalha quando houve mais de um pagamento no mês —
+            // repetir a mesma linha embaixo do total seria ruído.
+            if (entradas.length > 1) ...<Widget>[
+              const SizedBox(height: Space.x2),
+              for (final Entrada e in entradas)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    '${dataCurta(e.at)} · ${moneyBRL(e.valor)}',
+                    // "10/ago" na fala vira "dez barra ago". O helper que
+                    // resolve isso já existia e não estava sendo usado aqui.
+                    semanticsLabel:
+                        '${dataPorExtenso(e.at)}: ${moneyBRL(e.valor)}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: d.reserva,
+                      color: cs.onSurfaceVariant,
                       fontFeatures: AppType.tnum,
                     ),
                   ),
-                  // Só detalha quando houve mais de um pagamento no mês —
-                  // repetir a mesma linha embaixo do total seria ruído.
-                  if (entradas.length > 1) ...<Widget>[
-                    const SizedBox(height: Space.x2),
-                    for (final Entrada e in entradas)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          '${dataCurta(e.at)} · ${moneyBRL(e.valor)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontFeatures: AppType.tnum,
-                          ),
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+                ),
+            ],
+          ],
         ),
       ),
     );
