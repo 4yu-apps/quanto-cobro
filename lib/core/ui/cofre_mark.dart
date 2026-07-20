@@ -114,7 +114,18 @@ class CofreMarkPainter extends CustomPainter {
       ouroPaint,
     );
 
-    // Arco ESMERALDA ("é seu"): 2:30 dando a volta até 10:30, sweep 260°.
+    // Arco ESMERALDA ("é seu"): 2:30 dando a volta até ~10h.
+    //
+    // Sweep 240, não 260. Com 260 o ouro ENCOSTAVA no esmeralda do lado
+    // esquerdo, e os dois viravam uma peça só — o oposto da ideia, que é um
+    // arco de ouro FLUTUANDO na fresta.
+    //
+    // A conta que faltava era a das pontas redondas: `StrokeCap.round` estende
+    // cada extremidade em meia espessura (5,5 de 100), o que no raio 34 vale
+    // ~9,3° de arco. Cada fresta perde ~18,6° só de ponta. A da esquerda tinha
+    // 12° de folga bruta — ou seja, fechava 6° ANTES de existir. Com 240 ela
+    // abre 32° brutos (~13° visíveis) e casa com a da direita, que tem 33
+    // brutos (~14° visíveis).
     final Paint esmPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
@@ -123,7 +134,7 @@ class CofreMarkPainter extends CustomPainter {
     canvas.drawArc(
       ringRect,
       _rad(-12),
-      _rad(260 * ring.clamp(0, 1)),
+      _rad(240 * ring.clamp(0, 1)),
       false,
       esmPaint,
     );

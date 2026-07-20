@@ -104,9 +104,20 @@ const Color _ouro = Color(0xFFEFCE6F);
 /// continua em 1 — ver `CofreMark.coreScale`.
 const double _coreDoIcone = 0.80;
 
-/// O verde-quase-preto do fundo, igual ao `ic_launcher_background.xml`.
-const Color _fundoTopo = Color(0xFF0D2C21);
-const Color _fundoBase = Color(0xFF071612);
+/// O charcoal do splash — o fundo DE VERDADE do app.
+///
+/// O ícone vinha com um verde-escuro (`#0D2C21` → `#071612`) que o app já
+/// tinha abandonado. O motivo está escrito no `color_scheme.dart`: *"faz o
+/// esmeralda #57E5A9 BRILHAR mais — o verde só parecia sujo/antigo porque o
+/// fundo também era verde"*. O ícone tinha ficado com o fundo que a decisão
+/// tinha jogado fora, e sobre ele o esmeralda perdia exatamente o brilho que a
+/// mudança existia pra ganhar.
+///
+/// Estes dois são os do `splash_overlay.dart`: charcoal levantado no centro,
+/// quase preto na borda. Radial, não linear — é um spotlight, e é ele que faz
+/// a marca parecer iluminada por dentro em vez de colada num retângulo.
+const Color _fundoCentro = Color(0xFF17201B);
+const Color _fundoBorda = Color(0xFF0A0C0B);
 
 /// A versão com fundo: usada no ícone legado e no 512 da loja.
 class _IconeCheio extends StatelessWidget {
@@ -122,10 +133,10 @@ class _IconeCheio extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(lado * raio),
-      gradient: const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: <Color>[_fundoTopo, _fundoBase],
+      gradient: const RadialGradient(
+        center: Alignment.center,
+        radius: 0.78,
+        colors: <Color>[_fundoCentro, _fundoBorda],
       ),
     ),
     // 76% aqui, contra 62% do adaptive. O adaptive é preso na keyline de 66dp
