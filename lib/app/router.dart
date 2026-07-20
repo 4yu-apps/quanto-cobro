@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/model/perfil.dart';
 import '../core/model/projeto.dart';
+import '../core/telemetry/eventos.dart';
 import '../core/theme/motion.dart';
 import '../core/theme/tokens.dart';
 import '../features/calc/calc_screen.dart';
@@ -130,7 +131,13 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
       ),
       GoRoute(
         path: Routes.pro,
-        pageBuilder: (_, GoRouterState s) => _flowPage(s, const ProScreen()),
+        // `extra` = o gatilho que trouxe a pessoa até aqui (GatilhoPro.*).
+        pageBuilder: (_, GoRouterState s) => _flowPage(
+          s,
+          ProScreen(
+            gatilho: s.extra is String ? s.extra! as String : GatilhoPro.config,
+          ),
+        ),
       ),
       // Tools/consulta: gaveta lateral rápida.
       GoRoute(

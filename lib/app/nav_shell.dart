@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/ads/ads.dart';
 import '../core/providers.dart';
 import '../core/theme/materials.dart';
 import '../core/theme/motion.dart';
@@ -44,9 +43,9 @@ class NavShell extends StatelessWidget {
   }
 }
 
-/// A pílula de vidro que envolve a `NavigationBar` nativa + o banner do hub
-/// (AdSlot) acima dela. Um só ramo (vidro OU sólido) cria `BackdropFilter` —
-/// é o que o teste de fallback (`nav_glass_test.dart`) verifica.
+/// A pílula de vidro que envolve a `NavigationBar` nativa. Um só ramo (vidro
+/// OU sólido) cria `BackdropFilter` — é o que o teste de fallback
+/// (`nav_glass_test.dart`) verifica.
 class _GlassBottomBar extends ConsumerWidget {
   const _GlassBottomBar({required this.navigationShell});
 
@@ -130,20 +129,14 @@ class _GlassBottomBar extends ConsumerWidget {
       ),
     );
 
-    // Banner ancorado do hub: entre o conteúdo e a pílula, fora do vidro (não
-    // some no blur). Só aparece nas abas (fluxos/ferramentas cobrem a casca),
-    // nunca pra Pro, nunca antes do 1º cálculo — ver core/ads/ads.dart.
+    // Aqui morava um banner de anúncio ancorado. Saiu em 19/07/2026: no nosso
+    // nicho, anúncio dói 2,48× mais que a média do mercado, por eCPM de
+    // centavos — ver `core/ads/ads.dart` pro número e o raciocínio.
     return SafeArea(
       top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const AdSlot(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x3),
-            child: pilula,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x3),
+        child: pilula,
       ),
     );
   }

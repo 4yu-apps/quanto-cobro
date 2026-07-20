@@ -11,6 +11,8 @@ import '../../core/model/perfil.dart';
 import '../../core/model/proposta.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
@@ -112,6 +114,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
             Haptics.commit();
             announce(context, 'Trabalho salvo. Voltando pro painel.');
             await ref.read(profilesProvider.notifier).saveAndActivate(p);
+            telemetry.evento(Evento.areaSalva);
             // Único corte seguro pra um intersticial (fim de tarefa). No-op até
             // ter SDK/chave — ver core/ads/ads.dart. Nunca entre calc→Resultado.
             await AdInterstitial.maybeShowOnSave(ref.read(proProvider));

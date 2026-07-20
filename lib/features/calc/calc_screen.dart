@@ -9,6 +9,8 @@ import '../../core/model/custo.dart';
 import '../../core/model/perfil.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
@@ -79,6 +81,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     // Perfil legado (sem rotina) mas com horas salvo → abre em "digitar na mão".
     _horasManual = _draft.diasSemana == null;
     _renda.text = _draft.renda.round().toString();
+
+    // O denominador do sinal nº 1: quantos começam, pra saber quantos chegam.
+    telemetry.evento(Evento.calcIniciada);
   }
 
   @override
@@ -144,6 +149,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         _step++;
         _triedContinue = false;
       });
+      // Sinal nº 1 do roadmap: onde a pessoa desiste. Só o índice do passo —
+      // nenhum valor digitado sai daqui.
+      telemetry.evento(
+        Evento.calcPasso,
+        params: <String, Object?>{'passo': _step + 1},
+      );
       _focusStep();
       Future<void>.delayed(Motion.base, () {
         if (mounted) {
@@ -154,6 +165,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         }
       });
     } else {
+      telemetry.evento(Evento.calcConcluida);
       context.push(Routes.resultado, extra: _draft);
     }
   }

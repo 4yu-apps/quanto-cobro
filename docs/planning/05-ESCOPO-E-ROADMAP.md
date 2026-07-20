@@ -93,10 +93,19 @@ fiscais validadas na Receita (R5), anúncio nunca sobre número (R6), default di
 - **Núcleo grátis pra sempre:** calculadora + Divisão + reserva básica **+ o
   primeiro Trabalho salvo**. É o motor de instalação e boca-a-boca na
   comunidade MEI/freela (público massa, Android, orçamento apertado).
-- **Pro — o usuário escolhe como pagar** (respeita quem odeia assinatura E quem prefere anual):
-  - **Vitalício (compra única): ~R$ 129–149** ⚠️ *sob revisão — ver correção acima*
-  - **Anual: ~R$ 89,90/ano** ⚠️ *sob revisão — a âncora usada é de outra categoria*
-  - **Mensal: R$ 12,90** (topo do teto de impulso do nicho).
+- **Pro: assinatura mensal de R$ 6,90.** ✅ **Decidido pelo dono em 19/07/2026.**
+  Substitui a estrutura de três opções abaixo, que ficou registrada só como
+  histórico do raciocínio.
+  - *Por que abaixo do que estava no plano:* o comparável honesto do nosso
+    produto é compra única de R$ 12,90–29,90 (*Receitas – Quanto Cobrar*), não
+    SaaS de gestão. R$ 6,90/mês entra folgado abaixo do teto de impulso e não
+    depende de a pessoa achar que está comprando um sistema.
+  - *A tensão que fica anotada:* a pesquisa aponta que este público tende a
+    preferir compra única, e a assinatura cobra confiança recorrente de um app
+    que ainda não a construiu. **É uma hipótese a validar com gente real** — o
+    evento `pro_ativado` já carrega o gatilho pra medir isso desde o dia 1.
+  - *Histórico (não usar):* vitalício R$ 129–149 · anual R$ 89,90 · mensal
+    R$ 12,90 — calibrados contra a âncora errada.
   - *Preços são hipótese a testar — não há dado duro de willingness-to-pay BR ([F](../research/raw/F-mercado-sizing.md)).*
 - **Trial curto (3–7 dias)** nas saídas Pro — utilitários convertem melhor com trial curto.
 - **Ads = secundário**, não o motor. Banner discreto no grátis; **o Pro é a receita real.**

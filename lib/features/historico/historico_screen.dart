@@ -43,7 +43,6 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
     final ReservaHistoryRepository repo = ref.watch(
       reservaHistoryRepositoryProvider,
     );
-    final bool isPro = ref.watch(proProvider);
     final DateTime now = DateTime.now();
     final List<ReservaEntry> filtered = _perfilId == null
         ? all
@@ -86,7 +85,7 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
                 IconButton(
                   icon: const Icon(Icons.ios_share),
                   tooltip: 'Exportar CSV',
-                  onPressed: () => _exportarCsv(context, all, isPro),
+                  onPressed: () => _exportarCsv(context, all),
                 ),
               ],
       ),
@@ -290,23 +289,17 @@ class _HistoricoScreenState extends ConsumerState<HistoricoScreen> {
 
   /// Exporta o histórico (todos os registros, sem o filtro dos chips) como
   /// CSV e abre o share sheet — mesmo padrão do backup em config_screen.dart.
-  /// Pro: se ainda não é, avisa e leva pra tela Pro; volta e retoma sozinho
-  /// se a compra aconteceu (mesmo padrão de trabalho_switcher.novoTrabalho).
+  ///
+  /// **GRÁTIS, e nunca deve deixar de ser.** Isto aqui são os registros que a
+  /// PESSOA digitou; prender o dado dela atrás de pagamento é o crime que
+  /// derrubou o MEI Fácil pra 1,92★ e viola a regra 3 da nossa própria
+  /// monetização ([05 §monetização]: "nunca prender dados atrás de pagamento").
+  /// O Pro se paga nas saídas de alto valor — proposta em PDF, multi-área —,
+  /// nunca em devolver o que já é do usuário.
   Future<void> _exportarCsv(
     BuildContext context,
     List<ReservaEntry> entries,
-    bool isPro,
   ) async {
-    if (!isPro) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          const SnackBar(content: Text('Exportar CSV é recurso Pro.')),
-        );
-      await context.push(Routes.pro);
-      if (!context.mounted || !ref.read(proProvider)) return;
-      announce(context, 'Pro ativado. Exportando seu CSV.');
-    }
     if (!context.mounted) return;
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     try {

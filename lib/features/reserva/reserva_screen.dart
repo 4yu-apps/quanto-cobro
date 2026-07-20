@@ -16,6 +16,8 @@ import '../../core/model/projeto.dart';
 import '../../core/model/regime.dart';
 import '../../core/model/reserva_entry.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
@@ -637,6 +639,19 @@ class _ReservaScreenState extends ConsumerState<ReservaScreen> {
                                     pagoEm: pagoEm,
                                   );
                             }
+
+                            // Sinal nº 2 do roadmap: usos de reserva por mês é
+                            // o proxy nº 1 de hábito. Sem valor nenhum junto —
+                            // só QUE aconteceu, de que origem e em que regime.
+                            telemetry.evento(
+                              Evento.entradaRegistrada,
+                              params: <String, Object?>{
+                                'origem': projeto == null
+                                    ? 'avulso'
+                                    : 'trabalho',
+                                'regime': regime.name,
+                              },
+                            );
 
                             // O momento mais importante do app vibrava sem
                             // falar: a SnackBar não é anunciada de forma

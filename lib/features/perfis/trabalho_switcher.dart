@@ -8,6 +8,8 @@ import '../../core/common/money.dart';
 import '../../core/data/profile_repository.dart';
 import '../../core/model/perfil.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
@@ -148,7 +150,11 @@ Future<void> novoTrabalho(BuildContext context, WidgetRef ref) async {
       ..showSnackBar(
         const SnackBar(content: Text('Vários trabalhos é recurso Pro.')),
       );
-    await context.push(Routes.pro);
+    telemetry.evento(
+      Evento.proParedeVista,
+      params: <String, Object?>{'gatilho': GatilhoPro.segundaArea},
+    );
+    await context.push(Routes.pro, extra: GatilhoPro.segundaArea);
     // Na volta: virou Pro? Então a pessoa veio criar um trabalho — continua.
     if (!context.mounted || !ref.read(proProvider)) return;
     announce(context, 'Pro ativado. Continuando seu novo trabalho.');

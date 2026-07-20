@@ -58,19 +58,47 @@ o **4,42★ vem do público errado** (precificação de produto, não de hora), 
 
 ---
 
-## 3. Fase 0 — Não lançar cego *(nova; vem da leitura de mercado)*
+## 3. Fase 0 — Não lançar cego ✅ **FEITA (19/07/2026)**
 
 **Por quê:** bug/trava é a dor nº 1 do mercado (17,2% dos negativos; **21,2% no
 nosso nicho**) e é a única onde nossa vantagem é estrutural. Crash não se
 descobre por review — se descobre pela nota caindo três semanas depois, quando
 a agregada já travou.
 
-| Item | Ação |
+| Item | Estado |
 |---|---|
-| **Crashlytics + Analytics** | Religar, com opt-in de verdade (LGPD). Exige `google-services.json` |
-| **Anúncio na navbar** | **Remover o slot.** Ver §9.1 |
-| **CSV do histórico** | **Sair do paywall.** O dado é da pessoa; prendê-lo é o crime do MEI Fácil (1,92★) e viola a regra 3 do nosso próprio [05](05-ESCOPO-E-ROADMAP.md) |
-| Sinais de sucesso | Instrumentar os 5 que o [05](05-ESCOPO-E-ROADMAP.md) define e que hoje **nenhum** é mensurável |
+| **Anúncio na navbar** | ✅ **removido** — slot, placeholder e o `AdSlot` inteiro. O `ads.dart` virou a documentação da decisão, com o número, pra ela não ser desfeita por engano |
+| **CSV do histórico** | ✅ **livre** — saiu do paywall |
+| **Captura de erros** | ✅ instalada no boot (`FlutterError.onError` + `PlatformDispatcher.onError` + zona guardada), antes até do `SharedPreferences` |
+| **Camada de telemetria** | ✅ criada (`core/telemetry/`), com opt-in que vale na hora e 10 eventos cobrindo os 5 sinais de sucesso |
+| **Envio real (Firebase)** | ⏳ **bloqueado em passo humano** — ver §3.1 |
+
+### 3.1 O que falta pra telemetria realmente enviar
+
+A camada está pronta e os eventos já disparam nos lugares certos. Falta só o
+destino. **Service account não cria projeto Firebase** sem organização
+(documentado no `4yu-apps/CLAUDE.md`), então estes passos são seus:
+
+1. Criar o projeto Firebase do app (deixe ele criar a própria propriedade GA4 —
+   uma por produto, não uma pra tudo).
+2. GCP → IAM → conceder **Firebase Admin** a
+   `claude-automation@yu-automation.iam.gserviceaccount.com`.
+3. Me avisar: eu registro o app Android, baixo o `google-services.json`, ligo
+   `firebase_core`/`analytics`/`crashlytics` e troco **uma linha** em `main.dart`
+   (a instância `telemetry`). Nenhum call site muda.
+
+⚠️ Ao religar o Firebase, atenção ao histórico registrado no `pubspec.yaml`: o
+`MobileAdsInitProvider` derrubou o app no boot uma vez por falta de config. O
+mesmo cuidado vale aqui — sem o `google-services.json`, o `firebase_core` não
+sobe.
+
+### 3.2 Os eventos, e a regra que os governa
+10 eventos, todos amarrados a um dos 5 sinais do [05 §7](05-ESCOPO-E-ROADMAP.md).
+A regra dura: **nenhum evento carrega dinheiro, nome, cliente ou texto
+digitado.** Medir *que* a pessoa registrou uma entrada é legítimo; medir
+*quanto* ela recebeu quebra a promessa do onboarding. `test/telemetry_test.dart`
+falha se alguém adicionar um parâmetro que pareça dado pessoal — inclusive
+daqui a um ano.
 
 ---
 
@@ -233,18 +261,18 @@ Registrado aqui pra não se perder na conversa.
 
 ## 9. Decisões abertas do dono
 
-### 9.1 Anúncio na navbar — **minha recomendação: tirar**
+### 9.1 Anúncio na navbar ✅ **RESOLVIDO: removido**
 No nosso nicho, anúncio aparece em **6,7% das reclamações contra 2,7% na média
-geral — 2,48×**. Em troca, o eCPM de um banner num utilitário offline é de
-centavos, e o AdMob já derrubou o app no boot uma vez. É risco alto de ★1 por
-receita irrelevante, num app cuja promessa é justamente ser limpo e offline.
-**Receita vem do Pro.** ⏳ *Aguardando seu ok.*
+geral — 2,48×**, enquanto paywall dói MENOS que a média. Em troca, o eCPM de um
+banner num utilitário offline é de centavos, e o AdMob já derrubou o app no boot
+uma vez. **A receita vem do Pro.**
 
-### 9.2 Preço — revisar a âncora
-O R$ 97,80/ano do Precifica.app é **SaaS de gestão**. O comparável honesto é
-*Receitas – Quanto Cobrar*: **R$ 12,90–29,90 compra única**, 100k+ instalações,
-4,73★. E não há dado de willingness-to-pay do nosso público, porque não há
-amostra dele. ⏳ *Decidir antes de criar os produtos na Play Console.*
+### 9.2 Preço ✅ **DECIDIDO: assinatura mensal de R$ 6,90**
+Decisão do dono em 19/07/2026. Fica registrada a tensão: a pesquisa aponta que
+este público tende a preferir **compra única**, e assinatura cobra confiança
+recorrente de um app que ainda não a construiu. É hipótese a validar com gente
+real — e o evento `pro_ativado` já carrega o gatilho pra medir desde o dia 1.
+Se a conversão vier fraca, o teste seguinte é a compra única na mesma faixa.
 
 ### 9.3 Primeiro Trabalho grátis
 O gate de multiplicidade fica no **segundo** Trabalho, não no primeiro — sem o

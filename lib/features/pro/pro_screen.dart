@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
@@ -11,16 +13,17 @@ import '../../core/ui/a11y.dart';
 /// o que é Pro aparecem ANTES de o usuário investir trabalho (anti-★1 R2). O
 /// núcleo do app é sempre grátis; um único CTA primário fecha a escolha.
 class ProScreen extends ConsumerStatefulWidget {
-  const ProScreen({super.key});
+  const ProScreen({super.key, this.gatilho = GatilhoPro.config});
+
+  /// De ONDE a pessoa chegou aqui. Sem isso, "conversão" é um número só e não
+  /// responde a pergunta que decide o roadmap: qual recurso puxa a compra?
+  final String gatilho;
 
   @override
   ConsumerState<ProScreen> createState() => _ProScreenState();
 }
 
-enum _Plano { vitalicio, anual, mensal }
-
 class _ProScreenState extends ConsumerState<ProScreen> {
-  _Plano _plano = _Plano.vitalicio;
   bool _activating = false;
 
   static const List<(IconData, String)> _hoje = <(IconData, String)>[
@@ -124,15 +127,16 @@ class _ProScreenState extends ConsumerState<ProScreen> {
             _beneficio(context, icon, label),
           if (!isPro) ...<Widget>[
             const SizedBox(height: Space.x4),
+            // Um plano só (decisão de 19/07/2026). Três opções obrigavam a
+            // pessoa a comparar antes de entender o que compra — e a comparação
+            // acontecia justamente no instante em que ela ainda estava
+            // decidindo SE quer, não COMO paga.
             _plano_(
               context,
-              _Plano.vitalicio,
-              'Vitalício (sem assinatura)',
-              'R\$ 129, uma vez só',
+              'Pro',
+              'R\$ 6,90 por mês · cancela quando quiser',
               destaque: true,
             ),
-            _plano_(context, _Plano.anual, 'Anual', 'R\$ 89,90/ano'),
-            _plano_(context, _Plano.mensal, 'Mensal', 'R\$ 12,90/mês'),
             const SizedBox(height: Space.x4),
             FilledButton(
               onPressed: _activating
@@ -140,6 +144,10 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                   : () async {
                       Haptics.commit();
                       await ref.read(proProvider.notifier).grant();
+                      telemetry.evento(
+                        Evento.proAtivado,
+                        params: <String, Object?>{'gatilho': widget.gatilho},
+                      );
                       if (!context.mounted) return;
                       setState(() => _activating = true);
                       announce(
@@ -169,12 +177,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
                           Text('Pro ativo'),
                         ],
                       )
-                    : Text(
-                        _plano == _Plano.vitalicio
-                            ? 'Desbloquear pra sempre'
-                            : 'Assinar',
-                        key: const ValueKey<String>('comprar'),
-                      ),
+                    : const Text('Assinar', key: ValueKey<String>('comprar')),
               ),
             ),
             const SizedBox(height: Space.x2),
@@ -232,97 +235,47 @@ class _ProScreenState extends ConsumerState<ProScreen> {
     );
   }
 
+  /// O card do preço. Com um plano só ele não é uma ESCOLHA — é uma
+  /// informação. Por isso não tem rádio (não há o que selecionar) nem selo
+  /// "melhor valor" (não há com o que comparar): os dois convidariam a pessoa
+  /// a procurar a opção que não existe.
   Widget _plano_(
     BuildContext context,
-    _Plano plano,
     String titulo,
     String valor, {
     bool destaque = false,
   }) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    final bool selected = _plano == plano;
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.x2),
       child: MergeSemantics(
-        child: Semantics(
-          inMutuallyExclusiveGroup: true,
-          checked: selected,
-          child: Material(
-            color: selected ? cs.secondaryContainer : cs.surfaceContainerLow,
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.secondaryContainer,
             borderRadius: const BorderRadius.all(Radii.md),
-            child: InkWell(
-              borderRadius: const BorderRadius.all(Radii.md),
-              onTap: () {
-                Haptics.select();
-                setState(() => _plano = plano);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radii.md),
-                  border: selected
-                      ? Border.all(color: cs.primary, width: 1.5)
-                      : null,
-                ),
-                padding: const EdgeInsets.all(Space.x3),
-                child: Row(
+            border: destaque ? Border.all(color: cs.primary, width: 1.5) : null,
+          ),
+          padding: const EdgeInsets.all(Space.x4),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.workspace_premium_outlined, color: cs.primary),
+              const SizedBox(width: Space.x3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(
-                      selected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: selected ? cs.primary : cs.outline,
-                    ),
-                    const SizedBox(width: Space.x3),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              Flexible(
-                                child: Text(
-                                  titulo,
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                              ),
-                              if (destaque) ...<Widget>[
-                                const SizedBox(width: Space.x2),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: Space.x2,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: cs.primaryContainer,
-                                    borderRadius: const BorderRadius.all(
-                                      Radii.full,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'MELHOR VALOR',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: cs.onPrimaryContainer,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          Text(
-                            valor,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                    Text(titulo, style: theme.textTheme.titleMedium),
+                    Text(
+                      valor,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),

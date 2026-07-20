@@ -15,6 +15,7 @@ import 'model/perfil.dart';
 import 'model/projeto.dart';
 import 'model/reserva_entry.dart';
 import 'settings/settings_repository.dart';
+import 'telemetry/telemetry.dart';
 
 /// Injetado em main() via override (prefs já carregado no boot).
 final Provider<SharedPreferences> sharedPreferencesProvider =
@@ -190,7 +191,10 @@ class TelemetryNotifier extends Notifier<bool> {
   Future<void> set(bool value) async {
     await ref.read(settingsRepositoryProvider).setTelemetry(value);
     state = value;
-    // Quando o Firebase for ligado, aplicar aqui o opt-in de Analytics/Crashlytics.
+    // O opt-in tem que valer NA HORA, não no próximo boot: quem desliga espera
+    // que pare de sair dado agora. Vale pro no-op de hoje e pro Firebase de
+    // amanhã sem mudar esta linha.
+    await telemetry.setHabilitado(value);
   }
 }
 

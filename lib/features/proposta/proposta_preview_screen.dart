@@ -14,6 +14,8 @@ import '../../core/model/projeto.dart';
 import '../../core/model/proposta.dart';
 import '../../core/proposta/proposta_pdf.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
@@ -56,6 +58,10 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
   }
 
   Future<void> _paredePro() async {
+    telemetry.evento(
+      Evento.proParedeVista,
+      params: <String, Object?>{'gatilho': GatilhoPro.propostaPdf},
+    );
     final bool? verPro = await showDialog<bool>(
       context: context,
       builder: (BuildContext c) => AlertDialog(
@@ -78,7 +84,7 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
     );
     if (verPro != true || !mounted) return;
 
-    await context.push(Routes.pro);
+    await context.push(Routes.pro, extra: GatilhoPro.propostaPdf);
     // Virou Pro na volta? Então ela veio mandar a proposta — o app CONTINUA o
     // que ela pediu, sem exigir um segundo toque no mesmo botão. Quebrar a
     // promessa logo depois da compra é o pior lugar pra decepcionar.

@@ -35,6 +35,10 @@ abstract final class Motion {
 }
 
 /// Altura reservada no rodapé das ABAS pro conteúdo não sumir sob a navbar
-/// flutuante (`extendBody`). Pior caso = banner (56+8) + pílula (64) + pad (12).
+/// flutuante (`extendBody`): pílula (64) + pad (12) + folga de rolagem (12).
 /// Some-se `MediaQuery.viewPaddingOf(context).bottom` pro inset do sistema.
-const double kFloatingNavReserve = 140;
+///
+/// Era 140 enquanto existia um banner de anúncio ancorado acima da pílula.
+/// Com ele fora (19/07/2026), manter 140 deixaria 56px de vazio no fim de toda
+/// aba — espaço morto que o usuário lê como "acabou" antes de ter acabado.
+const double kFloatingNavReserve = 88;
