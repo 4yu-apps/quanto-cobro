@@ -48,7 +48,11 @@ class PanelCard extends StatelessWidget {
       ),
     );
     if (!selecionado) return corpo;
+    // `foreground`: o DecoratedBox pinta ATRÁS por padrão, e o preenchimento
+    // opaco do card cobriria a borda inteira — o contorno existiria no código
+    // e não na tela. Só apareceu numa captura.
     return DecoratedBox(
+      position: DecorationPosition.foreground,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.all(radius),
         border: Border.all(

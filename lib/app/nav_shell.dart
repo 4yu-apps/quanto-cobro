@@ -218,13 +218,27 @@ class _GlassRail extends ConsumerWidget {
       ],
     );
 
+    // A pílula ABRAÇA os três destinos, ancorada no topo — ela não estica pela
+    // altura da tela. Um trilho de 1250px com três ícones deixa um vão que
+    // parece erro de layout, e centrar os destinos só move o vão pra cima, que
+    // é onde o olho vai primeiro. A barra de baixo já é uma pílula que abraça
+    // o conteúdo; o trilho é a mesma pílula, de pé.
     return SafeArea(
       right: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Space.x3, Space.x3, 0, Space.x3),
-        child: _pilula(
-          context,
-          child: _vidro(context, solido: _solido(context, ref), child: rail),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: IntrinsicHeight(
+            child: _pilula(
+              context,
+              child: _vidro(
+                context,
+                solido: _solido(context, ref),
+                child: rail,
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -24,21 +24,35 @@ limpo.
 | Matriz de layout (§5) | ✅ 144 casos — **achou 9 sítios de estouro, 6 deles em fonte normal** |
 | P1 lote 1 — caminho de ouro (§3) | ✅ P1-1, P1-2, P1-12 |
 | P1 lote 2 — rótulos (§3) | ✅ P1-3, P1-4, P1-5, P1-6, P1-7, P1-10 |
-| Ganhos de tela larga (§4.4) | ✅ grade 2 colunas, calc em duas colunas |
+| Ganhos de tela larga (§4.4) | ✅ **mestre-detalhe** nos Trabalhos + calc em duas colunas |
 | P1 restantes | ✅ P1-8, P1-9, P1-11, P1-13 |
-| P2 | ✅ P2-1 (`bodySmall`), P2-4 (Ajustes) · ⏳ P2-2, P2-5, P2-6, P2-7 |
+| P2 | ✅ P2-1, P2-2, P2-4, P2-5, P2-6 · ❌ P2-7, com motivo |
 | Manifest large-screen | ✅ declarado |
 | **Infra e loja (§6)** | ⏳ **intocado — depende de passo humano** |
 
-**O que sobrou de código, e por quê:**
+**O bloco de código está fechado.** Duas decisões dentro dele merecem registro,
+porque as duas contrariam o que este documento dizia:
 
-1. **O painel mestre-detalhe** (§4.4). Único item que mexe em roteamento
-   (`StatefulShellRoute`). O próprio §4.4 dizia "se custar caro, corta e fica só
-   a grade" — a grade foi feita e já entrega o ganho de varredura. Cortado com
-   consciência, não esquecido.
-2. **P2-2, P2-5, P2-6, P2-7.** São polimento, e o §7 já os colocava por último.
-   O P2-6 (`SecaoTitulo` pros sobrolhos virarem `header`) é o de maior retorno
-   dos quatro: ele dá o "sumário" que quem não vê usa pra pular entre seções.
+1. **O mestre-detalhe foi feito, e ele SUBSTITUIU a grade de duas colunas.** O
+   §4.4 previa a grade como plano B ("se o mestre-detalhe custar caro, corta e
+   fica só a grade"). Não custou — deu pra fazer sem tocar em `go_router`, com
+   um construtor `.painel` que devolve o mesmo conteúdo sem a casca. E as duas
+   juntas não fazem sentido: com a lista ocupando 380dp, duas colunas de card
+   virariam duas tiras de 180dp. A grade viveu um commit; era o piso, e o piso
+   só serve enquanto o teto não existe.
+
+2. **O P2-6 não foi aplicado a todos os sobrolhos**, e essa é a única
+   discordância real com a auditoria. O app tem dois tipos de texto em caixa
+   alta, iguais na tela e opostos na fala: **seção** ("ENTRADAS", "ANOTAÇÕES") —
+   nomeia um bloco e é um lugar pra onde se pula, vira `SecaoTitulo`; e
+   **sobrancelha de valor** ("SEU VALOR-HORA", "LUCRO REAL") — é o nome do
+   número logo abaixo, que já carrega essa frase no próprio rótulo. Marcar a
+   segunda como cabeçalho encheria o sumário de legendas de número, que é ruído
+   exatamente pra quem o sumário serve. Onze viraram seção; nove ficaram.
+
+3. **O P2-7 (moeda falada) fica fora**, seguindo a recomendação da própria
+   auditoria: é o tipo de rigor que atrasa lançamento pra consertar um problema
+   que talvez não exista.
 
 **O achado que mais mudou a leitura do problema:** a matriz encontrou nove
 sítios de estouro, e **seis quebram em fonte normal** — no Moto E de 320dp, que
@@ -325,12 +339,46 @@ app novo entra dentro dele.
 | 6 | Criar a **assinatura** mensal R$ 6,90 — ID irreversível, igual ao do código — e adicionar testador de licença | **dono** (UI) | depois de 5 |
 | 7 | Implementar Play Billing de assinatura + entitlement (mata a flag local) | agente | depois de 6 |
 | 8 | Ficha: título, descrição curta e longa | agente (API) | depois de 5 |
-| 9 | Ícone, feature graphic 1024×500, screenshots — **incluindo tablet** | dono (agente gera as artes) | depois do §4 deste plano |
+| 9 | Ícone, feature graphic 1024×500, screenshots — **incluindo tablet** | dono (agente gera as artes) | ⚙️ **capturas prontas** — ver §6.5 |
 | 10 | Data Safety, IARC, público-alvo, categoria, declaração de anúncios (**"não contém anúncios"**) | **dono** (UI, sem API) | depois de 5 |
 | 11 | Página do produto, política de privacidade e **exclusão de dados** em `4yu.com.br/quanto-cobro/` | agente (repo `website`) | pode ir agora |
 | 12 | Secrets do CI, build do AAB **no CI**, subir pro teste interno | agente | depois de 3 e 7 |
 | 13 | Testar no aparelho: R8, compra real, fluxos | **dono** | depois de 12 |
 | 14 | 12 testadores no **teste fechado** → 14 dias → produção | **dono** | o relógio começa do zero, é por app |
+
+### 6.2.1 As capturas da ficha — prontas, e como refazer
+
+`test/prints_loja_test.dart` gera as cinco capturas em
+`docs/screenshots/loja/`, em celular (414×736) e tablet 10" (1280×800), a 2×:
+
+```
+flutter test test/ferramentas/prints_loja.dart --update-goldens
+```
+
+**Por que render e não emulador:** não há device nem emulador nesta máquina, e
+o playbook é explícito que build local em WSL derruba a máquina (~11 GB). O
+render dá o mesmo pixel, no tamanho exato, repetível — e carrega as fontes de
+verdade do `assets/`, senão o texto sairia em caixas pretas (o `flutter test`
+usa Ahem por padrão) e a captura não serviria pra nada.
+
+O arquivo está **fora** da suíte normal — o nome não termina em `_test.dart`,
+então o glob não o pega. Ele não é uma asserção sobre o app, é a ferramenta que
+produz a arte: no CI, quebraria o build toda vez que um pixel mudasse, num
+arquivo cujo trabalho é ser regenerado de propósito.
+
+**Duas coisas que só a captura revelou** — e que nenhum teste pegaria, porque
+as duas passam em qualquer asserção de layout:
+
+- o contorno do card selecionado no mestre-detalhe **não aparecia**: o
+  `DecoratedBox` pinta atrás por padrão, e o preenchimento opaco do card cobria
+  a borda inteira. Existia no código e não na tela;
+- o trilho esticava pela altura toda da tela, deixando ~1000px de vão embaixo
+  de três ícones. A pílula agora **abraça** os destinos, ancorada no topo — que
+  é o que a barra de baixo sempre fez.
+
+Falta só o passo humano: conferir e subir na ficha. Duas das cinco são o
+argumento comercial do bloco de tablet — o mestre-detalhe e a calculadora em
+duas colunas.
 
 ### 6.3 As armadilhas do playbook que mordem *este* app
 
