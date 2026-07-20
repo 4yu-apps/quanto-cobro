@@ -20,9 +20,20 @@
 | Assinatura | **`pro_mensal` ACTIVE** (plano `mensal`) |
 | Firebase | projeto `quanto-cobro`, GA4 própria (BRL) |
 
-**A verificação em aparelho ainda é a lacuna:** na hora deste doc, o testador
-tinha feito opt-in mas o build ainda propagava ("item não encontrado" = atraso
-da Play, não erro). Ninguém confirmou o boot com Firebase real ainda.
+**Atualização 20/07 (sessão seguinte):**
+- ✅ **App baixa e abre da Play** (teste interno) num aparelho real — o boot com
+  Firebase de verdade está confirmado (a pessoa chegou até a tela de Pro).
+- ✅ **Backup da keystore feito** fora da máquina (era a pendência crítica do §3).
+- ✅ **Testadores** já na lista do teste interno.
+- ✅ **Travessões removidos de todo o texto visível do app** (~40 strings): davam
+  cara de "escrito por IA". A tela 3 do onboarding (consentimento) também foi
+  encurtada. `analyze` limpo, 288 testes verdes. **Ainda não virou bundle novo** —
+  precisa buildar/subir pra chegar no aparelho.
+- ⚠️ **Compra de teste ainda dá "pagamento recusado":** é o §7.1 — falta cadastrar
+  os e-mails em **Testes de licença**. Sem isso a Play tenta cobrança real, e não
+  dá pra comprar do próprio app com a conta dona do Merchant (o "cartão de
+  recebimento"). Com licença de teste, a compra vira um cartão de teste que sempre
+  aprova, sem cobrar.
 
 ---
 
@@ -77,8 +88,8 @@ gh run download <run> -D build/ci-aab    # baixa
   SHA-1 `55:A8:A6:62:23:38:6D:81:F4:F9:37:C5:71:65:79:EB:37:69:78:A4`.
 - 4 secrets no GitHub (`KEYSTORE_BASE64`, `STORE_PASSWORD`, `KEY_PASSWORD`,
   `KEY_ALIAS`) — o `build-aab.yml` recria o `key.properties` a partir deles.
-- ⚠️ **PENDÊNCIA DO HUMANO:** backup do `.jks` + da senha **fora da máquina**.
-  Perder depois de publicar = nunca mais atualiza o app. Só existe aqui hoje.
+- ✅ **RESOLVIDO (20/07):** backup do `.jks` + da senha guardado **fora da
+  máquina**. (Era: perder depois de publicar = nunca mais atualiza o app.)
 
 ---
 
@@ -138,10 +149,12 @@ console, loja e relógio.
 
 ### 7.1 Humano, pra TESTAR agora (minutos)
 - [ ] **Testes de licença** (Play Console → Configurações → Testes de licença):
-      adicionar os e-mails testadores. Sem isso a compra de teste tenta cobrar
-      de verdade.
-- [ ] Instalar pelo link do teste interno e **confirmar que abre sem crashar**
-      (o teste real de que o `firebase_core` sobe no aparelho).
+      adicionar os e-mails testadores. **CONFIRMADO como o bloqueio da compra:**
+      sem isso a Play tenta cobrança real e recusa (não dá pra comprar do próprio
+      app com a conta dona do Merchant). Cadastrado, a compra vira cartão de teste
+      que sempre aprova, sem cobrar. Esperar uns minutos e re-logar no aparelho.
+- [x] ~~Instalar pelo link do teste interno e confirmar que abre sem crashar~~
+      — ✅ feito 20/07: baixa e abre da Play, `firebase_core` sobe no aparelho.
 
 ### 7.2 Humano, pra PUBLICAR (console/loja/jurídico)
 - [ ] **Declarações do app** (destravam o serve/publicação): financeiro =
