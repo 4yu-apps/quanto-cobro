@@ -390,7 +390,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           label: 'Seu salário, no bolso',
           prefix: r'R$ ',
           helper:
-              'O que você quer que sobre pra você, já livre de imposto e das contas do trabalho. Não é o quanto você cobra do cliente — isso a gente calcula.',
+              'O que você quer que sobre pra você, já livre de imposto e das contas do trabalho. Não é o quanto você cobra do cliente. Isso a gente calcula.',
           errorText: erro ? 'Me diz um valor pra eu começar a conta.' : null,
           onChanged: (String v) => setState(
             () => _draft = _draft.copyWith(renda: _digits(v).toDouble()),
@@ -466,7 +466,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               Text(
                 _horasManual
                     ? 'Você digitou esse número. Toque nos + / − acima pra voltar pra sua rotina.'
-                    : 'Já tirei o tempo que não é pago — e-mail, proposta, imprevisto, férias e feriados. Quase ninguém cobra o dia inteiro, todo dia.',
+                    : 'Já tirei o tempo que não é pago: e-mail, proposta, imprevisto, férias e feriados. Quase ninguém cobra o dia inteiro, todo dia.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSecondaryContainer,
                 ),
@@ -480,7 +480,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
           child: TextButton.icon(
             onPressed: _digitarHorasNaMao,
             icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Já sei meu número — digitar na mão'),
+            label: const Text('Já sei meu número, digitar na mão'),
           ),
         ),
       ],

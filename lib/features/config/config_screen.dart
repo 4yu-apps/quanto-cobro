@@ -199,7 +199,7 @@ class ConfigScreen extends ConsumerWidget {
                     leading: const Icon(Icons.account_balance_outlined),
                     title: const Text('Meu regime'),
                     subtitle: Text(
-                      '${Regime.of(ref.watch(regimeProvider)).label} — define quanto separar de cada pagamento',
+                      '${Regime.of(ref.watch(regimeProvider)).label}: define quanto separar de cada pagamento',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _escolherRegime(context, ref),
@@ -212,7 +212,7 @@ class ConfigScreen extends ConsumerWidget {
                     title: const Text('Minha marca'),
                     subtitle: Text(
                       marca.pronta
-                          ? '${marca.nome} — aparece no topo das suas propostas'
+                          ? '${marca.nome}: aparece no topo das suas propostas'
                           : 'Nome, logo e contato que vão nas suas propostas',
                     ),
                     trailing: const Icon(Icons.chevron_right),
@@ -228,7 +228,7 @@ class ConfigScreen extends ConsumerWidget {
                     subtitle: Text(
                       areas.areas.length <= 1
                           ? 'O cálculo que define quanto você cobra'
-                          : '${areas.areas.length} áreas — a ativa é "${areas.active?.nome ?? ''}"',
+                          : '${areas.areas.length} áreas. A ativa é "${areas.active?.nome ?? ''}"',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push(Routes.areas),
@@ -381,7 +381,7 @@ class ConfigScreen extends ConsumerWidget {
         ShareParams(
           files: <XFile>[XFile(file.path, mimeType: 'application/json')],
           subject: 'Backup Quanto Cobro',
-          text: 'Backup do Quanto Cobro? — guarde num lugar seguro.',
+          text: 'Backup do Quanto Cobro? Guarde num lugar seguro.',
         ),
       );
       messenger

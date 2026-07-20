@@ -287,8 +287,8 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
                         ),
                         const SizedBox(height: Space.x2),
                         Text(
-                          'Pra ganhar isso, você precisaria faturar ${moneyBRL(r.faturamento)}/mês — '
-                          'o MEI permite até ${moneyBRL(kTetoMensalMei)}/mês. Bom sinal: seu trabalho '
+                          'Pra ganhar isso, você precisaria faturar ${moneyBRL(r.faturamento)}/mês, '
+                          'e o MEI permite até ${moneyBRL(kTetoMensalMei)}/mês. Bom sinal: seu trabalho '
                           'está maior que o MEI. Vale conversar com um contador sobre o Simples. '
                           'Seu valor-hora continua valendo.',
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -417,7 +417,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
               ),
               const SizedBox(height: Space.x1),
               Text(
-                'MEI não paga % por pagamento — é um boleto fixo. '
+                'MEI não paga % por pagamento. É um boleto fixo. '
                 'Dá ~$pctFino% do que você fatura.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant,
@@ -442,7 +442,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           r,
           d,
           apoio:
-              'Alíquota efetiva do Simples pela sua faixa (estimativa pelo Anexo III — serviços).',
+              'Alíquota efetiva do Simples pela sua faixa (estimativa pelo Anexo III, serviços).',
         );
       case RegimeId.intl:
         return _reservePct(
@@ -450,7 +450,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           r,
           d,
           apoio:
-              'Regra de bolso pra quem recebe de fora: 25–30% de segurança. Ajuste com seu contador.',
+              'Regra de bolso pra quem recebe de fora: 25 a 30% de segurança. Ajuste com seu contador.',
         );
       case RegimeId.carneLeao:
         return _reservePct(
@@ -458,7 +458,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           r,
           d,
           apoio:
-              'Sua alíquota efetiva: só o IRPF pela sua faixa (carnê-leão), sem INSS — você não contribui como autônomo.',
+              'Sua alíquota efetiva: só o IRPF pela sua faixa (carnê-leão), sem INSS. Você não contribui como autônomo.',
         );
     }
   }

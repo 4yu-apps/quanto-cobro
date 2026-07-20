@@ -74,7 +74,7 @@ class HistoricoScreen extends ConsumerWidget {
                       const SizedBox(height: Space.x3),
                       Text(
                         'Nada registrado ainda. Quando um pagamento cair, ele '
-                        'aparece aqui — com o imposto já separado.',
+                        'aparece aqui, com o imposto já separado.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
@@ -117,7 +117,7 @@ class HistoricoScreen extends ConsumerWidget {
       await SharePlus.instance.share(
         ShareParams(
           files: <XFile>[XFile(file.path, mimeType: 'text/csv')],
-          subject: 'Histórico — Quanto Cobro',
+          subject: 'Histórico do Quanto Cobro',
         ),
       );
     } catch (_) {

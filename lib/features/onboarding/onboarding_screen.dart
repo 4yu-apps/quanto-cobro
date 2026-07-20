@@ -257,7 +257,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     // agora é preciso, e a próxima tela pede só estabilidade anônima, que é
     // outra coisa.
     body:
-        'Sem cadastro, sem login. Sua renda, seus clientes e seus valores ficam só aqui no aparelho — e funciona offline.',
+        'Sem cadastro, sem login. Sua renda, seus clientes e seus valores ficam só aqui no aparelho, e funciona offline.',
     extra: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -288,9 +288,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     icon: Icons.favorite_outline,
     title: 'Me ajuda a melhorar?',
     body:
-        'Quando o app trava ou dá erro, ele pode me avisar sozinho — só isso: '
-        'estabilidade e uso, de forma anônima. Seus números nunca entram nisso: '
-        'nem sua renda, nem seus clientes, nem seus valores. E só se você deixar.',
+        'Se o app travar ou der erro, ele pode me avisar sozinho: só '
+        'estabilidade e uso, de forma anônima. Seus números nunca entram '
+        'nisso, e só se você deixar.',
     extra: Text(
       'Dá pra ligar ou desligar quando quiser em Ajustes.',
       style: theme.textTheme.bodyMedium?.copyWith(

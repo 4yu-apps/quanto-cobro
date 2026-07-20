@@ -176,7 +176,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                         ? (p.provisaoCustom
                               ? 'Valor ajustado por você · ${moneyBRL(r.provisao)}'
                               : '1 mês da sua renda por ano · ${moneyBRL(r.provisao)}')
-                        : 'Quem trabalha por conta não recebe de ninguém — dá pra separar os seus.',
+                        : 'Quem trabalha por conta não recebe de ninguém. Dá pra separar os seus.',
                   ),
                 ),
                 if (p.provisaoOn)

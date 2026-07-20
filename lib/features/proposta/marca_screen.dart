@@ -153,7 +153,7 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.primeiraVez ? 'Sua marca — só uma vez' : 'Minha marca',
+          widget.primeiraVez ? 'Sua marca, só uma vez' : 'Minha marca',
         ),
       ),
       body: ContentWidth(
@@ -261,7 +261,7 @@ class _MarcaScreenState extends ConsumerState<MarcaScreen> {
 
             SecaoTitulo('Cor da sua marca', bottom: Space.x1),
             Text(
-              'Aparece como detalhe na proposta — no valor e no topo. O texto '
+              'Aparece como detalhe na proposta, no valor e no topo. O texto '
               'continua sempre legível, seja qual for a cor.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant,

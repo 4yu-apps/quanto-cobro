@@ -73,7 +73,7 @@ class Regime {
       id: RegimeId.carneLeao,
       label: 'Recebo de fora, sei que sou CPF',
       sub:
-          'Freelancer com cliente no exterior, como pessoa física. Paga só o IRPF pela sua faixa (carnê-leão) — sem INSS, porque não contribui como autônomo.',
+          'Freelancer com cliente no exterior, como pessoa física. Paga só o IRPF pela sua faixa (carnê-leão), sem INSS, porque não contribui como autônomo.',
       kind: TaxKind.progressivoSemInss,
       tag: 'CPF exterior',
     ),

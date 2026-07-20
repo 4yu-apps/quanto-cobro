@@ -35,7 +35,7 @@ Future<Uint8List> gerarPropostaPdf({
       base: fontes.regular,
       bold: fontes.semiBold,
     ).copyWith(defaultTextStyle: _corpo(fontes)),
-    title: 'Proposta — ${proposta.servico.trim()}',
+    title: 'Proposta: ${proposta.servico.trim()}',
     // Autoria do documento é do freelancer, não nossa (07 §A.5).
     author: nomeMarca.isEmpty ? null : nomeMarca,
   );

@@ -72,7 +72,7 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
       builder: (BuildContext c) => AlertDialog(
         title: const Text('Enviar em PDF é Pro'),
         content: const Text(
-          'Você já montou a proposta inteira — o Pro libera o envio com a sua '
+          'Você já montou a proposta inteira. O Pro libera o envio com a sua '
           'marca, sem marca d’água.',
         ),
         actions: <Widget>[
@@ -117,7 +117,7 @@ class _PropostaPreviewScreenState extends ConsumerState<PropostaPreviewScreen> {
       await SharePlus.instance.share(
         ShareParams(
           files: <XFile>[XFile(caminho, mimeType: 'application/pdf')],
-          subject: 'Proposta — ${widget.proposta.servico}',
+          subject: 'Proposta: ${widget.proposta.servico}',
         ),
       );
 

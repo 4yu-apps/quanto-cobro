@@ -18,7 +18,7 @@ class StaleBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
     final String texto = footnote
-        ? 'Tabelas de $ano — confirme as alíquotas do ano atual.'
+        ? 'Tabelas de $ano. Confirme as alíquotas do ano atual.'
         : 'Valores base de $ano. Confirme as alíquotas atuais.';
     if (footnote) {
       final Color fg = Theme.of(context).colorScheme.onSurfaceVariant;

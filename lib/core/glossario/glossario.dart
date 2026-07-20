@@ -36,7 +36,7 @@ abstract final class Glossario {
     'reserva': Verbete(
       'O que é "reserva"?',
       'É o dinheiro que você separa de cada pagamento pra pagar o imposto '
-          'depois. Não é seu pra gastar — fica guardado até a hora de acertar '
+          'depois. Não é seu pra gastar, fica guardado até a hora de acertar '
           'as contas.',
     ),
     'prolabore': Verbete(
@@ -47,7 +47,7 @@ abstract final class Glossario {
     'aliquota': Verbete(
       'O que é "alíquota"?',
       'É a porcentagem do imposto. "Alíquota efetiva" é quanto você paga de '
-          'verdade sobre o que ganha — quase sempre menos que a alíquota cheia '
+          'verdade sobre o que ganha, quase sempre menos que a alíquota cheia '
           'da tabela.',
     ),
     'carne_leao': Verbete(
@@ -73,19 +73,19 @@ abstract final class Glossario {
     ),
     'cpf': Verbete(
       'O que é "Autônomo (CPF)"?',
-      'É trabalhar por conta, sem abrir empresa — só com o seu CPF. O imposto '
+      'É trabalhar por conta, sem abrir empresa, só com o seu CPF. O imposto '
           'vem pelo carnê-leão, pela sua faixa de renda, mais o INSS.',
     ),
     'exterior': Verbete(
       'O que é "Recebo de fora, sei que sou CPF"?',
       'É pra quem já sabe que trabalha como pessoa física (CPF) pra cliente '
           'no exterior. Você paga o IRPF pela sua faixa, igual ao carnê-leão '
-          'do Autônomo — mas sem o INSS, porque não contribui como autônomo.',
+          'do Autônomo, mas sem o INSS, porque não contribui como autônomo.',
     ),
     'grossup': Verbete(
       'Imposto embutido',
       'Quer dizer que a conta já considera o imposto por dentro do valor, pra o '
-          'número que aparece pra você ser o final — sem surpresa depois.',
+          'número que aparece pra você ser o final, sem surpresa depois.',
     ),
   };
 

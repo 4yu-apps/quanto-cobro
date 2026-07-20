@@ -137,7 +137,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
               decoration: InputDecoration(
                 labelText: 'O que você vai entregar',
                 hintText:
-                    'Ex.: Identidade visual completa — logo, cores e manual de marca',
+                    'Ex.: Identidade visual completa: logo, cores e manual de marca',
                 errorText: _erroServico,
               ),
               onChanged: (_) {
@@ -176,7 +176,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
 
             SecaoTitulo('Validade da proposta', bottom: Space.x1),
             Text(
-              'Depois disso o preço pode mudar — é o que te protege de honrar '
+              'Depois disso o preço pode mudar. É o que te protege de honrar '
               'orçamento velho.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant,
@@ -216,7 +216,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
               minLines: 1,
               decoration: const InputDecoration(
                 labelText: 'Forma de pagamento',
-                helperText: 'O sinal é padrão de mercado — e te protege.',
+                helperText: 'O sinal é padrão de mercado, e te protege.',
               ),
             ),
             const SizedBox(height: Space.x4),
@@ -224,7 +224,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
               controller: _cliente,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
-                labelText: 'Para (cliente) — opcional',
+                labelText: 'Para o cliente (opcional)',
                 hintText: 'Nome de quem vai receber',
               ),
             ),
@@ -252,7 +252,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
                 // Desligado por default (07 §A.6): cliente que vê "40h × R$ 92"
                 // ancora na hora e pechincha a hora, não o trabalho.
                 subtitle: Text(
-                  'Desligado, o cliente vê o preço do trabalho — não o preço da '
+                  'Desligado, o cliente vê o preço do trabalho, não o preço da '
                   'sua hora.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurfaceVariant,

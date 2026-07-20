@@ -526,7 +526,7 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
           ? 'Seu imposto de ${mesNome(DateTime.now())} já está separado. O que entrar agora é todo seu.'
           : 'Como MEI, seu imposto do mês é um boleto só: ${moneyBRLCents(res.dasMensal!)}. Separando ele de uma vez.';
     }
-    return '~${res.pct}% — já é a sua faixa real de imposto, não a cheia.';
+    return '~${res.pct}%, já é a sua faixa real de imposto, não a cheia.';
   }
 
   Widget _legenda(

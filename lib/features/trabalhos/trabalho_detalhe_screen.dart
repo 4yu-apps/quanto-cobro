@@ -182,7 +182,7 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
           if (porMes.isEmpty)
             Text(
               'Nada registrado ainda. Quando o dinheiro cair, toque em "Nova '
-              'entrada" — o imposto sai separado junto.',
+              'entrada". O imposto sai separado junto.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
@@ -292,7 +292,7 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
                 title: Text('Apagar "${trabalho.nome}"?'),
                 content: const Text(
                   'O trabalho sai da lista. As entradas que você já registrou '
-                  'continuam no seu histórico — o que você separou de imposto '
+                  'continuam no seu histórico, o que você separou de imposto '
                   'não muda.',
                 ),
                 actions: <Widget>[

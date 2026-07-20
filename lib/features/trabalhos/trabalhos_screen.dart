@@ -413,7 +413,7 @@ class _Vazio extends StatelessWidget {
             ),
             const SizedBox(height: Space.x3),
             Text(
-              'Quando um pagamento cair, registre e diga de quem veio — o '
+              'Quando um pagamento cair, registre e diga de quem veio. O '
               'trabalho aparece aqui sozinho, com tudo que já entrou.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -465,7 +465,7 @@ class _PainelVazio extends StatelessWidget {
             Text(
               temTrabalhos
                   ? 'Escolha um trabalho pra ver os pagamentos dele aqui.'
-                  : 'Registre uma entrada e diga de quem veio — o trabalho '
+                  : 'Registre uma entrada e diga de quem veio. O trabalho '
                         'aparece aqui sozinho.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(

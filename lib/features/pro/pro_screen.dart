@@ -50,7 +50,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
       Icons.switch_account_outlined,
       'Vários trabalhos (cliente recorrente x avulso)',
     ),
-    (Icons.block, 'Sem anúncios — quando eles chegarem, você nunca os verá'),
+    (Icons.block, 'Sem anúncios: quando eles chegarem, você nunca os verá'),
   ];
 
   static const List<(IconData, String)> _chegando = <(IconData, String)>[
@@ -180,7 +180,7 @@ class _ProScreenState extends ConsumerState<ProScreen> {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    'Chegando — já incluso no seu Pro',
+                    'Chegando: já incluso no seu Pro',
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
