@@ -35,6 +35,30 @@
   recebimento"). Com licença de teste, a compra vira um cartão de teste que sempre
   aprova, sem cobrar.
 
+**Fecho do dia 20/07 (tarde):**
+- ✅ **Descrições da ficha publicadas** (curta + longa) via androidpublisher API,
+  título preservado. Texto versionado no [14](14-FICHA-LOJA.md).
+- ✅ **Feature graphic 1024×500** gerado (`test/ferramentas/feature_graphic.dart`),
+  em `docs/screenshots/loja/`. **Ainda NÃO subiu na ficha** (só o arquivo existe).
+- ✅ **Política de privacidade no ar e revisada:** outro agente já tinha publicado
+  em `4yu.com.br/quanto-cobro/privacidade/` (+ `/excluir-dados/`); esta sessão
+  acrescentou a base legal LGPD (Art. 7 e Art. 33) e re-deployou.
+- ✅ **AD_ID desligado** no `AndroidManifest.xml` (permissão removida + coleta off),
+  pra a política e o Data Safety poderem dizer "não coleta ID de publicidade".
+- ✅ **Testes de licença cadastrados** (o "pagamento recusado" acima deve sumir; a
+  conta dona pode ser recusada, testar com conta secundária tipo o Edu).
+- ✅ **Bundle `0.8.1+16` buildado** com sucesso (CI, branch `release/0.8.1+16`).
+  É o AAB com os textos limpos + AD_ID fora.
+
+**Amanhã, o que falta (em ordem):**
+1. **Publicar o AAB `+16` no track** (baixar o artefato do run e subir via API, §2).
+2. **Declarações do app** (Conteúdo do app): #6 ID de publicidade = **não usa** (só
+  depois do `+16` no ar, senão o Google acha a permissão no bundle 15); Data
+  Safety apontando a política e a página de exclusão; público-alvo 18+ sem
+  restringir menores; anúncios/financeiro/saúde/governo = não; login = sem acesso.
+3. **Subir o feature graphic** na ficha.
+4. **Teste fechado 12×14 dias** (relógio) — hoje 4 testadores, faltam chegar a 12.
+
 ---
 
 ## 1. O que esta sessão fez
