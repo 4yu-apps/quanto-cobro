@@ -11,10 +11,21 @@ class Entrada {
     required this.at,
     this.areaId,
     this.trabalhoId,
+    this.moedaOrigem,
+    this.taxa,
   });
 
   /// Quanto entrou (já em reais, convertido se veio em outra moeda).
   final double valor;
+
+  /// Código ISO da moeda ORIGINAL do recebimento ('USD', 'EUR'…), quando não
+  /// foi em real. Null = recebido em BRL. Guardado só pra rastreabilidade e
+  /// histórico; o [valor] já está convertido pra reais.
+  final String? moedaOrigem;
+
+  /// A taxa de câmbio usada na conversão (ex.: 5,50 pra USD→BRL). Null quando
+  /// foi em real. Junto de [moedaOrigem] deixa a conta auditável depois.
+  final double? taxa;
 
   /// Quanto foi separado pro imposto.
   final int separado;
@@ -42,6 +53,8 @@ class Entrada {
     at: at,
     areaId: areaId ?? this.areaId,
     trabalhoId: trabalhoId ?? this.trabalhoId,
+    moedaOrigem: moedaOrigem,
+    taxa: taxa,
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -51,6 +64,8 @@ class Entrada {
     'at': at.toIso8601String(),
     if (areaId != null) 'areaId': areaId,
     if (trabalhoId != null) 'trabalhoId': trabalhoId,
+    if (moedaOrigem != null) 'moedaOrigem': moedaOrigem,
+    if (taxa != null) 'taxa': taxa,
   };
 
   factory Entrada.fromJson(Map<String, dynamic> json) => Entrada(
@@ -62,5 +77,7 @@ class Entrada {
     at: DateTime.parse(json['at'] as String),
     areaId: (json['areaId'] ?? json['perfilId']) as String?,
     trabalhoId: (json['trabalhoId'] ?? json['projetoId']) as String?,
+    moedaOrigem: json['moedaOrigem'] as String?,
+    taxa: (json['taxa'] as num?)?.toDouble(),
   );
 }

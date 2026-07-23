@@ -9,8 +9,11 @@ import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/datas.dart';
 import '../../core/common/money.dart';
+import '../../core/fx/fx_rate.dart';
+import '../../core/fx/fx_service.dart';
 import '../../core/model/area.dart';
 import '../../core/model/entrada.dart';
+import '../../core/model/moeda.dart';
 import '../../core/model/regime.dart';
 import '../../core/model/trabalho.dart';
 import '../../core/providers.dart';
@@ -22,6 +25,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/estimativa_seal.dart';
+import '../../core/ui/help_dot.dart';
 import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/stale_banner.dart';
@@ -63,6 +67,20 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   final FocusNode _focoValor = FocusNode();
 
   Trabalho? _trabalho;
+
+  /// A moeda do valor digitado. BRL por padrão; USD/EUR/GBP ligam a conversão
+  /// (F3 — a Marina recebe em dólar). O imposto sempre roda sobre o valor JÁ
+  /// convertido pra real.
+  Moeda _moeda = Moeda.brl;
+
+  /// A cotação buscada pra [_moeda]→BRL. Null enquanto não há (buscando, ou
+  /// falhou sem cache). `stale` = última conhecida, offline.
+  FxRate? _fx;
+
+  /// Buscando a cotação agora (a única espera de rede do app → mostra indicador).
+  bool _buscandoFx = false;
+
+  bool get _emMoedaEstrangeira => _moeda.codigo != Moeda.brl.codigo;
 
   @override
   void initState() {
@@ -151,6 +169,10 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       at: agora,
       areaId: area?.id,
       trabalhoId: trabalho?.id,
+      // Guarda a moeda de origem e a taxa quando não foi em real — pra deixar a
+      // conversão auditável no histórico. O `valor` já está em reais.
+      moedaOrigem: _emMoedaEstrangeira ? _moeda.codigo : null,
+      taxa: _emMoedaEstrangeira ? _fx?.taxa : null,
     );
 
     final int antes = _separadoNoMesAtual();
@@ -192,7 +214,89 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
     _salvando = false;
   }
 
-  double get _valorEmReais => _digits(_valor.text).toDouble();
+  /// O valor SEMPRE em reais — é o que o imposto usa. Em real, é o que foi
+  /// digitado; em moeda estrangeira, é o digitado × a cotação (0 enquanto não
+  /// há cotação, pra não reservar em cima de taxa nenhuma).
+  double get _valorEmReais {
+    final int n = _digits(_valor.text);
+    if (!_emMoedaEstrangeira) return n.toDouble();
+    final double? t = _fx?.taxa;
+    return t == null ? 0 : n * t;
+  }
+
+  /// Abre o seletor de moeda (folha de baixo) e, ao escolher uma estrangeira,
+  /// busca a cotação. "Real" volta pro padrão e limpa a conversão.
+  Future<void> _escolherMoeda() async {
+    final Moeda? escolhida = await showModalBottomSheet<Moeda>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final Moeda m in Moeda.curadas)
+              ListTile(
+                leading: Text(
+                  m.simbolo,
+                  style: Theme.of(c).textTheme.titleMedium?.copyWith(
+                    fontFamily: AppType.numberFamily,
+                  ),
+                ),
+                title: Text(_nomeMoeda(m)),
+                trailing: m.codigo == _moeda.codigo
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.of(c).pop(m),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (escolhida == null || !mounted) return;
+    await _buscarCotacao(escolhida);
+  }
+
+  Future<void> _buscarCotacao(Moeda m) async {
+    if (m.codigo == Moeda.brl.codigo) {
+      setState(() {
+        _moeda = Moeda.brl;
+        _fx = null;
+        _buscandoFx = false;
+      });
+      return;
+    }
+    setState(() {
+      _moeda = m;
+      _fx = null;
+      _buscandoFx = true;
+    });
+    try {
+      final FxRate fx = await ref
+          .read(fxServiceProvider)
+          .cotacao(m, Moeda.brl, agora: DateTime.now());
+      if (!mounted) return;
+      setState(() {
+        _fx = fx;
+        _buscandoFx = false;
+      });
+    } on FxUnavailable {
+      if (!mounted) return;
+      // Sem cotação e sem cache: mantém a moeda escolhida mas sem taxa — a UI
+      // oferece tentar de novo ou voltar pro real. Nunca reserva sem taxa.
+      setState(() {
+        _fx = null;
+        _buscandoFx = false;
+      });
+    }
+  }
+
+  static String _nomeMoeda(Moeda m) => switch (m.codigo) {
+    'BRL' => 'Real (R\$)',
+    'USD' => 'Dólar americano (US\$)',
+    'EUR' => 'Euro (€)',
+    'GBP' => 'Libra (£)',
+    _ => m.codigo,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +337,7 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
             MoneyField(
               controller: _valor,
               label: 'Quanto você recebeu?',
-              prefix: r'R$ ',
+              prefix: '${_moeda.simbolo} ',
               focusNode: _focoValor,
               // Autofocus é ouro pra quem enxerga — abre o teclado no campo
               // certo. Mas ele rouba o foco antes de o leitor de tela terminar
@@ -254,6 +358,15 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                       : null,
                 );
               },
+            ),
+            const SizedBox(height: Space.x2),
+            _MoedaLinha(
+              moeda: _moeda,
+              fx: _fx,
+              buscando: _buscandoFx,
+              valorDigitado: _digits(_valor.text),
+              onEscolher: _escolherMoeda,
+              onTentarDeNovo: () => _buscarCotacao(_moeda),
             ),
             const SizedBox(height: Space.x4),
 
@@ -462,6 +575,153 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       ),
     ],
   );
+}
+
+/// A linha da moeda (F3). Em real: o link "recebi em outra moeda". Em moeda
+/// estrangeira: o chip da moeda + a conversão pra real (ou o indicador de busca,
+/// ou o caminho de recuperação quando a cotação não vem).
+class _MoedaLinha extends StatelessWidget {
+  const _MoedaLinha({
+    required this.moeda,
+    required this.fx,
+    required this.buscando,
+    required this.valorDigitado,
+    required this.onEscolher,
+    required this.onTentarDeNovo,
+  });
+
+  final Moeda moeda;
+  final FxRate? fx;
+  final bool buscando;
+  final int valorDigitado;
+  final VoidCallback onEscolher;
+  final VoidCallback onTentarDeNovo;
+
+  bool get _estrangeira => moeda.codigo != Moeda.brl.codigo;
+
+  static String _taxaFmt(double t) =>
+      'R\$ ${t.toStringAsFixed(2).replaceAll('.', ',')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final DivisaoColors d = theme.extension<DivisaoColors>()!;
+
+    if (!_estrangeira) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: onEscolher,
+          icon: const Icon(Icons.public, size: 18),
+          label: const Text('Recebi em outra moeda'),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ActionChip(
+            avatar: const Icon(Icons.public, size: 16),
+            label: Text('${moeda.simbolo} · trocar moeda'),
+            onPressed: onEscolher,
+          ),
+        ),
+        const SizedBox(height: Space.x2),
+        if (buscando)
+          // A ÚNICA espera de rede do app (doutrina §5): indicador, não skeleton
+          // falso.
+          Row(
+            children: <Widget>[
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: Space.x3),
+              Text(
+                'buscando a cotação de hoje…',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ],
+          )
+        else if (fx != null)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (valorDigitado > 0)
+                      Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            TextSpan(
+                              text: '${moeda.simbolo} $valorDigitado  ≈  ',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            TextSpan(
+                              text: moneyBRL(valorDigitado * fx!.taxa),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontFamily: AppType.numberFamily,
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: AppType.tnum,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Text(
+                      '1 ${moeda.simbolo} = ${_taxaFmt(fx!.taxa)}  ·  '
+                      '${fx!.stale ? 'cotação de ${dataCurta(fx!.at)} (offline)' : 'cotação de hoje'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: fx!.stale ? d.staleFg : cs.onSurfaceVariant,
+                        fontFeatures: AppType.tnum,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Space.x2),
+              const HelpDot(verbeteId: 'cambio'),
+            ],
+          )
+        else
+          // Sem cotação e sem cache: nunca reserva sem taxa. Oferece o caminho.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Não consegui a cotação agora.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              Row(
+                children: <Widget>[
+                  TextButton(
+                    onPressed: onTentarDeNovo,
+                    child: const Text('Tentar de novo'),
+                  ),
+                  TextButton(
+                    onPressed: onEscolher,
+                    child: const Text('Registrar em real'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+      ],
+    );
+  }
 }
 
 /// "como MEI · ajustar" — a frase que substituiu cinco chips de regime.

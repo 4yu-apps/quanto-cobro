@@ -87,6 +87,13 @@ abstract final class Glossario {
       'Quer dizer que a conta já considera o imposto por dentro do valor, pra o '
           'número que aparece pra você ser o final, sem surpresa depois.',
     ),
+    'cambio': Verbete(
+      'De onde vem a cotação?',
+      'Recebeu em dólar ou euro? Convertemos pra real pela cotação do dia, de '
+          'um serviço público. Ex.: US\$ 100 a 5,50 = R\$ 550. Offline, usamos a '
+          'última e mostramos a data. É estimativa: o imposto oficial usa a '
+          'cotação do Banco Central do dia anterior.',
+    ),
   };
 
   static Verbete of(String id) => _all[id]!;
