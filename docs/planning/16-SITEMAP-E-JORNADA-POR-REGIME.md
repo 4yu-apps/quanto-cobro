@@ -233,13 +233,56 @@ fazem** naturalmente. A dor é desorganização/esquecimento, não falta de dinh
 
 ---
 
-## 8. Perguntas abertas — consolidado (docs 15 + 16)
-- Alíquota efetiva: sempre-visível ou on-tap? (inclino a sempre)
-- Lembrete de vencimento: entra agora? (a varredura empurra pra SIM)
-- Teto do MEI: Pro ou grátis? (dano real → argumento pra grátis)
-- **Câmbio: BCB/PTAX D-1 (preciso) ou open.er-api (simples)?** (nova, da §7.2)
-- Fator R do Simples: tratar ou fora de escopo?
-- Múltiplas moedas no histórico: parte do USD grátis ou "organização" Pro?
+## 8. Decisões — TODAS travadas (23/07/2026, com o Gabriel)
+
+| # | Tema | Decisão |
+|---|---|---|
+| 1 | Alíquota efetiva | **Sempre visível SEM o termo técnico** + "o que é?". Selinho "≈12% vira imposto"; o help ensina a palavra "alíquota efetiva". |
+| 2 | Lembrete | **Notificação real** (chega com app fechado), **agendamento inexato** (sem permissão de alarme exato, sem risco Play). **Frente própria**, logo depois do USD/regime — build nativo distinto, não misturar. A versão só-in-app foi descartada (não alcança quem esqueceu de abrir). |
+| 3 | Teto MEI | **Alerta grátis, projeção Pro.** Saber a zona (verde/amarela/vermelha) e quanto falta = grátis (perigo real). "Nesse ritmo estoura em outubro" = Pro. |
+| 4 | Câmbio | **PTAX do BCB primária + open.er-api fallback + "o que é PTAX?"**. Precisa quando dá, resiliente quando não dá, jargão morto pelo help. |
+| 5 | Fator R Simples | **Tratar completo, SÓ no fluxo do Simples.** MEI/CPF/dólar nunca veem. Simples → pergunta humana ("tira pró-labore? quanto?") → calcula Fator R nos bastidores → escolhe anexo. Corrige o erro atual (app assume sempre Anexo III/barato). Precisa: tabela Anexo V + lógica + **revisitar/retestar** o cálculo. |
+| 6 | Multimoeda histórico | **Registro grátis, relatório Pro.** Ver cada recebimento em USD = grátis (é o loop). "Quanto recebi em dólar no ano" = Pro. |
+
+### 8.1 🔴 Achado que virou correção: o app subestima o Simples solo
+`aliquotaEfetivaSimples` ([tax_tables.dart:141](../../lib/core/calc/tax_tables.dart#L141))
+**sempre assume Anexo III** (o mais barato). Freelancer solo do Simples, sem
+pró-labore ≥28% do faturamento, cai no **Anexo V (mais caro)** pelo Fator R — então
+hoje o app **reserva de menos** pra ele. Num app fiscal, subestimar é o pior erro
+(a pessoa guarda pouco e toma susto). A decisão 5 conserta isso.
+
+---
+
+## 9. Princípios de UX (as diretrizes do Gabriel, pra valer em toda tela nova)
+
+Regras que governam o desenho das features daqui pra frente:
+
+1. **Fácil de verdade, sem jargão na cara.** Nenhum termo técnico solto na tela.
+   Quando o conceito for inevitável (PTAX, alíquota, carnê-leão, teto, Fator R),
+   ele aparece com um **"o que é XXX?"** do lado → bottom-sheet de baixo pra cima,
+   linguagem humana, **com exemplo**. Reusa o que já existe: `help_dot.dart` +
+   `glossario.dart`.
+2. **Fluxo linear e imaginável.** A pessoa consegue prever o caminho: "quero
+   calcular um freela → anoto isso, isso e isso → pronto, aqui está". "Recebi um
+   valor → quanto foi meu? → vem por aqui." Sem labirinto, sem decisão que trava.
+   Um objetivo por tela.
+3. **Sem número estourando.** Um herói por tela; o resto é apoio discreto. Números
+   complexos ficam atrás de um toque ("como cheguei"), nunca despejados de uma vez.
+4. **Motion que faz o app sentir vivo/rápido.** Transições com significado, número
+   que conta pra cima, card que sobe. Motion de *entrada/transição*, não decoração.
+5. **Skeleton só onde há espera real.** App é offline: dado local é instantâneo,
+   skeleton ali seria atraso falso (ruim). O **único** lugar com skeleton/shimmer é
+   a **busca de câmbio** (a única chamada de rede). No resto, motion de entrada.
+
+> Estes cinco valem como checklist de aceite de qualquer tela nova das features
+> USD, regime avançado, teto e lembrete.
+
+---
+
+## 10. Ainda 100% aberto (nada trava a UI)
+- Nada. As seis decisões estão fechadas. O que sobra é desenho de tela — a próxima
+  sessão — e o sequenciamento de build (sugestão em §5: USD → detalhamento →
+  teto → Fator R/revisão do Simples → lembrete como frente própria).
 
 ---
 

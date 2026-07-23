@@ -265,15 +265,12 @@ Anti-padrões que a pesquisa manda evitar (viram ★1):
 3. Detalhamento → **bottom sheet**, opt-in.
 4. MEI avançado → **rastreador de teto próprio**, escopo "limite fiscal, não finanças".
 
-**🔲 Ainda abertas (pra sessão de UI):**
-5. **Alíquota efetiva grátis:** aparece sempre, ou só quando a pessoa toca? (Inclino
-   a sempre — é barato e educa. Confirmar.)
-6. **Lembrete de vencimento** (table-stakes da frente C) — entra junto com o teto do
-   MEI ou é frente própria? Encosta no Diego, mas não é destas duas features.
-7. **Selo Pro no MEI-teto:** o rastreador de teto é Pro (como o detalhamento) ou
-   grátis (por ser "segurança", não "profundidade")? Argumento pra grátis: estourar
-   o teto é dano real, não conveniência. Argumento pra Pro: é agregação/valor extra.
-   **A decidir na sessão.**
+**✅ As antes-abertas, agora FECHADAS** (detalhe na [16 §8](16-SITEMAP-E-JORNADA-POR-REGIME.md#8-decisões--todas-travadas-23072026-com-o-gabriel)):
+5. Alíquota efetiva → **sempre visível, sem o termo técnico, com "o que é?"**.
+6. Lembrete → **notificação real (inexata), como frente própria** logo depois.
+7. Teto MEI → **alerta grátis, projeção Pro** (não é tudo-Pro nem tudo-grátis).
+- Câmbio → **PTAX + fallback open.er-api + "o que é PTAX?"**.
+- Fator R → **tratado por completo, só no fluxo do Simples** (corrige subestimação).
 
 ---
 
