@@ -66,6 +66,15 @@ Cada tela deve misturar pelo menos 3 naturezas diferentes de elemento:
 | Linha plana | lista de trabalhos/histórico | Trabalhos / Histórico |
 | Barra segmentada | a Divisão (lucro/reserva/custo) | todas as de resultado |
 
+### 3.1 Dois esclarecimentos (23/07, com o Gabriel)
+- **A Divisão mostra R$, não só %.** A legenda traz o **valor em reais** de cada
+  segmento (É seu / Imposto / Custos) + o % como apoio — pra o número não ficar
+  avulso/abstrato. **Tocar na barra** abre o detalhamento (a mecânica: faixa, INSS,
+  dedução). Dois níveis: R$ sempre visível · a conta atrás de um toque.
+- **O gráfico é "quanto entrou por mês"** (faturamento dos recebimentos
+  registrados). **Empty-state manda: sem dado, o gráfico não aparece** — nada de
+  barra fake ou "0" na cara. Ele nasce quando existe o primeiro recebimento.
+
 ---
 
 ## 4. Dois bugs de fluxo que entram junto
