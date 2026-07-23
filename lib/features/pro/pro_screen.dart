@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/billing/billing_service.dart';
 import '../../core/providers.dart';
 import '../../core/telemetry/eventos.dart';
 import '../../core/telemetry/telemetry.dart';
@@ -34,10 +37,24 @@ class _ProScreenState extends ConsumerState<ProScreen> {
   /// fora). Fica null até a loja responder — o texto cai no fallback em reais.
   String? _preco;
 
+  /// O que a loja responde DEPOIS do toque em Assinar chega por aqui — a compra
+  /// é assíncrona, o `comprar()` só diz se a folha abriu.
+  StreamSubscription<BillingEvento>? _eventosBilling;
+
   @override
   void initState() {
     super.initState();
     _carregarPreco();
+    _eventosBilling = ref
+        .read(billingServiceProvider)
+        .eventos
+        .listen(_aoEventoDaLoja);
+  }
+
+  @override
+  void dispose() {
+    _eventosBilling?.cancel();
+    super.dispose();
   }
 
   Future<void> _carregarPreco() async {
@@ -45,16 +62,52 @@ class _ProScreenState extends ConsumerState<ProScreen> {
     if (mounted && p != null) setState(() => _preco = p);
   }
 
+  /// Sem isto, "pagamento em análise" e "a loja recusou" eram silêncio: a pessoa
+  /// tocava em Assinar, a folha fechava e a tela ficava idêntica. Silêncio
+  /// depois de pagar é o caminho curto pro ★1 e pro pedido de reembolso.
+  void _aoEventoDaLoja(BillingEvento e) {
+    if (!mounted) return;
+    // A compra confirmada não precisa de aviso: a tela troca sozinha pro
+    // recibo (isPro no build). E cancelar foi escolha da pessoa — avisar que
+    // ela cancelou é ruído.
+    if (e == BillingEvento.comprado || e == BillingEvento.cancelado) {
+      if (_comprando) setState(() => _comprando = false);
+      return;
+    }
+    final String msg = switch (e) {
+      BillingEvento.pendente =>
+        'Pagamento em análise. Assim que a loja confirmar, o Pro liga sozinho.',
+      // "Item already owned" cai aqui: a conta já assina e o direito local se
+      // perdeu (reinstalou, trocou de aparelho). Por isso a saída oferecida é
+      // Restaurar compras, e não "tente pagar de novo".
+      BillingEvento.erro =>
+        'A loja não concluiu a compra. Se você já assina, toque em "Restaurar compras".',
+      BillingEvento.comprado || BillingEvento.cancelado => '',
+    };
+    if (msg.isEmpty) return;
+    setState(() => _comprando = false);
+    announce(context, msg);
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(content: Text(msg), duration: const Duration(seconds: 6)),
+      );
+  }
+
   static const List<(IconData, String)> _hoje = <(IconData, String)>[
     (
       Icons.switch_account_outlined,
       'Vários trabalhos (cliente recorrente x avulso)',
     ),
+    // A proposta em PDF ficou listada como "chegando" DEPOIS de estar pronta e
+    // já gated por Pro (proposta_preview_screen). Vender como promessa o que já
+    // se entrega é o pior dos dois mundos: parece que o Pro tem menos do que
+    // tem, e a pessoa que assina esperando "algo que vem" já recebe.
+    (Icons.picture_as_pdf_outlined, 'Orçamento em PDF pra mandar ao cliente'),
     (Icons.block, 'Sem anúncios: quando eles chegarem, você nunca os verá'),
   ];
 
   static const List<(IconData, String)> _chegando = <(IconData, String)>[
-    (Icons.picture_as_pdf_outlined, 'Orçamento em PDF pra mandar ao cliente'),
     (Icons.tune, 'Modo avançado por regime (faixas, INSS, deduções)'),
     (Icons.public, 'Módulo freela pra gringo (USD)'),
   ];
@@ -204,7 +257,12 @@ class _ProScreenState extends ConsumerState<ProScreen> {
               _plano_(
                 context,
                 'Pro',
-                '${_preco ?? 'R\$ 6,90'} por mês · cancela quando quiser',
+                // "Renova automaticamente" não é jargão jurídico enfiado na
+                // tela: a Play EXIGE que a recorrência apareça antes da compra,
+                // e omitir isso é metade das reclamações de "me cobraram de
+                // novo". Dizer junto com "cancela quando quiser" mantém a
+                // frase honesta sem virar aviso de letra miúda.
+                '${_preco ?? 'R\$ 6,90'} por mês · renova automaticamente · cancela quando quiser',
                 destaque: true,
               ),
               const SizedBox(height: Space.x4),
@@ -261,7 +319,9 @@ class _ProScreenState extends ConsumerState<ProScreen> {
               ),
               const SizedBox(height: Space.x2),
               Text(
-                'Cobrado pela Google Play. Cancela quando quiser, direto na Play.',
+                'Cobrado pela Google Play e renovado a cada mês até você '
+                'cancelar. O cancelamento é na sua conta da Play, e o Pro '
+                'continua até o fim do período já pago.',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),

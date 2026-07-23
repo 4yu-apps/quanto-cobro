@@ -10,14 +10,43 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
-// Assinatura de release: le android/key.properties (gitignored, fora do repo).
-// Ausente = build cai na chave de debug, que instala em aparelho mas a Play
-// recusa. O CI recria esse arquivo a partir dos secrets.
+// Assinatura de release. Duas fontes, nesta ordem:
+//
+//  1. android/key.properties (gitignored) — o que o CI recria a partir dos
+//     secrets do GitHub (KEYSTORE_BASE64, STORE_PASSWORD, KEY_PASSWORD, KEY_ALIAS).
+//  2. variaveis de ambiente — o caminho da maquina local.
+//
+// A ordem 2 existe porque o contrato da 4YU (CLAUDE.md) proibe segredo DENTRO do
+// repo, mesmo gitignored: um key.properties com a senha da keystore e um segredo
+// em repouso na arvore do projeto, esperando um `git add -f` distraido. Com env,
+// a senha nunca toca o disco do repo:
+//
+//   set -a && . /home/gabrielbarbosa/dev/gabriel/4yu-apps/.secrets/4yu.env && set +a
+//   export QUANTOCOBRO_KEYSTORE_FILE=/home/gabrielbarbosa/dev/gabriel/4yu-apps/.secrets/quantocobro-upload.jks
+//   flutter build apk --release
+//
+// Sem nenhuma das duas, o build cai na chave de debug: instala em aparelho pra
+// teste, e a Play recusa.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+
+// storeFile default: a keystore de upload vive no cofre compartilhado, fora de
+// qualquer git. So o CAMINHO aparece aqui; a senha, nunca.
+val envKeystoreFile: String? = System.getenv("QUANTOCOBRO_KEYSTORE_FILE")
+val envKeystorePass: String? = System.getenv("QUANTOCOBRO_KEYSTORE_PASS")
+val envKeyAlias: String? = System.getenv("QUANTOCOBRO_KEY_ALIAS")
+
+// A env so vale se der pra assinar de verdade: caminho, senha e alias, e o
+// arquivo existindo. Meio-caminho viraria erro no meio do build.
+val assinaPorEnv = envKeystoreFile != null &&
+    envKeystorePass != null &&
+    envKeyAlias != null &&
+    file(envKeystoreFile).exists()
+
+val temAssinaturaRelease = keystorePropertiesFile.exists() || assinaPorEnv
 
 android {
     namespace = "com.fouryuapps.quantocobro"
@@ -42,23 +71,32 @@ android {
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        if (temAssinaturaRelease) {
             create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+                if (keystorePropertiesFile.exists()) {
+                    keyAlias = keystoreProperties["keyAlias"] as String
+                    keyPassword = keystoreProperties["keyPassword"] as String
+                    storeFile = file(keystoreProperties["storeFile"] as String)
+                    storePassword = keystoreProperties["storePassword"] as String
+                } else {
+                    // A keystore de upload usa a MESMA senha pra store e pra
+                    // chave (foi gerada assim, `.secrets/4yu.env`).
+                    keyAlias = envKeyAlias
+                    keyPassword = envKeystorePass
+                    storeFile = file(envKeystoreFile!!)
+                    storePassword = envKeystorePass
+                }
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (temAssinaturaRelease) {
                 signingConfigs.getByName("release")
             } else {
                 // Sem keystore: chave de debug. Instala em aparelho pra teste,
-                // a Play recusa. E o estado atual ate a keystore existir.
+                // a Play recusa.
                 signingConfigs.getByName("debug")
             }
 
