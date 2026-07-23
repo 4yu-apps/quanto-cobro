@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/datas.dart';
@@ -50,31 +52,15 @@ class EntradaScreen extends ConsumerStatefulWidget {
 class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   final TextEditingController _valor = TextEditingController();
   final TextEditingController _deQuem = TextEditingController();
-  bool _saved = false;
   Timer? _announceTimer;
 
   /// Trava do salvamento. `_salvar` é `async` e nada impedia dois disparos
-  /// durante o `await`: saíam duas entradas e o Desfazer removia uma. Toque
-  /// duplo é o normal de quem tem tremor, usa Switch Access, ou de quem o
-  /// leitor de tela fez disparar duas vezes.
+  /// durante o `await`: saíam duas entradas. Toque duplo é o normal de quem tem
+  /// tremor, usa Switch Access, ou de quem o leitor de tela fez disparar duas
+  /// vezes.
   bool _salvando = false;
 
-  /// Pra onde o foco pousa quando os botões trocam de identidade. Sem eles, o
-  /// nó em que a pessoa estava é destruído debaixo dela e o leitor de tela
-  /// recai no topo da tela — com o "Desfazer" virando um botão que ninguém
-  /// acha.
-  final FocusNode _focoDepoisDoSave = FocusNode();
-  final FocusNode _focoGuardar = FocusNode();
   final FocusNode _focoValor = FocusNode();
-
-  /// Quanto já havia no cofre ANTES desta entrada, e quanto ficou depois.
-  /// É o par que faz o valor contar de 344 pra 412 em vez de zero pra 412 —
-  /// "você cresceu 68", não "você tem 412".
-  int? _cofreAntes;
-  int? _cofreDepois;
-
-  /// A última entrada salva — o que o "Desfazer" remove.
-  Entrada? _ultima;
 
   Trabalho? _trabalho;
 
@@ -95,8 +81,6 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
   void dispose() {
     _valor.dispose();
     _deQuem.dispose();
-    _focoDepoisDoSave.dispose();
-    _focoGuardar.dispose();
     _focoValor.dispose();
     _announceTimer?.cancel();
     super.dispose();
@@ -121,25 +105,6 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
         .read(entradasProvider)
         .where((Entrada e) => e.at.year == now.year && e.at.month == now.month)
         .fold<int>(0, (int s, Entrada e) => s + e.separado);
-  }
-
-  void _desfazer() {
-    // A fala do "digitando" não pode chegar DEPOIS da fala do desfazer.
-    _announceTimer?.cancel();
-    final Entrada? e = _ultima;
-    if (e == null) return;
-    ref.read(entradasProvider.notifier).remove(e);
-    announce(context, 'Desfeito. A entrada foi removida.');
-    setState(() {
-      _saved = false;
-      _ultima = null;
-      _cofreAntes = null;
-      _cofreDepois = null;
-    });
-    // O botão que ela apertou deixou de existir; o foco volta pro "Guardar".
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focoGuardar.requestFocus();
-    });
   }
 
   void _anunciar(ReservaResult? r) {
@@ -204,24 +169,27 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
       _salvando = false;
       return;
     }
-    // O gesto mais importante do app VIBRA e agora também FALA: a SnackBar não
-    // é anunciada de forma confiável pelo leitor de tela.
+    // O gesto mais importante do app VIBRA e FALA: o anúncio confirma o que foi
+    // guardado e quanto já tem no mês, ANTES de sair da tela (o leitor de tela
+    // não anuncia a troca de rota sozinho de forma confiável).
     announce(
       context,
       'Guardado. ${moneyBRL(res.separado)} separados do imposto'
       '${trabalho == null ? '' : ' do pagamento de ${trabalho.nome}'}. '
       'Você já tem ${moneyBRL(antes + res.separado)} separados este mês.',
     );
-    setState(() {
-      _saved = true;
-      _ultima = entrada;
-      _cofreAntes = antes;
-      _cofreDepois = antes + res.separado;
-      _salvando = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focoDepoisDoSave.requestFocus();
-    });
+
+    // Salvou → SAI. Antes a tela ficava e oferecia "registrar outro", que não
+    // fazia sentido: quem salvou terminou. Vai pra Meus Trabalhos, onde o
+    // pagamento aparece ligado a quem pagou — essa é a confirmação visual.
+    //
+    // A Entrada foi EMPURRADA sobre a casca (`push`), e `go` sozinho não tira
+    // rota empurrada — ficaria a Reserva por cima. Então: tira a Entrada da
+    // pilha E troca a aba pra Trabalhos.
+    final GoRouter router = GoRouter.of(context);
+    if (router.canPop()) router.pop();
+    router.go(Routes.trabalhos);
+    _salvando = false;
   }
 
   double get _valorEmReais => _digits(_valor.text).toDouble();
@@ -273,7 +241,7 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
               // orientação. Gateado: dá o ganho sem cobrar o preço.
               autofocus: !MediaQuery.accessibleNavigationOf(context),
               onChanged: (_) {
-                setState(() => _saved = false);
+                setState(() {});
                 final double v = _valorEmReais;
                 _anunciar(
                   v > 0
@@ -348,7 +316,6 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         VitrineCard(
-                          highlight: _saved,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
@@ -406,15 +373,7 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                                   sobra: res.sobra,
                                 ),
                               ),
-                              const SizedBox(height: Space.x2),
-                              // O cofre FECHA: a linha nasce dentro do mesmo
-                              // card, e o valor conta do total anterior pro
-                              // novo. Herói, barra e campo ficam parados — o
-                              // cofre não pula, ele fecha.
-                              _CofreDoMes(
-                                antes: _cofreAntes,
-                                depois: _cofreDepois,
-                              ),
+                              const SizedBox(height: Space.x3),
                               Wrap(
                                 spacing: Space.x4,
                                 runSpacing: Space.x2,
@@ -441,70 +400,12 @@ class _EntradaScreenState extends ConsumerState<EntradaScreen> {
                           ),
                         ),
                         const SizedBox(height: Space.x4),
-                        // O Desfazer inline (no lugar da SnackBar) foi a
-                        // decisão certa: SnackBar some sozinha em ~4s, e isso
-                        // é WCAG 2.2.1 na cara — com leitor de tela dá pra
-                        // ouvir o anúncio e mais nada. Aqui não tem prazo, e
-                        // ele fica na ordem de leitura, logo depois do card
-                        // que acabou de mudar. Falta só o foco não cair no
-                        // vazio quando os botões trocam de identidade.
-                        if (_saved)
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: FilledButton.tonal(
-                                  focusNode: _focoDepoisDoSave,
-                                  onPressed: () {
-                                    setState(() {
-                                      _valor.clear();
-                                      if (widget.trabalhoId == null) {
-                                        _deQuem.clear();
-                                        // A próxima entrada começa avulsa de
-                                        // novo — não herda o trabalho da última.
-                                        _trabalho = null;
-                                      }
-                                      _saved = false;
-                                      _cofreAntes = null;
-                                      _cofreDepois = null;
-                                    });
-                                    // O campo é limpo; sem isto ninguém avisa
-                                    // quem não vê a tela que ele esvaziou.
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                          if (mounted) {
-                                            _focoValor.requestFocus();
-                                          }
-                                        });
-                                  },
-                                  child: const Text('Registrar outro'),
-                                ),
-                              ),
-                              const SizedBox(width: Space.x3),
-                              Semantics(
-                                // "Desfazer" sozinho é um cheque em branco:
-                                // desfazer o quê? O registro? O trabalho que
-                                // nasceu? O rótulo diz o que se perde.
-                                label: _ultima == null
-                                    ? 'Desfazer'
-                                    : 'Desfazer o registro de '
-                                          '${moneyBRL(_ultima!.valor)}',
-                                button: true,
-                                onTap: _desfazer,
-                                child: ExcludeSemantics(
-                                  child: TextButton(
-                                    onPressed: _desfazer,
-                                    child: const Text('Desfazer'),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        else
-                          FilledButton.tonal(
-                            focusNode: _focoGuardar,
-                            onPressed: () => _salvar(res, regime, area),
-                            child: const Text('Guardar'),
-                          ),
+                        // Salvou → sai (vai pra Meus Trabalhos, com o Desfazer
+                        // na SnackBar de lá). Aqui só existe o Guardar.
+                        FilledButton.tonal(
+                          onPressed: () => _salvar(res, regime, area),
+                          child: const Text('Guardar'),
+                        ),
                         const SizedBox(height: Space.x4),
                         if (tabelasDefasadas(DateTime.now())) ...<Widget>[
                           StaleBanner(ano: kTabelasAno),
@@ -593,69 +494,3 @@ class _LinhaRegime extends StatelessWidget {
   }
 }
 
-/// A linha que nasce quando o cofre fecha: `NO COFRE ESTE MÊS`, com o valor
-/// contando **do total anterior pro novo**.
-///
-/// É a microinteração-assinatura do app. A regra que ela obedece: o último
-/// pixel a parar é o dinheiro que FICA, não o que sai.
-class _CofreDoMes extends StatelessWidget {
-  const _CofreDoMes({required this.antes, required this.depois});
-
-  final int? antes;
-  final int? depois;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final DivisaoColors d = theme.extension<DivisaoColors>()!;
-    final int? total = depois;
-
-    return AnimatedSize(
-      duration: reduceMotionOf(context) ? Duration.zero : Motion.emphasized,
-      curve: MotionCurves.emphasizedDecel,
-      alignment: Alignment.topCenter,
-      child: total == null
-          ? const SizedBox(width: double.infinity)
-          : Padding(
-              padding: const EdgeInsets.only(bottom: Space.x3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'NO COFRE ESTE MÊS',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  MoneyCountUp(
-                    total,
-                    from: antes,
-                    duration: Motion.emphasized,
-                    curve: MotionCurves.landing,
-                    style: theme.textTheme.titleLarge!.copyWith(
-                      color: d.reserva,
-                      fontFamily: AppType.numberFamily,
-                      fontFeatures: AppType.tnum,
-                    ),
-                    // Anuncie a TRANSIÇÃO, rotule o ESTADO — nunca deixe o
-                    // estado sem nome pra evitar repetir a transição.
-                    //
-                    // Aqui estava `semanticLabel: ''`, achando que silenciava
-                    // uma repetição. Não silencia: tira o valor da árvore. O
-                    // `announce` do save é transitório ("você acabou de
-                    // crescer 68") e passa; o rótulo é permanente ("no cofre
-                    // este mês: 412") e responde toda vez que o dedo passa.
-                    // Quem enxerga ouvia o anúncio e podia OLHAR de novo; quem
-                    // não enxerga ouvia uma vez e o número deixava de existir
-                    // — tendo que ir ao Histórico procurar o próprio acúmulo,
-                    // que é justamente a recompensa de voltar mês que vem.
-                    semanticLabel: 'No cofre este mês: ${moneyBRL(total)}',
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-}

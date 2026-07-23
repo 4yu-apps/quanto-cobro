@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantocobro/app/app.dart';
 import 'package:quantocobro/core/data/entrada_repository.dart';
 import 'package:quantocobro/core/model/entrada.dart';
 import 'package:quantocobro/core/providers.dart';
-import 'package:quantocobro/core/theme/app_theme.dart';
-import 'package:quantocobro/features/entrada/entrada_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/tela.dart';
@@ -13,27 +12,24 @@ import 'support/tela.dart';
 /// O caminho de ouro — a tela mais usada do app, no gesto que se repete toda
 /// semana. Os defeitos aqui são os que mais custam, e os mais fáceis de não
 /// perceber olhando pra tela.
+///
+/// Desde F2 (23/07/2026): salvar SAI da tela (vai pra Meus Trabalhos), com o
+/// Desfazer na SnackBar de lá. Não há mais "registrar outro" nem foco pós-save.
 void main() {
   testWidgets('toque duplo em Guardar grava UMA entrada, não duas', (
     WidgetTester tester,
   ) async {
     await comTela(tester, Tela.celularEmPe, () async {
-      final ProviderContainer container = await _pump(tester);
+      final ProviderContainer container = await _abrirNaEntrada(tester);
 
       await tester.enterText(find.byType(TextField).first, '400');
       await tester.pumpAndSettle();
 
-      // Dois toques ANTES de o primeiro terminar — é o que acontece com
-      // tremor, com Switch Access, ou quando o leitor de tela dispara duas
-      // vezes. `tester.tap` não serve aqui: ele assenta o frame entre um e
-      // outro, e aí o `await` do salvamento já terminou e a corrida some.
-      // Gestos crus mantêm os dois dentro da mesma janela — e o repositório
-      // lento (abaixo) mantém o `await` do salvamento pendente enquanto isso,
-      // que é o que acontece no aparelho de verdade e não acontece com
-      // SharedPreferences falso, onde a gravação resolve num microtask.
-      //
-      // Sem a trava saíam DUAS entradas — e o "Desfazer" removia uma só,
-      // deixando dinheiro fantasma no cofre sem como tirar.
+      // Dois toques ANTES de o primeiro terminar — é o que acontece com tremor,
+      // com Switch Access, ou quando o leitor de tela dispara duas vezes.
+      // `tester.tap` não serve: ele assenta o frame entre um e outro e a corrida
+      // some. Gestos crus mantêm os dois na mesma janela — e o repositório lento
+      // mantém o `await` do salvamento pendente, como no aparelho de verdade.
       final Finder guardar = find.widgetWithText(FilledButton, 'Guardar');
       await tester.ensureVisible(guardar);
       await tester.pumpAndSettle();
@@ -49,56 +45,35 @@ void main() {
     });
   });
 
-  testWidgets('o Desfazer diz o que se perde, não só "Desfazer"', (
+  testWidgets('depois de guardar, a tela é Meus Trabalhos (não fica na Reserva)', (
     WidgetTester tester,
   ) async {
     await comTela(tester, Tela.celularEmPe, () async {
-      await _pump(tester);
-      final SemanticsHandle handle = tester.ensureSemantics();
+      final ProviderContainer container = await _abrirNaEntrada(tester);
 
       await tester.enterText(find.byType(TextField).first, '400');
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
-      // Fora de contexto, "Desfazer, botão" é um cheque em branco: desfazer o
-      // quê? O registro? O trabalho que nasceu junto? Tudo?
-      expect(
-        find.bySemanticsLabel(RegExp(r'Desfazer o registro de')),
-        findsOneWidget,
-      );
-
-      handle.dispose();
-    });
-  });
-
-  testWidgets('depois de guardar, o foco pousa no botão que nasceu', (
-    WidgetTester tester,
-  ) async {
-    await comTela(tester, Tela.celularEmPe, () async {
-      await _pump(tester);
-
-      await tester.enterText(find.byType(TextField).first, '400');
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Guardar'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Guardar'));
-      await tester.pumpAndSettle();
-
-      // O "Guardar" é DESTRUÍDO na troca e nascem dois botões novos. Sem um
-      // destino, o foco do leitor de tela recai no topo da tela e o "Desfazer"
-      // vira um botão que ninguém acha.
-      final FilledButton registrarOutro = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Registrar outro'),
-      );
-      expect(registrarOutro.focusNode?.hasFocus, isTrue);
+      // Saiu da Reserva: o "Guardar" não existe mais, e a AppBar é a de
+      // Trabalhos (onde o pagamento aparece ligado a quem pagou — a confirmação
+      // visual). O "registrar outro" morreu de propósito.
+      expect(find.widgetWithText(FilledButton, 'Guardar'), findsNothing);
+      expect(find.text('Registrar outro'), findsNothing);
+      expect(find.widgetWithText(AppBar, 'Meus trabalhos'), findsOneWidget);
+      expect(container.read(entradasProvider), hasLength(1));
     });
   });
 }
 
-Future<ProviderContainer> _pump(WidgetTester tester) async {
+/// Sobe o app inteiro (precisa do router: salvar navega) e chega na Reserva,
+/// com o repositório LENTO pra abrir a janela de corrida do toque duplo.
+Future<ProviderContainer> _abrirNaEntrada(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues(<String, Object>{
     'onboarding_done': true,
     'areas_v1': _umaArea,
@@ -117,9 +92,11 @@ Future<ProviderContainer> _pump(WidgetTester tester) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: MaterialApp(theme: AppTheme.dark, home: const EntradaScreen()),
+      child: const QuantoCobroApp(),
     ),
   );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Recebi um pagamento'));
   await tester.pumpAndSettle();
   return container;
 }
@@ -129,10 +106,9 @@ const String _umaArea =
     '"horas":85,"provisao":0,"provisaoOn":true,"provisaoCustom":false,'
     '"diasSemana":5,"horasDia":6,"custos":[]}]}';
 
-/// Gravar no disco leva alguns milissegundos no aparelho — e é exatamente
-/// nessa janela que o segundo toque entra. Com `SharedPreferences` falso a
-/// gravação resolve num microtask, a janela não existe, e o teste passaria
-/// verde sem nunca ter exercitado a trava.
+/// Gravar no disco leva alguns milissegundos no aparelho — e é nessa janela que
+/// o segundo toque entra. Com `SharedPreferences` falso a gravação resolve num
+/// microtask, a janela não existe, e o teste passaria verde sem exercitar a trava.
 class _RepositorioLento extends EntradaRepository {
   _RepositorioLento(super.prefs);
 

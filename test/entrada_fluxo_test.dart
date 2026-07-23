@@ -11,6 +11,8 @@ import 'package:quantocobro/core/model/trabalho.dart';
 import 'package:quantocobro/core/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/tela.dart';
+
 /// **O trabalho nasce do primeiro pagamento.**
 ///
 /// É a inversão que resolveu a nota 4 do teste de personas: ninguém preenche
@@ -55,12 +57,24 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Salvar SAI da Reserva e vai pra Meus Trabalhos (onde o pagamento aparece).
   Future<void> guardar(WidgetTester tester) async {
-    await tester.ensureVisible(find.text('Guardar'));
+    final Finder g = find.widgetWithText(FilledButton, 'Guardar');
+    await tester.ensureVisible(g);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Guardar'));
+    await tester.tap(g);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+  }
+
+  /// Depois de salvar, a pessoa está em Meus Trabalhos. Pra registrar OUTRO
+  /// pagamento ela volta ao Início e toca "Recebi um pagamento" de novo — que é
+  /// o fluxo real, no lugar do antigo "registrar outro" na mesma tela.
+  Future<void> registrarDeNovo(WidgetTester tester) async {
+    await tester.tap(find.text('Início'));
+    await tester.pumpAndSettle();
+    await irPraEntrada(tester);
   }
 
   testWidgets('o trabalho nasce do nome digitado na entrada', (
@@ -89,27 +103,25 @@ void main() {
   testWidgets('digitar o mesmo nome de novo NÃO cria um segundo Augusto', (
     WidgetTester tester,
   ) async {
-    final ProviderContainer container = await abrirApp(tester);
-    await irPraEntrada(tester);
+    // celularEmPe: nav de baixo com os rótulos visíveis, pra tocar "Início".
+    await comTela(tester, Tela.celularEmPe, () async {
+      final ProviderContainer container = await abrirApp(tester);
+      await irPraEntrada(tester);
 
-    await tester.enterText(find.byType(TextField).first, '400');
-    await tester.enterText(find.byType(TextField).at(1), 'Augusto');
-    await tester.pumpAndSettle();
-    await guardar(tester);
+      await tester.enterText(find.byType(TextField).first, '400');
+      await tester.enterText(find.byType(TextField).at(1), 'Augusto');
+      await tester.pumpAndSettle();
+      await guardar(tester);
 
-    // Sem SnackBar cobrindo: o "Registrar outro" virou o botão primário da
-    // linha de confirmação, e está sempre alcançável.
-    await tester.ensureVisible(find.text('Registrar outro'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Registrar outro'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, '600');
-    await tester.enterText(find.byType(TextField).at(1), 'augusto');
-    await tester.pumpAndSettle();
-    await guardar(tester);
+      await registrarDeNovo(tester);
+      await tester.enterText(find.byType(TextField).first, '600');
+      await tester.enterText(find.byType(TextField).at(1), 'augusto');
+      await tester.pumpAndSettle();
+      await guardar(tester);
 
-    expect(container.read(trabalhosProvider), hasLength(1));
-    expect(container.read(entradasProvider), hasLength(2));
+      expect(container.read(trabalhosProvider), hasLength(1));
+      expect(container.read(entradasProvider), hasLength(2));
+    });
   });
 
   testWidgets('entrada sem nome é avulsa — não inventa um cliente', (
@@ -131,27 +143,27 @@ void main() {
   ) async {
     // O bug antigo: depois do primeiro registro do mês a tela travava, e não
     // existia caminho pro segundo pagamento.
-    final ProviderContainer container = await abrirApp(tester);
-    await irPraEntrada(tester);
+    await comTela(tester, Tela.celularEmPe, () async {
+      final ProviderContainer container = await abrirApp(tester);
+      await irPraEntrada(tester);
 
-    await tester.enterText(find.byType(TextField).first, '400');
-    await tester.pumpAndSettle();
-    await guardar(tester);
+      await tester.enterText(find.byType(TextField).first, '400');
+      await tester.pumpAndSettle();
+      await guardar(tester);
 
-    // Sem SnackBar cobrindo: o "Registrar outro" virou o botão primário da
-    // linha de confirmação, e está sempre alcançável.
-    await tester.ensureVisible(find.text('Registrar outro'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Registrar outro'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, '600');
-    await tester.pumpAndSettle();
-    await guardar(tester);
+      await registrarDeNovo(tester);
+      await tester.enterText(find.byType(TextField).first, '600');
+      await tester.pumpAndSettle();
+      await guardar(tester);
 
-    final List<Entrada> entradas = container.read(entradasProvider);
-    expect(entradas, hasLength(2));
-    final int separado = entradas.fold(0, (int s, Entrada e) => s + e.separado);
-    expect(separado, kDasMensalMei.round());
+      final List<Entrada> entradas = container.read(entradasProvider);
+      expect(entradas, hasLength(2));
+      final int separado = entradas.fold(
+        0,
+        (int s, Entrada e) => s + e.separado,
+      );
+      expect(separado, kDasMensalMei.round());
+    });
   });
 
   testWidgets(

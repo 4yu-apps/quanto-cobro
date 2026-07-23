@@ -17,7 +17,6 @@ import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
-import '../../core/ui/panel_card.dart';
 import '../../core/ui/breakpoints.dart';
 import 'trabalho_detalhe_screen.dart';
 
@@ -118,16 +117,24 @@ class _TrabalhosScreenState extends ConsumerState<TrabalhosScreen> {
     Map<String, double> recebido,
     Map<String, DateTime> ultima,
   ) {
+    final double totalRecebido = ordenados.fold<double>(
+      0,
+      (double s, Trabalho t) => s + (recebido[t.id] ?? 0),
+    );
     return ordenados.isEmpty
         ? const _Vazio()
         : ListView(
             padding: EdgeInsets.fromLTRB(
               Space.x4,
-              Space.x4,
+              Space.x5,
               Space.x4,
               reservaDaNavbar(context),
             ),
             children: <Widget>[
+              // Um destaque no topo (o total, número solto) em vez de abrir com
+              // uma pilha de cards iguais — doutrina de contenção.
+              _Resumo(total: totalRecebido, quantos: ordenados.length),
+              const SizedBox(height: Space.x6),
               if (areas.hierarquiaVisivel)
                 ..._porArea(context, ref, areas, ordenados, recebido, ultima)
               else
@@ -282,9 +289,8 @@ class _TrabalhoCard extends StatelessWidget {
     return SemanticButton(
       label: _semantica(),
       tapHint: onSelecionar == null ? 'abrir o trabalho' : 'abrir ao lado',
-      // No mestre-detalhe o card é uma ESCOLHA de um-entre-N, e o leitor de
-      // tela precisa saber qual está aberto — senão a pessoa não tem como
-      // descobrir o que o painel ao lado está mostrando.
+      // No mestre-detalhe a linha é uma ESCOLHA de um-entre-N, e o leitor de
+      // tela precisa saber qual está aberta.
       selected: onSelecionar == null ? null : selecionado,
       onTap: abrir,
       child: Material(
@@ -292,13 +298,22 @@ class _TrabalhoCard extends StatelessWidget {
         child: InkWell(
           onTap: abrir,
           borderRadius: const BorderRadius.all(Radii.lg),
-          child: PanelCard(
-            selecionado: selecionado,
-            padding: const EdgeInsets.all(Space.x4),
+          child: Ink(
+            decoration: BoxDecoration(
+              // Linha PLANA: fundo só quando selecionada (tablet). Fora disso é
+              // o canvas — nada de card brilhante por item (doutrina §2).
+              color: selecionado ? cs.surfaceContainerHigh : null,
+              borderRadius: const BorderRadius.all(Radii.lg),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: Space.x3,
+              vertical: Space.x3,
+            ),
             child: Row(
               children: <Widget>[
+                _Inicial(nome: trabalho.nome, apagado: trabalho.encerrado),
+                const SizedBox(width: Space.x3),
                 Expanded(
-                  flex: 3,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -309,27 +324,27 @@ class _TrabalhoCard extends StatelessWidget {
                               ? cs.onSurfaceVariant
                               : cs.onSurface,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: Space.x1),
+                      const SizedBox(height: 2),
                       Text(
                         _linhaApoio(),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: Space.x3),
-                // O dinheiro encolhe, nunca vaza. Sem isto o Row estourava
-                // 45px em fonte 200% — e o que saía da tela era justamente o
-                // valor recebido, que é a razão do card existir.
+                // O dinheiro encolhe, nunca vaza (em fonte 200% saía da tela).
                 Flexible(
-                  flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       FittedBox(
                         fit: BoxFit.scaleDown,
@@ -379,6 +394,110 @@ class _TrabalhoCard extends StatelessWidget {
     if (u != null) sb.write('Última entrada em ${dataPorExtenso(u)}. ');
     if (trabalho.encerrado) sb.write('Encerrado.');
     return sb.toString();
+  }
+}
+
+/// O destaque no topo: total recebido como número solto (não um card). É o "um
+/// herói por tela" da lista de trabalhos.
+class _Resumo extends StatelessWidget {
+  const _Resumo({required this.total, required this.quantos});
+
+  final double total;
+  final int quantos;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final DivisaoColors d = theme.extension<DivisaoColors>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          'RECEBIDO NO TOTAL',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: cs.onSurfaceVariant,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: Space.x1),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            moneyBRL(total),
+            style: AppType.valueXl.copyWith(
+              color: total > 0 ? d.lucro : cs.onSurfaceVariant,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'em $quantos ${quantos == 1 ? 'trabalho' : 'trabalhos'}',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A inicial colorida de um trabalho — a "cara" da lista (imagem/avatar), cor
+/// estável por nome, de uma paleta pequena da casa. Encerrado fica cinza.
+class _Inicial extends StatelessWidget {
+  const _Inicial({required this.nome, this.apagado = false});
+
+  final String nome;
+  final bool apagado;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
+    final List<Color> paleta = <Color>[
+      d.lucro,
+      d.reserva,
+      cs.secondary,
+      cs.tertiary,
+      d.brand4yu,
+    ];
+    final int h = nome.codeUnits.fold<int>(0, (int a, int b) => a + b);
+    final Color base = apagado
+        ? cs.surfaceContainerHighest
+        : paleta[h % paleta.length];
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: base,
+        borderRadius: BorderRadius.circular(13),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _iniciais(nome),
+        style: TextStyle(
+          fontFamily: AppType.numberFamily,
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          color: apagado ? cs.onSurfaceVariant : const Color(0xFF0C0F0E),
+        ),
+      ),
+    );
+  }
+
+  static String _iniciais(String nome) {
+    final List<String> partes = nome
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((String s) => s.isNotEmpty)
+        .toList();
+    if (partes.isEmpty) return '?';
+    if (partes.length == 1) {
+      final String p = partes.first;
+      return (p.length >= 2 ? p.substring(0, 2) : p).toUpperCase();
+    }
+    return (partes[0][0] + partes[1][0]).toUpperCase();
   }
 }
 
