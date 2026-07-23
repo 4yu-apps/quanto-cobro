@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanto Cobro? — mock de hierarquia (doutrina de contenção)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---- paleta REAL do app (lib/core/theme) ---- */
+  :root{
+    --surface:#101312; --surfLow:#171A19; --surfCont:#1E2120; --surfHigh:#272B29; --surfHi:#303532;
+    --onSurface:#E4E9E7; --onVar:#ACB4B1; --outline:#363A38;
+    --green:#57E5A9; --onGreen:#023221; --greenCont:#004F37; --greenOnCont:#A5F6CB;
+    --gold:#EFCE6F; --steel:#96A298; --terracota:#F2A26A; --blue:#A1C2DF; --pro:#AA95E8;
+    --track:#222524;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:Inter,system-ui,sans-serif; background:#20262b; color:var(--onSurface);
+    -webkit-font-smoothing:antialiased; padding:40px 20px 80px;
+    background-image:radial-gradient(ellipse 60% 40% at 50% -5%, #2c3a3a55, transparent 60%);
+  }
+  .num{font-family:Sora,sans-serif}
+  .head{max-width:1200px;margin:0 auto 36px;text-align:center}
+  .head h1{font-family:Sora;font-weight:800;font-size:26px;letter-spacing:-.5px}
+  .head p{color:#aeb7c0;font-size:14px;margin-top:8px;line-height:1.6}
+  .head .tag{display:inline-block;margin-top:14px;font-size:12px;color:var(--green);
+    border:1px solid #57e5a955;border-radius:999px;padding:5px 12px}
+
+  .stage{display:flex;gap:32px;justify-content:center;align-items:flex-start;flex-wrap:wrap;max-width:1300px;margin:0 auto}
+  .phone{
+    width:340px;flex:0 0 340px;background:var(--surface);border-radius:38px;
+    padding:14px 0 0; box-shadow:0 30px 70px #00000066, 0 0 0 1px #ffffff0d, inset 0 0 0 1px #ffffff08;
+    overflow:hidden;position:relative;height:720px
+  }
+  .scr{padding:0 20px 90px;height:100%;overflow-y:auto;scrollbar-width:none}
+  .scr::-webkit-scrollbar{display:none}
+  .label{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--onVar);font-weight:600}
+  .cap{text-align:center;font-size:12.5px;color:#8b939a;margin:10px auto 0;max-width:300px;line-height:1.5}
+
+  /* topo */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 0}
+  .top .hi{font-size:14px;color:var(--onVar)}
+  .top .hi b{display:block;font-family:Sora;font-weight:700;font-size:18px;color:var(--onSurface);margin-top:2px}
+  .ic{width:40px;height:40px;border-radius:50%;background:var(--surfCont);display:grid;place-items:center;color:var(--onVar);font-size:17px}
+
+  /* HERO — numero solto, 1 glow por tela */
+  .hero{position:relative;text-align:center;padding:30px 0 6px}
+  .hero::before{content:"";position:absolute;inset:-20% 10% 40%;z-index:0;
+    background:radial-gradient(ellipse 60% 60% at 50% 40%, #57e5a922, transparent 70%);pointer-events:none}
+  .hero .k{position:relative;z-index:1;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--onVar);font-weight:600}
+  .hero .big{position:relative;z-index:1;font-family:Sora;font-weight:800;letter-spacing:-2px;
+    color:var(--green);font-size:76px;line-height:1;margin-top:8px}
+  .hero .big .cur{font-size:30px;font-weight:600;vertical-align:top;margin-right:2px;color:#8fefc4}
+  .hero .big .unit{font-size:22px;font-weight:600;color:var(--onVar);letter-spacing:0}
+  .hero .sub{position:relative;z-index:1;margin-top:10px;font-size:13px;color:var(--onVar)}
+  .hero .sub .q{color:var(--onSurface);border-bottom:1px dashed var(--outline);cursor:help}
+
+  /* grafico de barras — mes a mes (elemento plano, nao card brilhante) */
+  .chart{margin-top:22px;background:var(--surfLow);border:1px solid var(--outline);border-radius:20px;padding:16px 16px 12px}
+  .chart .ttl{display:flex;justify-content:space-between;align-items:baseline}
+  .chart .ttl b{font-family:Sora;font-weight:600;font-size:14px}
+  .chart .ttl span{font-size:12px;color:var(--onVar)}
+  .bars{display:flex;align-items:flex-end;gap:10px;height:78px;margin-top:14px}
+  .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .bars .b i{width:100%;border-radius:6px 6px 3px 3px;background:var(--surfHi);display:block}
+  .bars .b.on i{background:linear-gradient(180deg,var(--green),#2fae7f)}
+  .bars .b small{font-size:10px;color:#79817d}
+
+  /* Divisao — barra segmentada plana */
+  .divisao{margin-top:20px}
+  .divbar{height:14px;border-radius:8px;overflow:hidden;display:flex;background:var(--track)}
+  .divbar i{height:100%}
+  .leg{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+  .leg span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--onVar)}
+  .leg .dot{width:9px;height:9px;border-radius:50%}
+  .leg b{color:var(--onSurface);font-family:Sora;font-weight:600}
+
+  /* linha plana com anel circular */
+  .row{display:flex;align-items:center;gap:14px;margin-top:20px;padding:2px}
+  .ring{width:56px;height:56px;flex:0 0 56px;border-radius:50%;display:grid;place-items:center;position:relative}
+  .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .ring .rv{font-family:Sora;font-weight:700;font-size:14px}
+  .row .txt{flex:1}
+  .row .txt .l{font-size:12px;color:var(--onVar)}
+  .row .txt .v{font-family:Sora;font-weight:700;font-size:22px;margin-top:1px}
+  .row .txt .v small{font-size:13px;color:var(--onVar);font-weight:400}
+
+  /* acoes — 1 primaria (10% accent) + 1 fantasma. NAO sao cards brilhantes */
+  .acts{display:flex;gap:12px;margin-top:26px}
+  .btn{flex:1;border-radius:16px;padding:15px 10px;text-align:center;font-weight:600;font-size:14px;cursor:pointer}
+  .btn.primary{background:var(--green);color:var(--onGreen)}
+  .btn.ghost{background:transparent;border:1px solid var(--outline);color:var(--onSurface)}
+  .btn .s{display:block;font-size:11px;font-weight:500;opacity:.7;margin-top:2px}
+
+  /* nav */
+  .nav{position:absolute;left:0;right:0;bottom:0;height:66px;background:#0d100fdd;backdrop-filter:blur(8px);
+    border-top:1px solid var(--outline);display:flex;align-items:center;justify-content:space-around;padding:0 24px}
+  .nav i{width:24px;height:24px;border-radius:7px;background:var(--surfHigh)}
+  .nav i.act{background:var(--green)}
+
+  /* ---- Meus Trabalhos ---- */
+  .worktop{padding:14px 2px 0}
+  .featured{margin-top:16px;position:relative;background:linear-gradient(150deg,#14201b,#101312);
+    border:1px solid #57e5a92e;border-radius:24px;padding:20px;overflow:hidden}
+  .featured::after{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;
+    background:radial-gradient(circle,#57e5a91f,transparent 70%)}
+  .featured .l{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--onVar);font-weight:600}
+  .featured .nm{font-family:Sora;font-weight:700;font-size:17px;margin-top:8px}
+  .featured .hr{font-family:Sora;font-weight:800;font-size:40px;color:var(--green);margin-top:6px;letter-spacing:-1px}
+  .featured .hr .u{font-size:16px;color:var(--onVar);font-weight:600}
+  .featured .meta{display:flex;gap:18px;margin-top:12px}
+  .featured .meta span{font-size:12px;color:var(--onVar)}
+  .featured .meta b{color:var(--onSurface);font-family:Sora}
+  .wlist{margin-top:8px}
+  .witem{display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid #23282699}
+  .av{width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:grid;place-items:center;font-family:Sora;font-weight:700;font-size:15px;color:#0c0f0e}
+  .witem .wt{flex:1}
+  .witem .wt b{font-size:14.5px;font-weight:600}
+  .witem .wt small{display:block;font-size:12px;color:var(--onVar);margin-top:2px}
+  .witem .wv{font-family:Sora;font-weight:700;font-size:16px}
+  .witem .wv small{font-size:11px;color:var(--onVar);font-weight:400;display:block;text-align:right}
+
+  /* ---- Reserva ---- */
+  .rk{margin-top:2px}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+  .key{background:var(--surfCont);border-radius:14px;padding:15px;text-align:center;font-family:Sora;font-weight:600;font-size:19px}
+  .save{margin-top:16px;background:var(--green);color:var(--onGreen);border-radius:16px;padding:16px;text-align:center;font-weight:700;font-size:15px}
+  .hint{text-align:center;font-size:12px;color:#79817d;margin-top:10px}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Quanto Cobro? — hierarquia, não card-soup</h1>
+    <p>Mesma paleta e fontes do app. O que muda é a <b>distribuição do destaque</b>:
+       um herói por tela · número solto · gráfico · anel · avatares · linhas planas ·
+       glow racionado (1 por tela) · 60·30·10.</p>
+    <span class="tag">mock — abrir no navegador · antes de portar pro Flutter</span>
+  </div>
+
+  <div class="stage">
+
+    <!-- ============ PAINEL ============ -->
+    <div class="phone"><div class="scr">
+      <div class="top">
+        <div class="hi">Bem-vindo de volta<b>Olá, Alex</b></div>
+        <div class="ic">⚙</div>
+      </div>
+
+      <!-- HERO: numero solto, o unico glow da tela -->
+      <div class="hero">
+        <div class="k">Você cobra por hora</div>
+        <div class="big"><span class="cur">R$</span>92<span class="unit">,00</span></div>
+        <div class="sub">≈ 12% vira imposto · <span class="q">o que é isso?</span></div>
+      </div>
+
+      <!-- GRAFICO: mes a mes, elemento plano -->
+      <div class="chart">
+        <div class="ttl"><b>Este mês</b><span>R$ 6.480 faturado</span></div>
+        <div class="bars">
+          <div class="b"><i style="height:38%"></i><small>fev</small></div>
+          <div class="b"><i style="height:55%"></i><small>mar</small></div>
+          <div class="b"><i style="height:30%"></i><small>abr</small></div>
+          <div class="b"><i style="height:68%"></i><small>mai</small></div>
+          <div class="b"><i style="height:48%"></i><small>jun</small></div>
+          <div class="b on"><i style="height:82%"></i><small>jul</small></div>
+        </div>
+      </div>
+
+      <!-- DIVISAO: barra segmentada plana -->
+      <div class="divisao">
+        <div class="divbar">
+          <i style="width:58%;background:var(--green)"></i>
+          <i style="width:12%;background:var(--gold)"></i>
+          <i style="width:30%;background:var(--steel)"></i>
+        </div>
+        <div class="leg">
+          <span><i class="dot" style="background:var(--green)"></i>É seu <b>58%</b></span>
+          <span><i class="dot" style="background:var(--gold)"></i>Imposto <b>12%</b></span>
+          <span><i class="dot" style="background:var(--steel)"></i>Custos <b>30%</b></span>
+        </div>
+      </div>
+
+      <!-- LINHA PLANA + ANEL circular -->
+      <div class="row">
+        <div class="ring">
+          <svg width="56" height="56"><circle cx="28" cy="28" r="24" fill="none" stroke="#222524" stroke-width="5"/>
+            <circle cx="28" cy="28" r="24" fill="none" stroke="var(--gold)" stroke-width="5" stroke-linecap="round"
+              stroke-dasharray="150.8" stroke-dashoffset="47"/></svg>
+          <span class="rv" style="color:var(--gold)">69%</span>
+        </div>
+        <div class="txt">
+          <div class="l">Guardei pro imposto este mês</div>
+          <div class="v">R$ 780 <small>de ~R$ 1.130</small></div>
+        </div>
+      </div>
+
+      <!-- ACOES: 1 primaria (accent) + 1 fantasma -->
+      <div class="acts">
+        <div class="btn primary">Recebi um pagamento<span class="s">quanto é meu?</span></div>
+        <div class="btn ghost">Vou orçar<span class="s">dá lucro?</span></div>
+      </div>
+      <div class="cap">1 herói (o valor-hora). Resto plano. Verde só no número e no botão primário.</div>
+    </div>
+      <div class="nav"><i class="act"></i><i></i><i></i></div>
+    </div>
+
+    <!-- ============ MEUS TRABALHOS ============ -->
+    <div class="phone"><div class="scr">
+      <div class="top worktop">
+        <div class="hi">Seus preços<b>Meus trabalhos</b></div>
+        <div class="ic">＋</div>
+      </div>
+
+      <!-- FEATURED: um destaque, com assinatura circular -->
+      <div class="featured">
+        <div class="l">Trabalho em foco</div>
+        <div class="nm">Cliente recorrente · Social</div>
+        <div class="hr"><span class="u">R$ </span>110<span class="u">,00 /h</span></div>
+        <div class="meta"><span>Reserva <b>14%</b></span><span>Lucro real <b>R$ 74/h</b></span></div>
+      </div>
+
+      <!-- LINHAS PLANAS com avatar/inicial colorida -->
+      <div class="wlist">
+        <div class="witem">
+          <div class="av" style="background:var(--green)">AV</div>
+          <div class="wt"><b>Projeto avulso</b><small>Design pontual</small></div>
+          <div class="wv">R$ 145<small>por hora</small></div>
+        </div>
+        <div class="witem">
+          <div class="av" style="background:var(--gold)">GR</div>
+          <div class="wt"><b>Cliente gringo</b><small>CPF exterior · USD</small></div>
+          <div class="wv">R$ 168<small>≈ US$ 30</small></div>
+        </div>
+        <div class="witem">
+          <div class="av" style="background:var(--blue)">Co</div>
+          <div class="wt"><b>Consultoria</b><small>Hora técnica</small></div>
+          <div class="wv">R$ 220<small>por hora</small></div>
+        </div>
+        <div class="witem" style="border:none">
+          <div class="av" style="background:var(--pro)">Pr</div>
+          <div class="wt"><b>Retainer mensal</b><small>Fixo · 20h/mês</small></div>
+          <div class="wv">R$ 98<small>por hora</small></div>
+        </div>
+      </div>
+      <div class="cap">Um card em foco + linhas planas com inicial colorida. Sem 4 cards iguais brilhando.</div>
+    </div>
+      <div class="nav"><i></i><i class="act"></i><i></i></div>
+    </div>
+
+    <!-- ============ RESERVA ============ -->
+    <div class="phone"><div class="scr">
+      <div class="top">
+        <div class="hi">Recebi um pagamento<b>Quanto é meu?</b></div>
+        <div class="ic">✕</div>
+      </div>
+
+      <!-- HERO duplo-passo: o que entrou (neutro) -> o que reservar (herói) -->
+      <div class="hero" style="padding-top:22px">
+        <div class="k">Reserve pro imposto</div>
+        <div class="big" style="color:var(--gold)"><span class="cur" style="color:#f3dd9a">R$</span>340<span class="unit">,00</span></div>
+        <div class="sub">de <b class="num" style="color:var(--onSurface)">R$ 2.000</b> que caíram · como <span class="q">CPF exterior</span></div>
+      </div>
+
+      <div class="divisao" style="margin-top:14px">
+        <div class="divbar">
+          <i style="width:66%;background:var(--green)"></i>
+          <i style="width:17%;background:var(--gold)"></i>
+          <i style="width:17%;background:var(--steel)"></i>
+        </div>
+        <div class="leg">
+          <span><i class="dot" style="background:var(--green)"></i>Sobra pra você <b>R$ 1.320</b></span>
+          <span><i class="dot" style="background:var(--gold)"></i>Imposto <b>R$ 340</b></span>
+        </div>
+      </div>
+
+      <div class="keypad rk">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key" style="color:var(--onVar)">.</div><div class="key">0</div><div class="key" style="color:var(--onVar)">⌫</div>
+      </div>
+      <div class="save">Guardar</div>
+      <div class="hint">Salvou → sai pra Meus Trabalhos. Sem "registrar outro".</div>
+    </div>
+      <div class="nav"><i class="act"></i><i></i><i></i></div>
+    </div>
+
+  </div>
+</body>
+</html>
