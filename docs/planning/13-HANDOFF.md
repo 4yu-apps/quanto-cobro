@@ -187,12 +187,12 @@ console, loja e relógio.
       público-alvo.
 - [ ] **Política de privacidade hospedada** numa URL pública + **revisão
       jurídica** (é rascunho; corrigir ≠ validar).
-- [ ] **Ficha:** descrição curta/longa + **feature graphic 1024×500** (falta; o
-      agente gera com o padrão de `test/ferramentas/`). Ícone 512 e 5 capturas já
-      existem em `docs/screenshots/loja/`.
-- [ ] **Teste fechado: 12 testadores × 14 dias** — o relógio de lançamento. Por
-      app, teste interno não conta. A lista "4YU internos" reaproveita, mas hoje
-      tem 3; precisa chegar a 12. **Começar cedo.**
+- [x] ~~**Ficha:** descrição curta/longa + feature graphic~~ — ✅ feito; ver
+      **§9.1** (as 10 imagens só foram pra ficha em 23/07; antes existiam apenas
+      como arquivo no repo).
+- [ ] **Teste fechado: 14 dias** — o relógio de lançamento. Por app; teste
+      interno não conta. Testadores **já são 24** (não 3, ver §9.4). O que falta
+      é ⚠️ **descartar o rascunho do bundle 11 e lançar o 16** — ver **§9.2**.
 
 ---
 
@@ -205,3 +205,64 @@ console, loja e relógio.
 - Downloads que o Windows enxerga: `/mnt/c/Users/gabriel.barbosa/Downloads/`.
 - Publicar no interno via API: o AAB tem que ter versionCode **maior** que o do
   bundle já no track.
+
+---
+
+## 9. Sessão 23/07 — publicação do +16, ficha completa e a armadilha do alpha
+
+> Esta seção é o retrato mais recente. Onde ela conflitar com §7 acima, **vale
+> esta**. Tudo aqui foi **verificado pela API**, não por memória de doc — a
+> sessão anterior tinha registrado como pronto coisas que não estavam.
+
+### 9.1 O que esta sessão fez (agente, via androidpublisher API)
+- ✅ **Bundle `16` publicado no track `internal`** (estava no 15). É o AAB com
+  textos limpos e AD_ID removido.
+- ✅ **Ficha ganhou TODAS as imagens** — e aqui mora a correção importante: o
+  handoff anterior dizia "ícone 512 e 5 capturas já existem". Existiam **como
+  arquivo no repo**; a API mostrava **0 imagens na ficha**. Subidas agora:
+  feature graphic 1 · ícone 1 · celular 2 · tablet 3 (7") + 3 (10") = **10**.
+- ✅ Verificado que `4yu.com.br/quanto-cobro/excluir-dados/` responde 200 e
+  cumpre os 3 requisitos do Google (cita app+dev, descreve passos, diz o que é
+  apagado e os prazos). Confirmado também que os passos que a página promete
+  batem com os rótulos reais do app (`config_screen.dart`: seção "Seus dados" →
+  "Apagar meus dados"; seção "Privacidade" → telemetria).
+- ✅ **Conteúdo do app 11/11** guiado: saúde=não · governamentais=não ·
+  financeiro=**nenhum** · Data Safety completo · categoria **Finanças** ·
+  contato `sac@4yu.com.br` + `https://4yu.com.br/quanto-cobro/`.
+
+### 9.2 🔴 A armadilha: o rascunho do alpha está no bundle 11
+O teste fechado (Alpha) tem uma **versão em rascunho com o bundle `11 (0.8.0)`**
+— sobra da primeira tentativa. Enviar esse rascunho faria os **14 dias** rodarem
+com um build que:
+- não tem Firebase, billing nem o consentimento do onboarding;
+- **carrega a permissão AD_ID** ("Permissões para 3"), que **contradiz o Data
+  Safety recém-declarado** ("não usa ID de publicidade"). Divergência entre o
+  bundle e a declaração é motivo de reprova na revisão.
+
+**Ação:** descartar a versão de rascunho e lançar o **16** no alpha. O agente
+publica via API (§2) — é o que evita repetir o relógio de 14 dias.
+
+### 9.3 Pontuação de otimização 50% — não é defeito nosso
+A Play mostra "Otimização: Intermediários / 50%", ofuscação 51%, redução 51%.
+**É estrutural de Flutter:** o R8 só age no lado Java/Kotlin, que num app Flutter
+é migalha (`classes.dex` ~1,4 MB num bundle de 64 MB); o resto é AOT nativo
+(`libapp.so`), que o R8 nem toca. Já estão ligados: **modo completo**, **redução
+de recursos** e **redução otimizada**. O único item não marcado é "classes de
+reempacotamento", de ganho marginal. **É aviso, não bloqueio** — não impede
+publicar. Não vale mexer agora.
+
+### 9.4 Correções ao que estava escrito
+- "hoje 4 testadores" (§7.2) estava **errado** — número herdado de doc, não
+  medido. A lista "4YU internos" tem **24 usuários**, e o teste fechado estava em
+  **rascunho, 0 iniciado**. Lição: medir pela API/tela, não repetir doc.
+- Feature graphic: §7.2 diz que falta. **Já existe e já subiu na ficha.**
+
+### 9.5 O que sobra
+1. **Descartar o rascunho do alpha e lançar o bundle 16** (crítico — §9.2).
+2. Enviar a versão do teste fechado ao Google e **rodar os 14 dias**.
+3. Revisão jurídica da política (segue pendente; corrigir ≠ validar).
+
+**Estado medido em 23/07:** `internal` = bundle **16** (completed) · `alpha` =
+bundle 11 (**draft, descartar**) · ficha pt-BR com título, curta (78), longa
+(1633) e 10 imagens · `pro_mensal`/`mensal` **ACTIVE** (BR R$ 6,90; resto do
+mundo USD/EUR 1,49).
