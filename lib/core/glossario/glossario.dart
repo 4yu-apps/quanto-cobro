@@ -82,6 +82,18 @@ abstract final class Glossario {
           'no exterior. Você paga o IRPF pela sua faixa, igual ao carnê-leão '
           'do Autônomo, mas sem o INSS, porque não contribui como autônomo.',
     ),
+    'inss': Verbete(
+      'O que é "INSS"?',
+      'A sua contribuição pra Previdência: quem trabalha por conta (CPF) paga '
+          '20% do que recebe, até um teto, e um dia vira aposentadoria. Quem '
+          'recebe do exterior como CPF não paga INSS.',
+    ),
+    'parcela_deduzir': Verbete(
+      'O que é "parcela a deduzir"?',
+      'Um desconto fixo da sua faixa: a tabela cobra uma % cheia, mas devolve '
+          'um pedaço pra ninguém pagar demais ao mudar de faixa. Por isso o que '
+          'você paga de verdade fica menor que a % da tabela.',
+    ),
     'grossup': Verbete(
       'Imposto embutido',
       'Quer dizer que a conta já considera o imposto por dentro do valor, pra o '
@@ -91,7 +103,7 @@ abstract final class Glossario {
       'De onde vem a cotação?',
       'Recebeu em dólar ou euro? Convertemos pra real pela cotação do dia, de '
           'um serviço público. Ex.: US\$ 100 a 5,50 = R\$ 550. Offline, usamos a '
-          'última e mostramos a data. É estimativa: o imposto oficial usa a '
+          'última e mostramos a data. É estimativa: o oficial usa a '
           'cotação do Banco Central do dia anterior.',
     ),
   };

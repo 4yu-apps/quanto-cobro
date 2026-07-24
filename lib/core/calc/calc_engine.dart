@@ -34,6 +34,129 @@ double aliquotaEfetiva(RegimeId regime, double faturamentoMensal) {
   );
 }
 
+/// Raio-x do imposto de um mês (F4 — o detalhamento Pro). PURO: só números,
+/// a folha de UI é quem monta as linhas e formata. Reproduz, peça a peça, o
+/// mesmo [impostoMensal] que o resto do app usa — [imposto] fecha com ele.
+///
+/// Campos por regime:
+/// - CPF (progressivo): [inss] + [irpf]; [baseIrpf] = faturamento − INSS.
+/// - Carnê-leão (sem INSS): só [irpf]; [inss] = 0, [baseIrpf] = faturamento.
+/// - Simples: [rbt12], [simplesNominal] e [simplesDeducao] descrevem a faixa.
+/// - MEI/intl: só [imposto]/[efetiva] (a folha não abre pra eles).
+class ImpostoDetalhe {
+  const ImpostoDetalhe({
+    required this.regime,
+    required this.faturamento,
+    required this.imposto,
+    required this.efetiva,
+    this.inss = 0,
+    this.baseIrpf = 0,
+    this.faixaAliquota = 0,
+    this.deducaoFaixa = 0,
+    this.irpfBruto = 0,
+    this.redutor = 0,
+    this.irpf = 0,
+    this.rbt12 = 0,
+    this.simplesNominal = 0,
+    this.simplesDeducao = 0,
+  });
+
+  final RegimeId regime;
+
+  /// O faturamento do mês sobre o qual o imposto incide (já com gross-up).
+  final double faturamento;
+
+  /// Imposto total do mês — fecha com [impostoMensal].
+  final double imposto;
+
+  /// Alíquota efetiva (imposto ÷ faturamento), 0..1.
+  final double efetiva;
+
+  // --- CPF / carnê-leão ---
+  final double inss; // 0 no carnê-leão
+  final double baseIrpf; // base sobre a qual o IRPF incide
+  final double faixaAliquota; // alíquota nominal da faixa IRPF (0..1)
+  final double deducaoFaixa; // parcela a deduzir da faixa IRPF
+  final double irpfBruto; // baseIrpf × faixaAliquota (antes das deduções)
+  final double redutor; // desconto da Lei 15.270/2025
+  final double irpf; // IRPF final (após parcela a deduzir e redutor)
+
+  // --- Simples ---
+  final double rbt12; // receita bruta 12m estimada
+  final double simplesNominal; // alíquota nominal da faixa (0..1)
+  final double simplesDeducao; // parcela a deduzir da faixa (anual)
+
+  /// Verdadeiro quando a renda do mês não gera IRPF (faixa isenta / redutor
+  /// cobre tudo) — a folha mostra "só INSS" em vez de uma linha zerada.
+  bool get semIrpf => irpf <= 0.005;
+}
+
+/// Abre o imposto do mês em peças (F4). [faturamentoMensal] é a base já com
+/// gross-up (o `ValorHoraResult.faturamento` / o valor do pagamento).
+ImpostoDetalhe detalharImposto(RegimeId regime, double faturamentoMensal) {
+  final double f = math.max(0, faturamentoMensal);
+  final double total = impostoMensal(regime, f);
+  final double efetiva = f > 0 ? (total / f).clamp(0, 1) : 0;
+
+  switch (Regime.of(regime).kind) {
+    case TaxKind.progressivo: // CPF: INSS + IRPF sobre (f − INSS)
+      final double inss = inssIndividual(f);
+      final double base = math.max(0, f - inss);
+      final FaixaIrpf faixa = faixaIrpfDe(base);
+      final double apurado = irpfTabela(base);
+      final double redutor = redutorIrpf(f, apurado);
+      return ImpostoDetalhe(
+        regime: regime,
+        faturamento: f,
+        imposto: total,
+        efetiva: efetiva,
+        inss: inss,
+        baseIrpf: base,
+        faixaAliquota: faixa.aliquota,
+        deducaoFaixa: faixa.deducao,
+        irpfBruto: base * faixa.aliquota,
+        redutor: redutor,
+        irpf: math.max(0, apurado - redutor),
+      );
+    case TaxKind.progressivoSemInss: // carnê-leão: só IRPF sobre f cheio
+      final FaixaIrpf faixa = faixaIrpfDe(f);
+      final double apurado = irpfTabela(f);
+      final double redutor = redutorIrpf(f, apurado);
+      return ImpostoDetalhe(
+        regime: regime,
+        faturamento: f,
+        imposto: total,
+        efetiva: efetiva,
+        baseIrpf: f,
+        faixaAliquota: faixa.aliquota,
+        deducaoFaixa: faixa.deducao,
+        irpfBruto: f * faixa.aliquota,
+        redutor: redutor,
+        irpf: math.max(0, apurado - redutor),
+      );
+    case TaxKind.faixasSimples: // Simples: efetiva por faixa do Anexo III
+      final double rbt12 = f * 12;
+      final FaixaSimples faixa = faixaSimplesDe(rbt12);
+      return ImpostoDetalhe(
+        regime: regime,
+        faturamento: f,
+        imposto: total,
+        efetiva: efetiva,
+        rbt12: rbt12,
+        simplesNominal: faixa.aliquotaNominal,
+        simplesDeducao: faixa.deducao,
+      );
+    case TaxKind.fixoMensal: // MEI: DAS fixo (folha não abre)
+    case TaxKind.flat: // intl: regra de bolso (folha não abre)
+      return ImpostoDetalhe(
+        regime: regime,
+        faturamento: f,
+        imposto: total,
+        efetiva: efetiva,
+      );
+  }
+}
+
 /// Resultado do valor-hora justo (Blueprint §6.13).
 class ValorHoraResult {
   const ValorHoraResult({

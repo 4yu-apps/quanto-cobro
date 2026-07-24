@@ -61,6 +61,15 @@ double irpfTabela(double base) {
   return 0; // inalcançável (última faixa é infinita)
 }
 
+/// A faixa progressiva em que uma [base] cai — pra a folha de detalhamento
+/// mostrar QUAL faixa foi aplicada (F4). Base ≤ 0 fica na 1ª (isenta).
+FaixaIrpf faixaIrpfDe(double base) {
+  for (final FaixaIrpf f in kFaixasIrpfMensal) {
+    if (base <= f.limite) return f;
+  }
+  return kFaixasIrpfMensal.last;
+}
+
 /// Redutor da Lei 15.270/2025 sobre o imposto mensal, em função do RENDIMENTO
 /// tributável (não da base pós-deduções): zera o imposto até R$ 5.000/mês
 /// (limite de R$ 312,89) e decresce linearmente até R$ 7.350.
@@ -135,6 +144,16 @@ const List<FaixaSimples> kFaixasSimplesAnexo3 = <FaixaSimples>[
   FaixaSimples(360000, 0.112, 9360),
   FaixaSimples(720000, 0.135, 17640),
 ];
+
+/// A faixa do Anexo III em que uma receita anual ([rbt12]) cai — pra a folha
+/// de detalhamento nomear a faixa (F4). Acima da última, mantém a 3ª (a mesma
+/// convenção de estimativa de [aliquotaEfetivaSimples]).
+FaixaSimples faixaSimplesDe(double rbt12) {
+  for (final FaixaSimples f in kFaixasSimplesAnexo3) {
+    if (rbt12 <= f.limiteRbt12) return f;
+  }
+  return kFaixasSimplesAnexo3.last;
+}
 
 /// Alíquota EFETIVA do Simples (Anexo III) a partir do faturamento mensal.
 /// RBT12 estimado = mensal × 12. Assunção declarada na UI: Anexo III, sem

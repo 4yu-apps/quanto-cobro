@@ -17,6 +17,7 @@ import '../../core/ui/money_count_up.dart';
 import '../../core/ui/money_field.dart';
 import '../../core/ui/breakpoints.dart';
 import '../../core/ui/secao_titulo.dart';
+import 'imposto_detalhe_sheet.dart';
 
 /// Detalhamento ("como cheguei aqui", Blueprint §5.4): a conta linha a linha,
 /// custo a custo, com renda e horas editáveis inline e recálculo ao vivo.
@@ -190,13 +191,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                       ),
                     ),
                   ),
-                _linha(
-                  context,
-                  regime == RegimeId.mei
-                      ? '+ DAS (fixo do MEI)'
-                      : '+ Imposto estimado (~${r.reservaPct}% efetivo)',
-                  moneyBRL(r.imposto),
-                ),
+                _linhaImposto(context, regime, r),
                 if (regime == RegimeId.simples)
                   Padding(
                     padding: const EdgeInsets.only(top: Space.x2),
@@ -269,6 +264,58 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
         const SizedBox(height: Space.x4),
         const EstimativaSeal(),
       ],
+    );
+  }
+
+  /// A linha do imposto. Pros regimes com mecânica real (CPF · carnê-leão ·
+  /// Simples) ela é o gatilho do detalhamento (F4): toca → a folha com a conta
+  /// por dentro (Pro). MEI (DAS fixo) e intl (regra de bolso) não têm o que
+  /// abrir — seguem linha plana, como o resto da conta.
+  Widget _linhaImposto(
+    BuildContext context,
+    RegimeId regime,
+    ValorHoraResult r,
+  ) {
+    final String label = regime == RegimeId.mei
+        ? '+ DAS (fixo do MEI)'
+        : '+ Imposto estimado (~${r.reservaPct}% efetivo)';
+    if (!regimeTemDetalhamento(regime)) {
+      return _linha(context, label, moneyBRL(r.imposto));
+    }
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final TextStyle? style = theme.textTheme.bodyLarge?.copyWith(
+      fontFeatures: AppType.tnum,
+    );
+    return Semantics(
+      button: true,
+      hint: 'abre a conta do imposto por dentro',
+      child: InkWell(
+        onTap: () => showImpostoDetalheSheet(
+          context,
+          ref,
+          regime: regime,
+          faturamentoMensal: r.faturamento,
+        ),
+        borderRadius: const BorderRadius.all(Radii.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Space.x1),
+          child: Row(
+            children: <Widget>[
+              Expanded(child: Text(label, style: style)),
+              const SizedBox(width: Space.x2),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(moneyBRL(r.imposto), style: style),
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

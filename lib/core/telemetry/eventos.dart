@@ -60,5 +60,6 @@ abstract final class GatilhoPro {
   static const String propostaPdf = 'proposta_pdf';
   static const String segundaArea = 'segunda_area';
   static const String moedaEstrangeira = 'moeda_estrangeira';
+  static const String detalhamentoImposto = 'detalhamento_imposto';
   static const String config = 'config';
 }
