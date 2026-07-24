@@ -168,18 +168,18 @@ const List<FaixaSimples> kFaixasSimplesAnexo5 = <FaixaSimples>[
 const double kFatorRLimite = 0.28;
 
 /// O Fator R (folha ÷ receita) a partir dos valores MENSAIS — o ×12 de cima e de
-/// baixo se cancela, então a razão mensal já é a anual. Folha aqui = pró-labore
-/// (o "salário" que o dono tira), o único componente de folha do solo.
-double fatorR(double proLaboreMensal, double faturamentoMensal) {
+/// baixo se cancela, então a razão mensal já é a anual. Folha = pró-labore + 
+/// salários de funcionários (no solo, só o pró-labore).
+double fatorR(double folhaMensal, double faturamentoMensal) {
   if (faturamentoMensal <= 0) return 0;
-  return proLaboreMensal / faturamentoMensal;
+  return folhaMensal / faturamentoMensal;
 }
 
 /// Verdadeiro quando o Fator R coloca o prestador no Anexo III (folha alta).
 /// Sem pró-labore declarado (0) → falso → Anexo V, a estimativa conservadora:
 /// na dúvida, reserva MAIS, nunca menos.
-bool simplesEhAnexo3(double proLaboreMensal, double faturamentoMensal) =>
-    fatorR(proLaboreMensal, faturamentoMensal) >= kFatorRLimite;
+bool simplesEhAnexo3(double folhaMensal, double faturamentoMensal) =>
+    fatorR(folhaMensal, faturamentoMensal) >= kFatorRLimite;
 
 /// A faixa em que uma receita anual ([rbt12]) cai, no anexo escolhido pelo Fator
 /// R ([anexo3]) — pra a folha de detalhamento nomear a faixa (F4). Acima da
@@ -195,16 +195,16 @@ FaixaSimples faixaSimplesDe(double rbt12, {bool anexo3 = false}) {
 }
 
 /// Alíquota EFETIVA do Simples a partir do faturamento mensal, escolhendo o
-/// anexo pelo Fator R do [proLaboreMensal] (Anexo III se folha ≥ 28% da receita;
+/// anexo pelo Fator R da [folhaMensal] (Anexo III se folha ≥ 28% da receita;
 /// Anexo V caso contrário). RBT12 estimado = mensal × 12. Acima da 3ª faixa,
-/// mantém a efetiva da 3ª (estimativa). Sem pró-labore → Anexo V (conservador).
+/// mantém a efetiva da 3ª (estimativa). Sem folha → Anexo V (conservador).
 double aliquotaEfetivaSimples(
   double faturamentoMensal, {
-  double proLaboreMensal = 0,
+  double folhaMensal = 0,
 }) {
   final double rbt12 = math.max(0, faturamentoMensal) * 12;
   final List<FaixaSimples> anexo =
-      simplesEhAnexo3(proLaboreMensal, faturamentoMensal)
+      simplesEhAnexo3(folhaMensal, faturamentoMensal)
       ? kFaixasSimplesAnexo3
       : kFaixasSimplesAnexo5;
   if (rbt12 <= 0) return anexo.first.aliquotaNominal;

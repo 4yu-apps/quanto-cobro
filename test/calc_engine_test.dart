@@ -42,13 +42,13 @@ void main() {
       expect(aliquotaEfetivaSimples(10000), closeTo(0.155, 0.0001)); // 1ª V
       // Pró-labore ≥ 28% do faturamento → Fator R joga no Anexo III (mais barato).
       expect(
-        aliquotaEfetivaSimples(10000, proLaboreMensal: 3000),
+        aliquotaEfetivaSimples(10000, folhaMensal: 3000),
         closeTo(0.06, 0.0001),
       );
       // RBT12 270k (mensal 22.5k), com pró-labore alto → Anexo III:
       // (270k×11,2% − 9.360)/270k ≈ 7,73%
       expect(
-        aliquotaEfetivaSimples(22500, proLaboreMensal: 8000),
+        aliquotaEfetivaSimples(22500, folhaMensal: 8000),
         closeTo(0.0773, 0.001),
       );
       // Fator R logo abaixo do piso (27%) ainda é Anexo V:
@@ -156,6 +156,27 @@ void main() {
         computeValorHora(com, RegimeId.mei).faturamento,
         computeValorHora(sem, RegimeId.mei).faturamento,
       );
+    });
+
+    test('folha de funcionários SOMA na base E conta no Fator R', () {
+      // Diferente do pró-labore, salário de funcionário é custo real → aumenta
+      // o faturamento necessário (visível até no MEI, onde o anexo não muda).
+      final Area sem = Area.padrao();
+      final Area comFunc = Area.padrao().copyWith(folhaFuncionarios: 2000);
+      expect(
+        computeValorHora(comFunc, RegimeId.mei).faturamento,
+        greaterThan(computeValorHora(sem, RegimeId.mei).faturamento),
+      );
+      // E entra no Fator R: uma folha de funcionários alta joga no Anexo III.
+      final int comFuncPct = computeValorHora(
+        Area.padrao().copyWith(folhaFuncionarios: 6000),
+        RegimeId.simples,
+      ).reservaPct;
+      final int semPct = computeValorHora(
+        Area.padrao(),
+        RegimeId.simples,
+      ).reservaPct;
+      expect(comFuncPct, lessThan(semPct));
     });
 
     test('horas 0 não estoura (usa mínimo 1, sem divisão por zero)', () {

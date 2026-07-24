@@ -35,7 +35,7 @@ Future<void> showImpostoDetalheSheet(
   WidgetRef ref, {
   required RegimeId regime,
   required double faturamentoMensal,
-  double proLaboreMensal = 0,
+  double folhaMensal = 0,
 }) async {
   if (!regimeTemDetalhamento(regime)) return;
 
@@ -54,7 +54,7 @@ Future<void> showImpostoDetalheSheet(
   final ImpostoDetalhe d = detalharImposto(
     regime,
     faturamentoMensal,
-    proLaboreMensal: proLaboreMensal,
+    folhaMensal: folhaMensal,
   );
   await showModalBottomSheet<void>(
     context: context,

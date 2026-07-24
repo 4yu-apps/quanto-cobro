@@ -197,7 +197,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: Space.x2),
                     child: Text(
-                      simplesEhAnexo3(proLaboreDe(p), r.faturamento)
+                      simplesEhAnexo3(folhaFatorR(p), r.faturamento)
                           ? 'Anexo III (serviços): seu pró-labore passa de 28% do que fatura (Fator R). Toque no imposto pra ver a conta.'
                           : 'Anexo V (serviços): seu pró-labore não chega a 28% do que fatura (Fator R), então reservamos mais, pra não faltar. Toque no imposto pra ver a conta.',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -299,7 +299,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           ref,
           regime: regime,
           faturamentoMensal: r.faturamento,
-          proLaboreMensal: proLaboreDe(_area!),
+          folhaMensal: folhaFatorR(_area!),
         ),
         borderRadius: const BorderRadius.all(Radii.sm),
         child: Padding(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
+import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
 import '../../core/model/custo.dart';
 import '../../core/model/area.dart';
@@ -40,7 +41,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   /// planejamento de longo prazo feito a quem ainda não sabe quanto cobra por
   /// hora. Virou toggle no Detalhamento, onde já existe o contexto pra entender
   /// o que é, e continua LIGADO por default.
-  static const int _lastStep = 3;
+  // O último passo depende do regime: o Simples ganha um passo a mais (pró-labore
+  // + funcionários, pro Fator R). Nos outros, a calculadora termina no regime.
+  int get _lastStep => ref.read(regimeProvider) == RegimeId.simples ? 4 : 3;
 
   late Area _draft;
   int _step = 0;
@@ -54,6 +57,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
 
   final TextEditingController _renda = TextEditingController();
   final FocusNode _rendaFocus = FocusNode();
+
+  // Passo do Simples (Fator R): pró-labore e folha de funcionários.
+  final TextEditingController _proLaboreCtrl = TextEditingController();
+  final TextEditingController _funcionariosCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -79,6 +86,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     // Area legado (sem rotina) mas com horas salvo → abre em "digitar na mão".
     _horasManual = _draft.diasSemana == null;
     _renda.text = _draft.renda.round().toString();
+    if ((_draft.proLabore ?? 0) > 0) {
+      _proLaboreCtrl.text = _draft.proLabore!.round().toString();
+    }
+    if ((_draft.folhaFuncionarios ?? 0) > 0) {
+      _funcionariosCtrl.text = _draft.folhaFuncionarios!.round().toString();
+    }
 
     // O denominador do sinal nº 1: quantos começam, pra saber quantos chegam.
     telemetry.evento(Evento.calcIniciada);
@@ -88,6 +101,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   void dispose() {
     _renda.dispose();
     _rendaFocus.dispose();
+    _proLaboreCtrl.dispose();
+    _funcionariosCtrl.dispose();
     super.dispose();
   }
 
@@ -193,6 +208,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    // Observa o regime pra o nº de passos (e os pontinhos/botão) reagir quando a
+    // pessoa escolhe Simples no passo do regime.
+    ref.watch(regimeProvider);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -336,8 +354,10 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         return _stepHoras();
       case 2:
         return _stepCustos();
-      default:
+      case 3:
         return _stepRegime();
+      default:
+        return _stepProLaboreSimples();
     }
   }
 
@@ -358,7 +378,8 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     0 => 'Quanto você quer ganhar por mês?',
     1 => 'Quanto você trabalha por semana?',
     2 => 'O que você gasta pra trabalhar?',
-    _ => 'E o imposto, como é pra você?',
+    3 => 'E o imposto, como é pra você?',
+    _ => 'Seu pró-labore e sua folha',
   };
 
   // ---------------------------------------------------------------- passo 1
@@ -897,132 +918,101 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         ),
         const SizedBox(height: Space.x3),
         for (final Regime r in Regime.all.values) _regimeOption(r),
-        // Fator R (F6): só o Simples vê. O pró-labore decide o anexo — e sem
-        // ele o app assume o mais caro (Anexo V), reservando a mais pra não
-        // faltar. A pergunta humana mora aqui, no momento em que faz sentido.
-        if (ref.watch(regimeProvider) == RegimeId.simples) _proLaboreSimples(),
       ],
     );
   }
 
-  Widget _proLaboreSimples() {
+  // ---------------------------------------------------------------- passo 5
+  /// O passo do Fator R — só existe pro Simples (o [_lastStep] cuida disso).
+  /// Pergunta o pró-labore e a folha de funcionários, os dois componentes da
+  /// folha que decide o anexo. Dá feedback ao vivo de qual anexo você caiu.
+  Widget _stepProLaboreSimples() {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    final double atual = proLaboreDe(_draft);
-    return Padding(
-      padding: const EdgeInsets.only(top: Space.x4),
-      child: Container(
-        padding: const EdgeInsets.all(Space.x4),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerLow,
-          borderRadius: const BorderRadius.all(Radii.md),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Flexible(
-                  child: Text(
-                    'Tem pró-labore? Você pode reservar menos',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                const HelpDot(verbeteId: 'fator_r', size: 18),
-              ],
-            ),
-            const SizedBox(height: Space.x1),
-            Text(
-              atual > 0
-                  ? 'Com um pró-labore alto (a partir de 28% do que você fatura), '
-                        'seu imposto cai no Anexo III, mais barato.'
-                  : 'É o quanto você já tira de salário da empresa por mês — não '
-                        'some de novo, é parte da sua renda. A partir de 28% do que '
-                        'fatura, seu imposto fica mais barato (Anexo III). Sem informar, '
-                        'usamos o mais caro (Anexo V), pra não faltar.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: Space.x3),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    atual > 0
-                        ? 'Pró-labore: ${moneyBRL(atual)}/mês'
-                        : 'Ainda não informado',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontFeatures: AppType.tnum,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: Space.x2),
-                FilledButton.tonal(
-                  onPressed: _editarProLabore,
-                  child: Text(atual > 0 ? 'Ajustar' : 'Definir'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final ValorHoraResult r = computeValorHora(_draft, RegimeId.simples);
+    final bool anexo3 = simplesEhAnexo3(folhaFatorR(_draft), r.faturamento);
+    final double folha = folhaFatorR(_draft);
 
-  /// Edita o pró-labore do rascunho — a folha do Fator R (F6). Vai pro campo
-  /// próprio (Area.proLabore), INFORMATIVO: não soma na base do cálculo (já é
-  /// parte da renda). Uma pergunta só, "quanto você tira por mês".
-  Future<void> _editarProLabore() async {
-    final double atual = proLaboreDe(_draft);
-    final TextEditingController valorC = TextEditingController(
-      text: atual > 0 ? atual.round().toString() : '',
-    );
-    final double? valor = await showModalBottomSheet<double>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext c) => Padding(
-        padding: EdgeInsets.only(
-          left: Space.x6,
-          right: Space.x6,
-          top: Space.x2,
-          bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
           children: <Widget>[
-            Text('Seu pró-labore', style: Theme.of(c).textTheme.titleLarge),
-            const SizedBox(height: Space.x2),
-            const Text(
-              'Quanto você tira de salário da empresa por mês. Entra como custo '
-              'e decide seu anexo no Simples (Fator R).',
-            ),
-            const SizedBox(height: Space.x4),
-            MoneyField(
-              controller: valorC,
-              label: 'Valor por mês',
-              prefix: r'R$ ',
-              autofocus: true,
-            ),
-            const SizedBox(height: Space.x4),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () =>
-                    Navigator.pop(c, _digits(valorC.text).toDouble()),
-                child: const Text('Usar este valor'),
-              ),
-            ),
+            Flexible(child: _title('Seu pró-labore e sua folha')),
+            const HelpDot(verbeteId: 'fator_r', size: 20),
           ],
         ),
-      ),
+        _subtitle(
+          'No Simples, o quanto você paga de salários decide seu imposto: a '
+          'partir de 28% do que você fatura, cai no Anexo III (mais barato).',
+        ),
+        const SizedBox(height: Space.x5),
+        MoneyField(
+          controller: _proLaboreCtrl,
+          label: 'Seu pró-labore por mês',
+          prefix: r'R$ ',
+          onChanged: (String v) => setState(
+            () => _draft = _draft.copyWith(proLabore: _digits(v).toDouble()),
+          ),
+        ),
+        const SizedBox(height: Space.x2),
+        Text(
+          'O quanto você tira de salário da empresa. Já é parte da sua renda — '
+          'não vira custo a mais.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: Space.x5),
+        MoneyField(
+          controller: _funcionariosCtrl,
+          label: 'Salários de funcionários por mês',
+          prefix: r'R$ ',
+          onChanged: (String v) => setState(
+            () => _draft =
+                _draft.copyWith(folhaFuncionarios: _digits(v).toDouble()),
+          ),
+        ),
+        const SizedBox(height: Space.x2),
+        Text(
+          'Trabalha sozinho? Deixe zero. Isto é custo real e entra na conta.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: Space.x6),
+        // Feedback ao vivo: qual anexo, com o que já foi digitado.
+        Container(
+          padding: const EdgeInsets.all(Space.x4),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLow,
+            borderRadius: const BorderRadius.all(Radii.md),
+          ),
+          child: Row(
+            children: <Widget>[
+              Icon(
+                anexo3 ? Icons.trending_down : Icons.shield_outlined,
+                color: anexo3 ? cs.primary : cs.onSurfaceVariant,
+              ),
+              const SizedBox(width: Space.x3),
+              Expanded(
+                child: Text(
+                  folha <= 0
+                      ? 'Sem folha informada: usamos o Anexo V (mais caro), '
+                            'pra não faltar.'
+                      : anexo3
+                      ? 'Sua folha passa de 28% do que você fatura: Anexo III, '
+                            'o mais barato.'
+                      : 'Sua folha ainda não chega a 28% do que você fatura: '
+                            'Anexo V, o mais caro.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
-    Future<void>.delayed(const Duration(milliseconds: 600), valorC.dispose);
-    if (valor == null || !mounted) return;
-    Haptics.select();
-    setState(() => _draft = _draft.copyWith(proLabore: valor));
   }
 
   Widget _regimeOption(Regime r) {

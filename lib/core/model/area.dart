@@ -28,6 +28,7 @@ class Area {
     this.horasDia,
     required this.custos,
     this.proLabore,
+    this.folhaFuncionarios,
   });
 
   final String id;
@@ -54,12 +55,18 @@ class Area {
 
   final List<Custo> custos;
 
-  /// Pró-labore mensal declarado (só Simples) — a folha do Fator R (F6), que
-  /// decide o anexo. É INFORMATIVO: **não** entra em [custosTotal] nem na base
-  /// do cálculo. O pró-labore já é parte da sua renda (o que você tira pra
+  /// Pró-labore mensal declarado (só Simples) — parte da folha do Fator R (F6),
+  /// que decide o anexo. É INFORMATIVO: **não** entra em [custosTotal] nem na
+  /// base do cálculo. O pró-labore já é parte da sua renda (o que você tira pra
   /// você), não um custo a mais — somá-lo cobraria o seu salário duas vezes.
   /// Null = não informado → Anexo V (a estimativa conservadora).
   final double? proLabore;
+
+  /// Folha de salários dos funcionários/mês (só Simples). Entra na folha do
+  /// Fator R JUNTO com o pró-labore, E é custo real (você fatura pra pagar) —
+  /// então, diferente do pró-labore, ESTE soma na base do cálculo. Null = sem
+  /// funcionários (o caso do freelancer solo).
+  final double? folhaFuncionarios;
 
   double get custosTotal => custos.fold(0, (double s, Custo c) => s + c.valor);
 
@@ -99,6 +106,7 @@ class Area {
     int? horasDia,
     List<Custo>? custos,
     double? proLabore,
+    double? folhaFuncionarios,
   }) {
     return Area(
       id: id ?? this.id,
@@ -112,6 +120,7 @@ class Area {
       horasDia: horasDia ?? this.horasDia,
       custos: custos ?? this.custos,
       proLabore: proLabore ?? this.proLabore,
+      folhaFuncionarios: folhaFuncionarios ?? this.folhaFuncionarios,
     );
   }
 
@@ -127,6 +136,7 @@ class Area {
     if (horasDia != null) 'horasDia': horasDia,
     'custos': custos.map((Custo c) => c.toJson()).toList(),
     if (proLabore != null) 'proLabore': proLabore,
+    if (folhaFuncionarios != null) 'folhaFuncionarios': folhaFuncionarios,
   };
 
   factory Area.fromJson(Map<String, dynamic> json) => Area(
@@ -143,5 +153,6 @@ class Area {
         .map((dynamic e) => Custo.fromJson(e as Map<String, dynamic>))
         .toList(),
     proLabore: (json['proLabore'] as num?)?.toDouble(),
+    folhaFuncionarios: (json['folhaFuncionarios'] as num?)?.toDouble(),
   );
 }

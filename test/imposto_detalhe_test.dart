@@ -66,7 +66,7 @@ void main() {
       final ImpostoDetalhe d = detalharImposto(
         RegimeId.simples,
         10000,
-        proLaboreMensal: 3000,
+        folhaMensal: 3000,
       );
       expect(d.simplesAnexo3, isTrue);
       expect(d.fatorR, closeTo(0.3, 0.0001));

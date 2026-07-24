@@ -442,7 +442,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           context,
           r,
           d,
-          apoio: simplesEhAnexo3(proLaboreDe(p), r.faturamento)
+          apoio: simplesEhAnexo3(folhaFatorR(p), r.faturamento)
               ? 'Alíquota efetiva do Simples, Anexo III: seu pró-labore passa de 28% do que fatura (Fator R).'
               : 'Alíquota efetiva do Simples, Anexo V: seu pró-labore não chega a 28% do que fatura (Fator R), então reservamos mais.',
         );

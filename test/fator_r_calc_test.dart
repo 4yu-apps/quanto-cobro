@@ -9,9 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/tela.dart';
 
-/// F6 — a "pergunta humana" do Fator R. Ela SÓ aparece pro Simples (MEI/CPF/dólar
-/// nunca veem), e é o que permite ao solo declarar pró-labore e escapar do Anexo
-/// V. Sem isso, o app o deixaria no anexo mais caro pra sempre.
+/// F6 — o passo do Fator R. Ele SÓ existe pro Simples (um passo a mais na
+/// calculadora), e é onde a pessoa informa pró-labore + folha de funcionários.
+/// Sem isso, o Simples solo ficaria preso no anexo mais caro sem saber.
 Future<void> _ateORegime(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues(<String, Object>{
     'onboarding_done': true,
@@ -33,57 +33,54 @@ Future<void> _ateORegime(WidgetTester tester) async {
   }
 }
 
+Future<void> _escolher(WidgetTester tester, String regime) async {
+  final Finder f = find.text(regime);
+  await tester.ensureVisible(f);
+  await tester.tap(f);
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('a pergunta de pró-labore só existe no fluxo do Simples', (
+  testWidgets('MEI termina no regime; Simples ganha o passo do Fator R', (
     WidgetTester tester,
   ) async {
     await comTela(tester, Tela.tabletEmPe, () async {
       await _ateORegime(tester);
 
-      // Default é MEI: nada de Fator R.
-      expect(find.text('Tem pró-labore? Você pode reservar menos'), findsNothing);
+      // Default MEI: o regime é o último passo (4 de 4), botão "Ver resultado".
+      expect(find.text('Passo 4 de 4'), findsOneWidget);
+      expect(find.text('Ver resultado'), findsOneWidget);
 
-      // Escolhe Simples → a pergunta aparece.
-      final Finder simples = find.text('Tenho empresa no Simples');
-      await tester.ensureVisible(simples);
-      await tester.tap(simples);
-      await tester.pumpAndSettle();
-      expect(find.text('Tem pró-labore? Você pode reservar menos'), findsOneWidget);
-      expect(find.text('Definir'), findsOneWidget);
+      // Escolhe Simples → aparece um 5º passo (o botão volta a "Continuar").
+      await _escolher(tester, 'Tenho empresa no Simples');
+      expect(find.text('Passo 4 de 5'), findsOneWidget);
+      expect(find.text('Continuar'), findsOneWidget);
 
-      // Volta pra MEI → a pergunta some de novo.
-      final Finder mei = find.text('Sou MEI');
-      await tester.ensureVisible(mei);
-      await tester.tap(mei);
+      // Avança → o passo do Fator R, com os dois campos.
+      await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
-      expect(find.text('Tem pró-labore? Você pode reservar menos'), findsNothing);
+      expect(find.text('Passo 5 de 5'), findsOneWidget);
+      expect(find.text('Seu pró-labore por mês'), findsOneWidget);
+      expect(find.text('Salários de funcionários por mês'), findsOneWidget);
     });
   });
 
-  testWidgets('definir o pró-labore grava o campo e reflete na pergunta', (
+  testWidgets('o passo do Simples dá o feedback do anexo ao vivo', (
     WidgetTester tester,
   ) async {
     await comTela(tester, Tela.tabletEmPe, () async {
       await _ateORegime(tester);
-      final Finder simples = find.text('Tenho empresa no Simples');
-      await tester.ensureVisible(simples);
-      await tester.tap(simples);
+      await _escolher(tester, 'Tenho empresa no Simples');
+      await tester.tap(find.text('Continuar'));
       await tester.pumpAndSettle();
 
-      final Finder definir = find.text('Definir');
-      await tester.ensureVisible(definir);
-      await tester.tap(definir);
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '4000');
-      await tester.tap(find.text('Usar este valor'));
-      await tester.pumpAndSettle();
+      // Sem folha: o feedback diz que usamos o Anexo V (o conservador).
+      expect(find.textContaining('Sem folha informada'), findsOneWidget);
 
-      expect(find.textContaining('Pró-labore: '), findsOneWidget);
-      expect(find.text('Ajustar'), findsOneWidget);
-
-      // O controller do sheet é descartado por um timer de 600ms (deixa a folha
-      // fechar antes): avança o relógio pra ele não vazar pro fim do teste.
-      await tester.pump(const Duration(milliseconds: 700));
+      // Informa um pró-labore alto → passa de 28% → o feedback vira Anexo III.
+      await tester.enterText(find.byType(TextField).first, '3000');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Sua folha passa de 28%'), findsOneWidget);
     });
   });
 }
