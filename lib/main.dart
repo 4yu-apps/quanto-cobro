@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/lembrete/lembrete.dart';
 import 'core/providers.dart';
 import 'core/settings/settings_repository.dart';
 import 'core/telemetry/telemetry.dart';
@@ -40,7 +43,16 @@ Future<void> main() async {
     // Opt-in de verdade (LGPD + a promessa do onboarding "sem enviar seus
     // dados"): sai desligada, e só liga se a pessoa aceitou em Configurações.
     // Vale pro no-op E pro Firebase — a instância acima já está no lugar.
-    await telemetry.setHabilitado(SettingsRepository(prefs).telemetryEnabled());
+    final SettingsRepository settings = SettingsRepository(prefs);
+    await telemetry.setHabilitado(settings.telemetryEnabled());
+
+    // Lembrete (F7): se está ligado, REAGENDA com o regime atual — pega uma
+    // troca de regime desde a última vez e reforça o agendamento pós-reboot (o
+    // boot receiver nativo já faz o básico). Fire-and-forget e blindado (o
+    // serviço já engole erro por dentro): nunca segura nem derruba o boot.
+    if (settings.lembreteEnabled()) {
+      unawaited(LembreteService().agendar(settings.regime()));
+    }
 
     runApp(
       ProviderScope(

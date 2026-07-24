@@ -74,4 +74,10 @@ class SettingsRepository {
   static const String _kTextScale = 'text_scale';
   double textScale() => _prefs.getDouble(_kTextScale) ?? 1.0;
   Future<void> setTextScale(double v) => _prefs.setDouble(_kTextScale, v);
+
+  // Lembrete de imposto (F7) — notificação mensal. Default DESLIGADO: exige
+  // permissão de notificação, então é opt-in explícito no toggle dos Ajustes.
+  static const String _kLembrete = 'lembrete_enabled';
+  bool lembreteEnabled() => _prefs.getBool(_kLembrete) ?? false;
+  Future<void> setLembrete(bool v) => _prefs.setBool(_kLembrete, v);
 }

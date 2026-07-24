@@ -63,6 +63,15 @@ dependencies:
   # só nasce de uma compra confirmada pela loja.
   in_app_purchase: ^3.2.0
 
+  # Lembrete de imposto (F7): notificação REAL, que chega com o app fechado. O
+  # agendamento é INEXATO de propósito (sem SCHEDULE_EXACT_ALARM) — a Play trata
+  # alarme exato como permissão sensível e um lembrete mensal não precisa de
+  # precisão de minuto. timezone: pra agendar em America/Sao_Paulo mesmo com o
+  # relógio do aparelho noutro fuso. Init DEFENSIVO no core/lembrete (lição do
+  # AdMob: plugin nativo nunca pode derrubar o boot).
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
+
 # win32 é dep transitiva SÓ do Windows (share_plus quer ^6, file_picker quer ^5).
 # O app é Android/iOS — win32 nunca é compilado. Fixo num 5.x pra os dois
 # resolverem sem tocar no build mobile.

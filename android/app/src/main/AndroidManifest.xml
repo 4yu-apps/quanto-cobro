@@ -4,6 +4,15 @@
          o build de release não tem rede nenhuma e a busca falha em silêncio. -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- Lembrete de imposto (F7). POST_NOTIFICATIONS: obrigatória no Android 13+
+         pra qualquer notificação (pedida em runtime pelo toggle dos Ajustes).
+         RECEIVE_BOOT_COMPLETED: deixa o lembrete voltar depois de reiniciar o
+         aparelho (o AlarmManager esquece os agendamentos no boot). NÃO pedimos
+         SCHEDULE_EXACT_ALARM de propósito: agendamento inexato basta pra um
+         lembrete mensal e evita a revisão extra da Play sobre alarme exato. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
     <!-- O SDK do Firebase Analytics injeta a permissão AD_ID via merge e coleta
          o ID de publicidade por padrão. Este app não tem anúncio nenhum, então
          removemos a permissão E desligamos a coleta (meta-data abaixo). Assim a
@@ -52,6 +61,24 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- flutter_local_notifications (F7): o receiver que dispara a
+             notificação agendada, e o que a REAGENDA depois de reiniciar o
+             aparelho (ou de atualizar o app). Sem o boot receiver, o lembrete
+             sumiria no primeiro reboot. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

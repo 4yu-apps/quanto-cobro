@@ -11,6 +11,7 @@ import 'data/marca_repository.dart';
 import 'data/trabalho_repository.dart';
 import 'fx/fx_repository.dart';
 import 'fx/fx_service.dart';
+import 'lembrete/lembrete.dart';
 import 'model/area.dart';
 import 'model/entrada.dart';
 import 'model/marca.dart';
@@ -46,6 +47,29 @@ class RegimeNotifier extends Notifier<RegimeId> {
 
 final NotifierProvider<RegimeNotifier, RegimeId> regimeProvider =
     NotifierProvider<RegimeNotifier, RegimeId>(RegimeNotifier.new);
+
+// ---------------------------------------------------------------------------
+// Lembrete de imposto (F7) — notificação mensal, opt-in
+// ---------------------------------------------------------------------------
+
+/// O serviço de lembrete. Injetável: os testes trocam por um fake (o plugin
+/// nativo não roda em teste de unidade).
+final Provider<Lembretes> lembretesProvider = Provider<Lembretes>(
+  (Ref ref) => LembreteService(),
+);
+
+class LembreteNotifier extends Notifier<bool> {
+  @override
+  bool build() => ref.read(settingsRepositoryProvider).lembreteEnabled();
+
+  Future<void> set(bool value) async {
+    await ref.read(settingsRepositoryProvider).setLembrete(value);
+    state = value;
+  }
+}
+
+final NotifierProvider<LembreteNotifier, bool> lembreteProvider =
+    NotifierProvider<LembreteNotifier, bool>(LembreteNotifier.new);
 
 // ---------------------------------------------------------------------------
 // Áreas de trabalho — onde o cálculo mora

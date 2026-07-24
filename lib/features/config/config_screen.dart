@@ -16,6 +16,7 @@ import '../../core/model/regime.dart';
 import '../../core/model/area.dart';
 import '../../core/model/trabalho.dart';
 import '../../core/model/entrada.dart';
+import '../../core/lembrete/lembrete.dart';
 import '../../core/providers.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
@@ -203,6 +204,21 @@ class ConfigScreen extends ConsumerWidget {
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _escolherRegime(context, ref),
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
+                  // Lembrete de imposto (F7): notificação real, mensal. Mora
+                  // colado no regime porque é o regime que define O QUE lembrar
+                  // (DAS dia 20 do MEI, carnê-leão no fim do mês do CPF).
+                  SwitchListTile(
+                    secondary: const Icon(Icons.notifications_active_outlined),
+                    title: const Text('Lembrete de imposto'),
+                    subtitle: Text(
+                      ref.watch(lembreteProvider)
+                          ? 'Ligado: todo mês, dia ${planoLembrete(ref.watch(regimeProvider)).dia}, um aviso pra separar'
+                          : 'Um aviso mensal pra não esquecer de separar o imposto',
+                    ),
+                    value: ref.watch(lembreteProvider),
+                    onChanged: (bool v) => _aplicarLembrete(context, ref, v),
                   ),
                   const Divider(height: 1, indent: Space.x4),
                   // A marca vive aqui, mas quase ninguém chega por aqui: ela é
@@ -628,6 +644,42 @@ class ConfigScreen extends ConsumerWidget {
 
   /// Trocar o regime é raro e pesa: uma folha com as opções e a explicação de
   /// cada uma, no mesmo texto que a calculadora usa.
+  /// Liga/desliga o lembrete. Ligar PEDE a permissão de notificação primeiro:
+  /// negada, o toggle não sobe e a pessoa é orientada — degradar com elegância,
+  /// nunca um switch que finge estar ligado sem poder notificar.
+  Future<void> _aplicarLembrete(
+    BuildContext context,
+    WidgetRef ref,
+    bool ligar,
+  ) async {
+    final Lembretes lembretes = ref.read(lembretesProvider);
+    if (ligar) {
+      final bool ok = await lembretes.pedirPermissao();
+      if (!ok) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Pra receber o lembrete, ative as notificações do app nas '
+                  'configurações do sistema.',
+                ),
+              ),
+            );
+        }
+        return; // não liga: sem permissão, o switch não sobe
+      }
+      await lembretes.agendar(ref.read(regimeProvider));
+      await ref.read(lembreteProvider.notifier).set(true);
+      if (context.mounted) announce(context, 'Lembrete de imposto ligado.');
+    } else {
+      await lembretes.cancelar();
+      await ref.read(lembreteProvider.notifier).set(false);
+      if (context.mounted) announce(context, 'Lembrete de imposto desligado.');
+    }
+  }
+
   Future<void> _escolherRegime(BuildContext context, WidgetRef ref) async {
     final RegimeId atual = ref.read(regimeProvider);
     await showModalBottomSheet<void>(

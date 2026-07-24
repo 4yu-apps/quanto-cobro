@@ -71,8 +71,14 @@
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
 
+# flutter_local_notifications (F7): o plugin serializa os detalhes da notificação
+# agendada com Gson; sem manter suas classes, o R8 as renomeia e o agendamento
+# quebra em runtime (release), não no build.
+-keep class com.dexterous.** { *; }
+-dontwarn com.dexterous.**
+
 # ---------------------------------------------------------------------------
 # NAO tem aqui, de proposito (ver 11-HANDOFF.md §6): AdMob, Maps, ML Kit,
-# notificacoes locais, foreground service. Billing entra quando o in_app_purchase
-# entrar — a regra e -keep class com.android.billingclient.api.** { *; }.
+# foreground service. Billing entra quando o in_app_purchase entrar — a regra e
+# -keep class com.android.billingclient.api.** { *; }.
 # ---------------------------------------------------------------------------
