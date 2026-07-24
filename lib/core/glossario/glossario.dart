@@ -94,6 +94,12 @@ abstract final class Glossario {
           'um pedaço pra ninguém pagar demais ao mudar de faixa. Por isso o que '
           'você paga de verdade fica menor que a % da tabela.',
     ),
+    'teto_mei': Verbete(
+      'O que é o "teto do MEI"?',
+      'É o limite de faturamento do MEI: R\$ 81 mil por ano. Passou até 20% '
+          '(R\$ 97,2 mil), você paga um imposto a mais e vira ME no ano seguinte. '
+          'Passou disso, sai do MEI já valendo desde janeiro. Por isso a gente avisa.',
+    ),
     'grossup': Verbete(
       'Imposto embutido',
       'Quer dizer que a conta já considera o imposto por dentro do valor, pra o '

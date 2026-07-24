@@ -47,6 +47,16 @@ double entrouNoMes(List<Entrada> todas, DateTime mes, {String? areaId}) => todas
     )
     .fold(0.0, (double s, Entrada e) => s + e.valor);
 
+/// Quanto entrou no ANO (bruto) — a base do rastreador de teto do MEI (F5).
+/// Soma o que já foi registrado no ano; sem categoria, sem meta: é checagem de
+/// limite fiscal, não controle financeiro (doc 15 §4.3).
+double entrouNoAno(List<Entrada> todas, int ano, {String? areaId}) => todas
+    .where(
+      (Entrada e) =>
+          e.at.year == ano && (areaId == null || e.areaId == areaId),
+    )
+    .fold(0.0, (double s, Entrada e) => s + e.valor);
+
 /// Quanto foi separado de imposto no mês.
 int separadoNoMes(List<Entrada> todas, DateTime mes, {String? areaId}) => todas
     .where(

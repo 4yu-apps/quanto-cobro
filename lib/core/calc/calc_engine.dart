@@ -157,6 +157,78 @@ ImpostoDetalhe detalharImposto(RegimeId regime, double faturamentoMensal) {
   }
 }
 
+/// As três zonas do teto do MEI (F5, achado da varredura — doc 16 §7.1). Não é
+/// uma barra até 81k: passar do teto tem DOIS desfechos, e o medo do MEI é não
+/// saber em qual está.
+enum ZonaTeto {
+  /// Abaixo de R$ 81k — tranquilo.
+  verde,
+
+  /// R$ 81k–97,2k — excesso tolerado: DAS complementar + vira ME ano que vem.
+  amarela,
+
+  /// Acima de R$ 97,2k — desenquadramento retroativo a 1º de janeiro.
+  vermelha,
+}
+
+/// Onde o MEI está em relação ao teto do ano, e pra onde caminha (F5). PURO: a
+/// projeção é linear simples (ritmo × 12), com selo de estimativa na UI — é
+/// planejamento, nunca a conta oficial.
+class TetoMei {
+  const TetoMei({
+    required this.faturado,
+    required this.zona,
+    required this.restante,
+    required this.excedente,
+    required this.ritmoMensal,
+    required this.projecaoAno,
+    required this.mesEncosta,
+  });
+
+  final double faturado;
+  final ZonaTeto zona;
+
+  /// Quanto falta pra encostar em R$ 81k (0 quando já passou).
+  final double restante;
+
+  /// Quanto já passou de R$ 81k (0 quando ainda dentro).
+  final double excedente;
+
+  final double ritmoMensal;
+
+  /// Faturamento projetado pro fim do ano, no ritmo atual.
+  final double projecaoAno;
+
+  /// Mês (1..12) em que, no ritmo atual, o faturado encosta em R$ 81k — null se
+  /// já encostou, se o ritmo é zero, ou se não encosta dentro do ano.
+  final int? mesEncosta;
+}
+
+/// Avalia o teto do MEI a partir do [faturado] no ano e do [mesAtual] (1..12,
+/// os meses decorridos — base do ritmo linear).
+TetoMei avaliarTetoMei({required double faturado, required int mesAtual}) {
+  final double f = math.max(0, faturado);
+  final ZonaTeto zona = f <= kTetoAnualMei
+      ? ZonaTeto.verde
+      : (f <= kTetoMeiComTolerancia ? ZonaTeto.amarela : ZonaTeto.vermelha);
+  final int meses = mesAtual.clamp(1, 12);
+  final double ritmo = f / meses;
+  int? mesEncosta;
+  if (f < kTetoAnualMei && ritmo > 0) {
+    final double alvo = meses + (kTetoAnualMei - f) / ritmo;
+    if (alvo <= 12.5) mesEncosta = alvo.round().clamp(meses, 12);
+  }
+  return TetoMei(
+    faturado: f,
+    zona: zona,
+    restante: math.max(0, kTetoAnualMei - f),
+    excedente: math.max(0, f - kTetoAnualMei),
+    ritmoMensal: ritmo,
+    projecaoAno: ritmo * 12,
+    mesEncosta: mesEncosta,
+  );
+}
+
 /// Resultado do valor-hora justo (Blueprint §6.13).
 class ValorHoraResult {
   const ValorHoraResult({

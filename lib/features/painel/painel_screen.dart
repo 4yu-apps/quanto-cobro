@@ -6,6 +6,7 @@ import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
+import '../../core/common/datas.dart';
 import '../../core/config/app_config.dart';
 import '../../core/data/area_repository.dart';
 import '../../core/data/entrada_repository.dart';
@@ -13,6 +14,8 @@ import '../../core/model/area.dart';
 import '../../core/model/entrada.dart';
 import '../../core/model/regime.dart';
 import '../../core/providers.dart';
+import '../../core/telemetry/eventos.dart';
+import '../../core/telemetry/telemetry.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
@@ -21,6 +24,7 @@ import '../../core/ui/a11y.dart';
 import '../../core/ui/divisao_bar.dart';
 import '../../core/ui/empty_state_hero.dart';
 import '../../core/ui/estimativa_seal.dart';
+import '../../core/ui/help_dot.dart';
 import '../../core/ui/panel_card.dart';
 import '../../core/ui/stale_banner.dart';
 import '../../core/ui/breakpoints.dart';
@@ -138,6 +142,15 @@ class _Corpo extends ConsumerWidget {
     // (doutrina §3.1: nada de barra fake nem "0" na cara).
     final bool temMovimento = entrou > 0;
 
+    // Teto do MEI (F5): a única coisa que o MEI de verdade precisa (doc 16 §3.1).
+    // Só aparece pro MEI e só quando já faturou algo no ano — mesma regra de
+    // empty-state do gráfico (sem dado, nada de "R$ 0 de R$ 81 mil" na cara).
+    final double faturadoAno = entrouNoAno(entradas, now.year);
+    final TetoMei? teto = (regime == RegimeId.mei && faturadoAno > 0)
+        ? avaliarTetoMei(faturado: faturadoAno, mesAtual: now.month)
+        : null;
+    final bool isPro = ref.watch(proProvider);
+
     return _ambientWash(
       context,
       ContentWidth(
@@ -175,7 +188,28 @@ class _Corpo extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            // 3) GRÁFICO + 4) ANEL — só com movimento no mês.
+            // 3) TETO DO MEI — só pro MEI, e só depois do primeiro recebimento
+            // do ano. A zona e o quanto falta são grátis (perigo real); a
+            // projeção "quando você encosta" é Pro (doc 16 §8, decisão 3).
+            if (teto != null) ...<Widget>[
+              StaggerIn(
+                index: 2,
+                child: _TetoMeiCard(
+                  teto: teto,
+                  isPro: isPro,
+                  onVerPro: () {
+                    telemetry.evento(
+                      Evento.proParedeVista,
+                      params: <String, Object?>{'gatilho': GatilhoPro.tetoMei},
+                    );
+                    context.push(Routes.pro, extra: GatilhoPro.tetoMei);
+                  },
+                ),
+              ),
+              const SizedBox(height: Space.x6),
+            ],
+
+            // 4) GRÁFICO + 5) ANEL — só com movimento no mês.
             if (temMovimento) ...<Widget>[
               StaggerIn(
                 index: 2,
@@ -765,6 +799,227 @@ class _DivisaoBloco extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// O rastreador de teto do MEI (F5). Um número e uma barra de três zonas — NÃO
+/// é controle financeiro (doc 15 §4.3): só soma o que entrou no ano e mostra a
+/// distância do teto. A zona e o quanto falta são grátis (o perigo real); a
+/// projeção de quando encosta é Pro.
+class _TetoMeiCard extends StatelessWidget {
+  const _TetoMeiCard({
+    required this.teto,
+    required this.isPro,
+    required this.onVerPro,
+  });
+
+  final TetoMei teto;
+  final bool isPro;
+  final VoidCallback onVerPro;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final DivisaoColors d = theme.extension<DivisaoColors>()!;
+    final Color zonaCor = switch (teto.zona) {
+      ZonaTeto.verde => d.lucro,
+      ZonaTeto.amarela => d.alerta,
+      ZonaTeto.vermelha => cs.error,
+    };
+
+    return PanelCard(
+      padding: const EdgeInsets.all(Space.x5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  'TETO DO MEI',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const HelpDot(verbeteId: 'teto_mei', size: 18),
+            ],
+          ),
+          const SizedBox(height: Space.x1),
+          // O número: faturado do ano de encontro ao teto fixo.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: moneyBRL(teto.faturado),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontFamily: AppType.numberFamily,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' de ${moneyBRL(kTetoAnualMei)}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: Space.x3),
+          _BarraTeto(faturado: teto.faturado, cor: zonaCor),
+          const SizedBox(height: Space.x3),
+          _status(context, zonaCor),
+          const SizedBox(height: Space.x3),
+          _projecao(context),
+        ],
+      ),
+    );
+  }
+
+  /// A frase da zona: o perigo (ou a calma) real, grátis pra todo mundo.
+  Widget _status(BuildContext context, Color zonaCor) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final (String forte, String? apoio) = switch (teto.zona) {
+      ZonaTeto.verde => (
+        'Faltam ${moneyBRL(teto.restante)} pra encostar no teto.',
+        null,
+      ),
+      ZonaTeto.amarela => (
+        'Passou ${moneyBRL(teto.excedente)} do teto — dentro dos 20% de tolerância.',
+        'Você paga um imposto a mais sobre o excedente e vira ME no ano que vem.',
+      ),
+      ZonaTeto.vermelha => (
+        'Passou o limite dos ${moneyBRL(kTetoMeiComTolerancia)}.',
+        'Risco de sair do MEI valendo desde janeiro. Vale falar com um contador.',
+      ),
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          forte,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: teto.zona == ZonaTeto.verde ? cs.onSurface : zonaCor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (apoio != null) ...<Widget>[
+          const SizedBox(height: 2),
+          Text(
+            apoio,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// A projeção — Pro. Grátis vê o convite; o perigo (a zona) já ficou grátis
+  /// acima, então isto nunca é uma parede na frente do que importa.
+  Widget _projecao(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    if (!isPro) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton(
+          onPressed: onVerPro,
+          style: TextButton.styleFrom(padding: EdgeInsets.zero),
+          child: const Text('Ver a projeção do ano (Pro)'),
+        ),
+      );
+    }
+    final String texto = switch (teto.zona) {
+      ZonaTeto.verde => teto.mesEncosta != null
+          ? 'Nesse ritmo, você encosta no teto por volta de ${kMeses[teto.mesEncosta! - 1]}.'
+          : 'Nesse ritmo, você não encosta no teto este ano.',
+      ZonaTeto.amarela ||
+      ZonaTeto.vermelha =>
+        'No ritmo atual, você fecha o ano em ~${moneyBRL(teto.projecaoAno)}.',
+    };
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Icon(
+          Icons.trending_up,
+          size: 16,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: Space.x2),
+        Expanded(
+          child: Text(
+            texto,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A barra de três zonas: trilho neutro, preenchimento na cor da zona atual, e
+/// um traço no ponto do teto (R$ 81 mil) — a fronteira verde→amarela. A escala
+/// vai até o limite dos 20% (R$ 97,2 mil); acima disso o preenchimento satura.
+class _BarraTeto extends StatelessWidget {
+  const _BarraTeto({required this.faturado, required this.cor});
+
+  final double faturado;
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) {
+    final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final double fill = (faturado / kTetoMeiComTolerancia).clamp(0.0, 1.0);
+    final double tetoPos = kTetoAnualMei / kTetoMeiComTolerancia; // ~0,833
+
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: 10,
+        child: Stack(
+          children: <Widget>[
+            // Trilho vazio.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: d.track,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: const SizedBox.expand(),
+            ),
+            // Preenchimento na cor da zona.
+            FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: fill,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: cor,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+            ),
+            // O traço do teto (81 mil).
+            Align(
+              alignment: Alignment(2 * tetoPos - 1, 0),
+              child: Container(width: 2, color: cs.surface),
+            ),
+          ],
+        ),
       ),
     );
   }

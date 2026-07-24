@@ -27,6 +27,12 @@ const int kDasVencimentoDia = 20;
 /// Teto de faturamento anual do MEI (estável desde 2018).
 const double kTetoAnualMei = 81000;
 
+/// Teto com a tolerância de 20% (R$ 97.200). Achado da varredura (doc 16 §7.1):
+/// entre R$ 81k e aqui, o MEI continua no ano, paga um DAS complementar sobre o
+/// excedente e vira ME no ano seguinte; ACIMA daqui, desenquadra retroativo a
+/// 1º de janeiro. São dois desfechos diferentes — daí as três zonas do teto.
+const double kTetoMeiComTolerancia = kTetoAnualMei * 1.2;
+
 /// Teto mensal proporcional (81.000 / 12).
 const double kTetoMensalMei = kTetoAnualMei / 12;
 
