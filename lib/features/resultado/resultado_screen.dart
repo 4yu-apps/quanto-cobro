@@ -225,7 +225,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    _blocoImposto(context, r, d, regime),
+                    _blocoImposto(context, r, d, regime, p),
                     const Divider(),
                     MergeSemantics(
                       child: _bloco(
@@ -391,6 +391,7 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
     ValorHoraResult r,
     DivisaoColors d,
     RegimeId regime,
+    Area p,
   ) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
@@ -441,8 +442,9 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
           context,
           r,
           d,
-          apoio:
-              'Alíquota efetiva do Simples pela sua faixa (estimativa pelo Anexo III, serviços).',
+          apoio: simplesEhAnexo3(proLaboreDe(p), r.faturamento)
+              ? 'Alíquota efetiva do Simples, Anexo III: seu pró-labore passa de 28% do que fatura (Fator R).'
+              : 'Alíquota efetiva do Simples, Anexo V: seu pró-labore não chega a 28% do que fatura (Fator R), então reservamos mais.',
         );
       case RegimeId.intl:
         return _reservePct(

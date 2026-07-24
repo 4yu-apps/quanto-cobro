@@ -53,20 +53,33 @@ void main() {
     });
   });
 
-  group('Simples — faixa do Anexo III', () {
-    test('1ª faixa: 6% nominal, RBT12 = mês × 12', () {
+  group('Simples — anexo pelo Fator R (F6)', () {
+    test('sem pró-labore: Anexo V, 1ª faixa 15,5%', () {
       final ImpostoDetalhe d = detalharImposto(RegimeId.simples, 10000);
       expect(d.rbt12, 120000);
+      expect(d.simplesAnexo3, isFalse);
+      expect(d.simplesNominal, 0.155);
+      expect(d.efetiva, closeTo(0.155, 0.0001));
+    });
+
+    test('com pró-labore ≥28%: Anexo III, 1ª faixa 6%', () {
+      final ImpostoDetalhe d = detalharImposto(
+        RegimeId.simples,
+        10000,
+        proLaboreMensal: 3000,
+      );
+      expect(d.simplesAnexo3, isTrue);
+      expect(d.fatorR, closeTo(0.3, 0.0001));
       expect(d.simplesNominal, 0.06);
-      expect(d.simplesDeducao, 0);
       expect(d.efetiva, closeTo(0.06, 0.0001));
     });
 
-    test('2ª faixa: usa parcela a deduzir e efetiva < nominal', () {
+    test('2ª faixa Anexo V usa parcela a deduzir e efetiva < nominal', () {
       final ImpostoDetalhe d = detalharImposto(RegimeId.simples, 22500);
       expect(d.rbt12, 270000);
-      expect(d.simplesNominal, 0.112);
-      expect(d.simplesDeducao, 9360);
+      expect(d.simplesAnexo3, isFalse);
+      expect(d.simplesNominal, 0.18);
+      expect(d.simplesDeducao, 4500);
       expect(d.efetiva, lessThan(d.simplesNominal));
     });
   });
@@ -78,10 +91,14 @@ void main() {
       expect(faixaIrpfDe(100000).aliquota, 0.275); // topo
     });
 
-    test('faixaSimplesDe cai na faixa certa', () {
-      expect(faixaSimplesDe(100000).aliquotaNominal, 0.06);
-      expect(faixaSimplesDe(300000).aliquotaNominal, 0.112);
-      expect(faixaSimplesDe(9999999).aliquotaNominal, 0.135); // acima → 3ª
+    test('faixaSimplesDe: Anexo V por padrão, Anexo III sob demanda', () {
+      // Padrão (Anexo V, o conservador):
+      expect(faixaSimplesDe(100000).aliquotaNominal, 0.155);
+      expect(faixaSimplesDe(300000).aliquotaNominal, 0.18);
+      expect(faixaSimplesDe(9999999).aliquotaNominal, 0.195); // acima → 3ª V
+      // Anexo III quando o Fator R manda:
+      expect(faixaSimplesDe(100000, anexo3: true).aliquotaNominal, 0.06);
+      expect(faixaSimplesDe(300000, anexo3: true).aliquotaNominal, 0.112);
     });
   });
 }

@@ -6,8 +6,8 @@ import 'dart:math' as math;
 /// - IRPF mensal: gov.br/receitafederal (tabelas/2026) + redutor Lei 15.270/2025
 ///   (isenção efetiva até R$ 5.000/mês; redução linear até R$ 7.350).
 /// - INSS: teto do salário de contribuição 2026 = R$ 8.475,55 (gov.br/inss).
-/// - Simples Anexo III: LC 123/2006 com redação da LC 155/2016 (faixas nominais
-///   estáveis desde 2018).
+/// - Simples Anexo III e V: LC 123/2006 com redação da LC 155/2016 (faixas
+///   nominais estáveis desde 2018). O anexo sai do Fator R (folha ÷ receita).
 /// Revisar ~1x/ano (regra R5). O número é "estimativa/piso", nunca boleto.
 const int kTabelasAno = 2026;
 
@@ -151,24 +151,63 @@ const List<FaixaSimples> kFaixasSimplesAnexo3 = <FaixaSimples>[
   FaixaSimples(720000, 0.135, 17640),
 ];
 
-/// A faixa do Anexo III em que uma receita anual ([rbt12]) cai — pra a folha
-/// de detalhamento nomear a faixa (F4). Acima da última, mantém a 3ª (a mesma
-/// convenção de estimativa de [aliquotaEfetivaSimples]).
-FaixaSimples faixaSimplesDe(double rbt12) {
-  for (final FaixaSimples f in kFaixasSimplesAnexo3) {
-    if (rbt12 <= f.limiteRbt12) return f;
-  }
-  return kFaixasSimplesAnexo3.last;
+/// Anexo V (serviços de baixo fator-mão-de-obra), 3 primeiras faixas — LC 123/2006.
+/// É o anexo MAIS CARO. O prestador solo sem pró-labore suficiente cai aqui pelo
+/// Fator R; assumir sempre o Anexo III (mais barato) fazia o app reservar de
+/// MENOS pra ele — o pior erro num app fiscal (doc 16 §8.1).
+const List<FaixaSimples> kFaixasSimplesAnexo5 = <FaixaSimples>[
+  FaixaSimples(180000, 0.155, 0),
+  FaixaSimples(360000, 0.18, 4500),
+  FaixaSimples(720000, 0.195, 9900),
+];
+
+/// O piso do Fator R: folha 12m ÷ receita 12m ≥ 28% joga o prestador de
+/// serviços no Anexo III (mais barato); abaixo, no Anexo V (mais caro).
+const double kFatorRLimite = 0.28;
+
+/// O Fator R (folha ÷ receita) a partir dos valores MENSAIS — o ×12 de cima e de
+/// baixo se cancela, então a razão mensal já é a anual. Folha aqui = pró-labore
+/// (o "salário" que o dono tira), o único componente de folha do solo.
+double fatorR(double proLaboreMensal, double faturamentoMensal) {
+  if (faturamentoMensal <= 0) return 0;
+  return proLaboreMensal / faturamentoMensal;
 }
 
-/// Alíquota EFETIVA do Simples (Anexo III) a partir do faturamento mensal.
-/// RBT12 estimado = mensal × 12. Assunção declarada na UI: Anexo III, sem
-/// Fator R/Anexo V. Acima da 3ª faixa, mantém a efetiva da 3ª (estimativa).
-double aliquotaEfetivaSimples(double faturamentoMensal) {
+/// Verdadeiro quando o Fator R coloca o prestador no Anexo III (folha alta).
+/// Sem pró-labore declarado (0) → falso → Anexo V, a estimativa conservadora:
+/// na dúvida, reserva MAIS, nunca menos.
+bool simplesEhAnexo3(double proLaboreMensal, double faturamentoMensal) =>
+    fatorR(proLaboreMensal, faturamentoMensal) >= kFatorRLimite;
+
+/// A faixa em que uma receita anual ([rbt12]) cai, no anexo escolhido pelo Fator
+/// R ([anexo3]) — pra a folha de detalhamento nomear a faixa (F4). Acima da
+/// última, mantém a 3ª (a mesma convenção de estimativa de [aliquotaEfetivaSimples]).
+FaixaSimples faixaSimplesDe(double rbt12, {bool anexo3 = false}) {
+  final List<FaixaSimples> anexo = anexo3
+      ? kFaixasSimplesAnexo3
+      : kFaixasSimplesAnexo5;
+  for (final FaixaSimples f in anexo) {
+    if (rbt12 <= f.limiteRbt12) return f;
+  }
+  return anexo.last;
+}
+
+/// Alíquota EFETIVA do Simples a partir do faturamento mensal, escolhendo o
+/// anexo pelo Fator R do [proLaboreMensal] (Anexo III se folha ≥ 28% da receita;
+/// Anexo V caso contrário). RBT12 estimado = mensal × 12. Acima da 3ª faixa,
+/// mantém a efetiva da 3ª (estimativa). Sem pró-labore → Anexo V (conservador).
+double aliquotaEfetivaSimples(
+  double faturamentoMensal, {
+  double proLaboreMensal = 0,
+}) {
   final double rbt12 = math.max(0, faturamentoMensal) * 12;
-  if (rbt12 <= 0) return kFaixasSimplesAnexo3.first.aliquotaNominal;
-  FaixaSimples faixa = kFaixasSimplesAnexo3.last;
-  for (final FaixaSimples f in kFaixasSimplesAnexo3) {
+  final List<FaixaSimples> anexo =
+      simplesEhAnexo3(proLaboreMensal, faturamentoMensal)
+      ? kFaixasSimplesAnexo3
+      : kFaixasSimplesAnexo5;
+  if (rbt12 <= 0) return anexo.first.aliquotaNominal;
+  FaixaSimples faixa = anexo.last;
+  for (final FaixaSimples f in anexo) {
     if (rbt12 <= f.limiteRbt12) {
       faixa = f;
       break;

@@ -100,6 +100,12 @@ abstract final class Glossario {
           '(R\$ 97,2 mil), você paga um imposto a mais e vira ME no ano seguinte. '
           'Passou disso, sai do MEI já valendo desde janeiro. Por isso a gente avisa.',
     ),
+    'fator_r': Verbete(
+      'O que é o "Fator R"?',
+      'É o que decide seu imposto no Simples: quanto você tira de pró-labore '
+          '(salário) dividido pelo que fatura. Deu 28% ou mais, cai no Anexo III '
+          '(mais barato). Menos que isso, no Anexo V (mais caro).',
+    ),
     'grossup': Verbete(
       'Imposto embutido',
       'Quer dizer que a conta já considera o imposto por dentro do valor, pra o '

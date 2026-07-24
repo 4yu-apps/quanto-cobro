@@ -897,8 +897,142 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
         ),
         const SizedBox(height: Space.x3),
         for (final Regime r in Regime.all.values) _regimeOption(r),
+        // Fator R (F6): só o Simples vê. O pró-labore decide o anexo — e sem
+        // ele o app assume o mais caro (Anexo V), reservando a mais pra não
+        // faltar. A pergunta humana mora aqui, no momento em que faz sentido.
+        if (ref.watch(regimeProvider) == RegimeId.simples) _proLaboreSimples(),
       ],
     );
+  }
+
+  Widget _proLaboreSimples() {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final double atual = proLaboreDe(_draft);
+    return Padding(
+      padding: const EdgeInsets.only(top: Space.x4),
+      child: Container(
+        padding: const EdgeInsets.all(Space.x4),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLow,
+          borderRadius: const BorderRadius.all(Radii.md),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    'Seu pró-labore decide o imposto',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                const HelpDot(verbeteId: 'fator_r', size: 18),
+              ],
+            ),
+            const SizedBox(height: Space.x1),
+            Text(
+              atual > 0
+                  ? 'Com pró-labore, você tende ao Anexo III (mais barato). Sem, ao Anexo V.'
+                  : 'Quanto você tira de salário da empresa por mês? Com pelo menos 28% do que fatura, seu imposto é o Anexo III (mais barato). Sem informar, assumimos o Anexo V.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.x3),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    atual > 0
+                        ? 'Pró-labore: ${moneyBRL(atual)}/mês'
+                        : 'Ainda não informado',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontFeatures: AppType.tnum,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Space.x2),
+                FilledButton.tonal(
+                  onPressed: _editarProLabore,
+                  child: Text(atual > 0 ? 'Ajustar' : 'Definir'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Edita o pró-labore como o custo 'prolabore' do rascunho — mesmo número que
+  /// vira folha do Fator R. Sem campo de nome (o rótulo é fixo): é uma pergunta
+  /// só, "quanto você tira por mês".
+  Future<void> _editarProLabore() async {
+    final double atual = proLaboreDe(_draft);
+    final TextEditingController valorC = TextEditingController(
+      text: atual > 0 ? atual.round().toString() : '',
+    );
+    final double? valor = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext c) => Padding(
+        padding: EdgeInsets.only(
+          left: Space.x6,
+          right: Space.x6,
+          top: Space.x2,
+          bottom: Space.x6 + MediaQuery.of(c).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Seu pró-labore', style: Theme.of(c).textTheme.titleLarge),
+            const SizedBox(height: Space.x2),
+            const Text(
+              'Quanto você tira de salário da empresa por mês. Entra como custo '
+              'e decide seu anexo no Simples (Fator R).',
+            ),
+            const SizedBox(height: Space.x4),
+            MoneyField(
+              controller: valorC,
+              label: 'Valor por mês',
+              prefix: r'R$ ',
+              autofocus: true,
+            ),
+            const SizedBox(height: Space.x4),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () =>
+                    Navigator.pop(c, _digits(valorC.text).toDouble()),
+                child: const Text('Usar este valor'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    Future<void>.delayed(const Duration(milliseconds: 600), valorC.dispose);
+    if (valor == null || !mounted) return;
+    Haptics.select();
+    setState(() {
+      final List<Custo> custos = _draft.custos
+          .where((Custo x) => x.id != 'prolabore')
+          .toList();
+      if (valor > 0) {
+        custos.add(
+          Custo(
+            id: 'prolabore',
+            label: 'Pró-labore (seu salário)',
+            valor: valor,
+          ),
+        );
+      }
+      _draft = _draft.copyWith(custos: custos);
+    });
   }
 
   Widget _regimeOption(Regime r) {

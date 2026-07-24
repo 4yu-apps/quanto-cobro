@@ -4,7 +4,7 @@
 /// Cada regime tem um MODELO, não uma alíquota chapada (v0.4):
 /// - MEI: DAS fixo mensal (não é % do faturamento) + teto anual.
 /// - CPF: carnê-leão progressivo (IRPF 2026 com redutor) + INSS individual.
-/// - Simples: alíquota efetiva por faixa do Anexo III.
+/// - Simples: alíquota efetiva por faixa, anexo (III ou V) escolhido pelo Fator R.
 /// - Internacional: regra de bolso flat (reserva de segurança).
 /// - Carnê-leão puro: mesmo IRPF progressivo (tabela + redutor) do CPF, mas
 ///   SEM INSS — CPF que recebe de cliente no exterior e não contribui como

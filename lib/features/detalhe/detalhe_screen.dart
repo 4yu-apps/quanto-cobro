@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/routes.dart';
 import '../../core/calc/calc_engine.dart';
+import '../../core/calc/tax_tables.dart';
 import '../../core/common/money.dart';
 import '../../core/model/custo.dart';
 import '../../core/model/area.dart';
@@ -196,7 +197,9 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: Space.x2),
                     child: Text(
-                      'Estimativa pelo Anexo III (serviços). Se seu contador fala em Fator R ou Anexo V, confirme o número com ele.',
+                      simplesEhAnexo3(proLaboreDe(p), r.faturamento)
+                          ? 'Anexo III (serviços): seu pró-labore passa de 28% do que fatura (Fator R). Toque no imposto pra ver a conta.'
+                          : 'Anexo V (serviços): seu pró-labore não chega a 28% do que fatura (Fator R), então reservamos mais, pra não faltar. Toque no imposto pra ver a conta.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -296,6 +299,7 @@ class _DetalheScreenState extends ConsumerState<DetalheScreen> {
           ref,
           regime: regime,
           faturamentoMensal: r.faturamento,
+          proLaboreMensal: proLaboreDe(_area!),
         ),
         borderRadius: const BorderRadius.all(Radii.sm),
         child: Padding(

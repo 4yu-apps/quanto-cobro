@@ -85,6 +85,19 @@ void main() {
     });
   });
 
+  testWidgets('Simples sem pró-labore: a folha mostra o Anexo V (Fator R)', (
+    WidgetTester tester,
+  ) async {
+    await comTela(tester, Tela.tabletEmPe, () async {
+      await _pump(tester, pro: true, regime: 'simples');
+      await _tocarImposto(tester);
+      expect(find.text('De onde vem esse imposto'), findsOneWidget);
+      expect(find.textContaining('Anexo V'), findsWidgets);
+      // A área do teste não tem pró-labore, então NÃO é o Anexo III barato.
+      expect(find.textContaining('Seu anexo: Anexo III'), findsNothing);
+    });
+  });
+
   testWidgets('MEI: a linha do DAS não abre folha (é a frente do teto, F5)', (
     WidgetTester tester,
   ) async {

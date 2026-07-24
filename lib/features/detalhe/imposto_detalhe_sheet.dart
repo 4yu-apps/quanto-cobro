@@ -35,6 +35,7 @@ Future<void> showImpostoDetalheSheet(
   WidgetRef ref, {
   required RegimeId regime,
   required double faturamentoMensal,
+  double proLaboreMensal = 0,
 }) async {
   if (!regimeTemDetalhamento(regime)) return;
 
@@ -50,7 +51,11 @@ Future<void> showImpostoDetalheSheet(
     return;
   }
 
-  final ImpostoDetalhe d = detalharImposto(regime, faturamentoMensal);
+  final ImpostoDetalhe d = detalharImposto(
+    regime,
+    faturamentoMensal,
+    proLaboreMensal: proLaboreMensal,
+  );
   await showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -142,14 +147,23 @@ class _DetalheImposto extends StatelessWidget {
           _rodapeEfetiva(context, comparativo: 'A tabela chega a 27,5%.'),
         ];
       case RegimeId.simples:
+        final String anexo = d.simplesAnexo3 ? 'Anexo III' : 'Anexo V';
         return <Widget>[
+          _Linha(
+            'Seu anexo: $anexo',
+            pctTexto: 'Fator R ${_pct(d.fatorR)}',
+            nota: d.simplesAnexo3
+                ? 'Seu pró-labore passa de 28% do que você fatura, então cai no Anexo III (mais barato).'
+                : 'Seu pró-labore não chega a 28% do que você fatura, então cai no Anexo V (mais caro).',
+            help: 'fator_r',
+          ),
           _Linha(
             'Sua receita no ano (estimada)',
             valor: d.rbt12,
             nota: 'seu mês × 12 — é o que define a sua faixa.',
           ),
           _Linha(
-            'Faixa do Anexo III',
+            'Faixa do $anexo',
             pctTexto: _pct(d.simplesNominal),
             nota: 'a alíquota cheia da sua faixa (serviços).',
           ),

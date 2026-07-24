@@ -37,10 +37,24 @@ void main() {
       expect(inssIndividual(3000), closeTo(600, 0.01));
     });
 
-    test('Simples Anexo III: 1ª faixa é 6% flat; 2ª usa parcela a deduzir', () {
-      expect(aliquotaEfetivaSimples(10000), closeTo(0.06, 0.0001));
-      // RBT12 270k (mensal 22.5k) → (270k×11,2% − 9.360)/270k ≈ 7,73%
-      expect(aliquotaEfetivaSimples(22500), closeTo(0.0773, 0.001));
+    test('Simples: sem pró-labore vai pro Anexo V; Fator R ≥28% leva ao Anexo III', () {
+      // F6: sem pró-labore declarado → Anexo V (mais caro, conservador).
+      expect(aliquotaEfetivaSimples(10000), closeTo(0.155, 0.0001)); // 1ª V
+      // Pró-labore ≥ 28% do faturamento → Fator R joga no Anexo III (mais barato).
+      expect(
+        aliquotaEfetivaSimples(10000, proLaboreMensal: 3000),
+        closeTo(0.06, 0.0001),
+      );
+      // RBT12 270k (mensal 22.5k), com pró-labore alto → Anexo III:
+      // (270k×11,2% − 9.360)/270k ≈ 7,73%
+      expect(
+        aliquotaEfetivaSimples(22500, proLaboreMensal: 8000),
+        closeTo(0.0773, 0.001),
+      );
+      // Fator R logo abaixo do piso (27%) ainda é Anexo V:
+      expect(fatorR(2700, 10000), closeTo(0.27, 0.0001));
+      expect(simplesEhAnexo3(2700, 10000), isFalse);
+      expect(simplesEhAnexo3(2800, 10000), isTrue); // exatamente 28%
     });
 
     test('carnê-leão puro: IRPF progressivo com redutor, SEM INSS', () {
@@ -111,12 +125,27 @@ void main() {
       expect(r.rate, closeTo(0.20, 0.02));
     });
 
-    test('Simples: renda típica cai na 1ª faixa (6%), não em 12% flat', () {
-      final ValorHoraResult r = computeValorHora(
+    test('Simples: sem pró-labore reserva pelo Anexo V; com pró-labore alto cai '
+        'no Anexo III e reserva menos (Fator R, F6)', () {
+      // Area.padrao não tem pró-labore → Anexo V (mais caro).
+      final int semFolha = computeValorHora(
         Area.padrao(),
         RegimeId.simples,
+      ).reservaPct;
+      expect(semFolha, greaterThanOrEqualTo(14));
+
+      // Declara pró-labore (folha) bem acima de 28% → Fator R leva ao Anexo III.
+      final Area comFolha = Area.padrao().copyWith(
+        custos: <Custo>[
+          const Custo(id: 'prolabore', label: 'Pró-labore', valor: 6000),
+        ],
       );
-      expect(r.reservaPct, 6);
+      final int comFolhaPct = computeValorHora(
+        comFolha,
+        RegimeId.simples,
+      ).reservaPct;
+      expect(comFolhaPct, lessThan(semFolha)); // Anexo III é mais barato
+      expect(comFolhaPct, closeTo(6, 1)); // 1ª faixa do Anexo III
     });
 
     test('horas 0 não estoura (usa mínimo 1, sem divisão por zero)', () {

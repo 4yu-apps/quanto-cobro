@@ -1,8 +1,20 @@
 import 'dart:math' as math;
 
 import '../model/area.dart';
+import '../model/custo.dart';
 import '../model/regime.dart';
 import 'tax_tables.dart';
+
+/// O pró-labore mensal que a pessoa declarou como custo (o "salário" que tira da
+/// empresa). É a folha do Fator R (F6): decide se o Simples cai no Anexo III ou
+/// V. Mesmo número, dois papéis — custo do negócio E folha —, sem duplicar nada.
+/// Sem o custo declarado: 0 → Anexo V (a estimativa conservadora).
+double proLaboreDe(Area p) {
+  for (final Custo c in p.custos) {
+    if (c.id == 'prolabore') return c.valor;
+  }
+  return 0;
+}
 
 /// Motor de cálculo — PURO e testável. É a conta que sustenta a confiança do
 /// app; dinheiro errado destrói o diferencial. v0.4: modelo fiscal honesto por
@@ -10,7 +22,13 @@ import 'tax_tables.dart';
 /// efetiva do Anexo III). Ver testes em test/calc_engine_test.dart.
 
 /// Imposto mensal estimado do regime para um dado faturamento mensal.
-double impostoMensal(RegimeId regime, double faturamentoMensal) {
+/// [proLaboreMensal] só pesa no Simples (escolhe o anexo pelo Fator R, F6);
+/// nos outros regimes é ignorado.
+double impostoMensal(
+  RegimeId regime,
+  double faturamentoMensal, {
+  double proLaboreMensal = 0,
+}) {
   switch (Regime.of(regime).kind) {
     case TaxKind.fixoMensal:
       return kDasMensalMei;
@@ -19,19 +37,30 @@ double impostoMensal(RegimeId regime, double faturamentoMensal) {
     case TaxKind.progressivoSemInss:
       return impostoCarneLeao(faturamentoMensal);
     case TaxKind.faixasSimples:
-      return faturamentoMensal * aliquotaEfetivaSimples(faturamentoMensal);
+      return faturamentoMensal *
+          aliquotaEfetivaSimples(
+            faturamentoMensal,
+            proLaboreMensal: proLaboreMensal,
+          );
     case TaxKind.flat:
       return faturamentoMensal * kFlatIntl;
   }
 }
 
 /// Alíquota efetiva (imposto ÷ faturamento) do regime num faturamento mensal.
-double aliquotaEfetiva(RegimeId regime, double faturamentoMensal) {
+double aliquotaEfetiva(
+  RegimeId regime,
+  double faturamentoMensal, {
+  double proLaboreMensal = 0,
+}) {
   if (faturamentoMensal <= 0) return 0;
-  return (impostoMensal(regime, faturamentoMensal) / faturamentoMensal).clamp(
-    0,
-    1,
-  );
+  return (impostoMensal(
+            regime,
+            faturamentoMensal,
+            proLaboreMensal: proLaboreMensal,
+          ) /
+          faturamentoMensal)
+      .clamp(0, 1);
 }
 
 /// Raio-x do imposto de um mês (F4 — o detalhamento Pro). PURO: só números,
@@ -59,6 +88,8 @@ class ImpostoDetalhe {
     this.rbt12 = 0,
     this.simplesNominal = 0,
     this.simplesDeducao = 0,
+    this.simplesAnexo3 = false,
+    this.fatorR = 0,
   });
 
   final RegimeId regime;
@@ -85,6 +116,8 @@ class ImpostoDetalhe {
   final double rbt12; // receita bruta 12m estimada
   final double simplesNominal; // alíquota nominal da faixa (0..1)
   final double simplesDeducao; // parcela a deduzir da faixa (anual)
+  final bool simplesAnexo3; // Fator R jogou no Anexo III (true) ou V (false)
+  final double fatorR; // folha ÷ receita (0..1), a razão que escolheu o anexo
 
   /// Verdadeiro quando a renda do mês não gera IRPF (faixa isenta / redutor
   /// cobre tudo) — a folha mostra "só INSS" em vez de uma linha zerada.
@@ -93,9 +126,14 @@ class ImpostoDetalhe {
 
 /// Abre o imposto do mês em peças (F4). [faturamentoMensal] é a base já com
 /// gross-up (o `ValorHoraResult.faturamento` / o valor do pagamento).
-ImpostoDetalhe detalharImposto(RegimeId regime, double faturamentoMensal) {
+/// [proLaboreMensal] escolhe o anexo do Simples pelo Fator R (F6).
+ImpostoDetalhe detalharImposto(
+  RegimeId regime,
+  double faturamentoMensal, {
+  double proLaboreMensal = 0,
+}) {
   final double f = math.max(0, faturamentoMensal);
-  final double total = impostoMensal(regime, f);
+  final double total = impostoMensal(regime, f, proLaboreMensal: proLaboreMensal);
   final double efetiva = f > 0 ? (total / f).clamp(0, 1) : 0;
 
   switch (Regime.of(regime).kind) {
@@ -134,9 +172,10 @@ ImpostoDetalhe detalharImposto(RegimeId regime, double faturamentoMensal) {
         redutor: redutor,
         irpf: math.max(0, apurado - redutor),
       );
-    case TaxKind.faixasSimples: // Simples: efetiva por faixa do Anexo III
+    case TaxKind.faixasSimples: // Simples: efetiva por faixa, anexo pelo Fator R
       final double rbt12 = f * 12;
-      final FaixaSimples faixa = faixaSimplesDe(rbt12);
+      final bool anexo3 = simplesEhAnexo3(proLaboreMensal, f);
+      final FaixaSimples faixa = faixaSimplesDe(rbt12, anexo3: anexo3);
       return ImpostoDetalhe(
         regime: regime,
         faturamento: f,
@@ -145,6 +184,8 @@ ImpostoDetalhe detalharImposto(RegimeId regime, double faturamentoMensal) {
         rbt12: rbt12,
         simplesNominal: faixa.aliquotaNominal,
         simplesDeducao: faixa.deducao,
+        simplesAnexo3: anexo3,
+        fatorR: fatorR(proLaboreMensal, f),
       );
     case TaxKind.fixoMensal: // MEI: DAS fixo (folha não abre)
     case TaxKind.flat: // intl: regra de bolso (folha não abre)
@@ -275,13 +316,16 @@ ValorHoraResult computeValorHora(Area p, RegimeId regime) {
   final double provisao = p.provisaoOn ? p.provisaoEfetiva : 0;
   final double custos = p.custosTotal;
   final double base = p.renda + custos + provisao;
+  // Folha do Fator R (só o Simples usa): o pró-labore declarado como custo.
+  final double proLabore = proLaboreDe(p);
 
   // Gross-up: f = base + imposto(f). Para MEI é soma direta; para taxas
   // progressivas, ponto-fixo (marginal < 50% ⇒ converge rápido; 8 iterações
   // dão erro < 0,3%).
   double faturamento = base;
   for (int i = 0; i < 8; i++) {
-    faturamento = base + impostoMensal(regime, faturamento);
+    faturamento = base +
+        impostoMensal(regime, faturamento, proLaboreMensal: proLabore);
   }
   final double imposto = faturamento - base;
   final double rate = faturamento > 0 ? imposto / faturamento : 0;
