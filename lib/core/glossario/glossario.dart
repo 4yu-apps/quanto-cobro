@@ -113,10 +113,16 @@ abstract final class Glossario {
     ),
     'cambio': Verbete(
       'De onde vem a cotação?',
-      'Recebeu em dólar ou euro? Convertemos pra real pela cotação do dia, de '
-          'um serviço público. Ex.: US\$ 100 a 5,50 = R\$ 550. Offline, usamos a '
-          'última e mostramos a data. É estimativa: o oficial usa a '
-          'cotação do Banco Central do dia anterior.',
+      'Recebeu em dólar ou euro? Convertemos pela PTAX, a cotação oficial do '
+          'Banco Central — a mesma do carnê-leão, do último dia útil. Se ela não '
+          'vier, usamos uma cotação de mercado e avisamos. Offline, a última '
+          'conhecida, com a data.',
+    ),
+    'ptax': Verbete(
+      'O que é a "PTAX"?',
+      'É a cotação oficial do dólar (e outras moedas) que o Banco Central fecha '
+          'todo dia útil. É a taxa que a Receita manda usar pra converter o que '
+          'você recebeu de fora e calcular o imposto. Por isso ela vem primeiro.',
     ),
   };
 

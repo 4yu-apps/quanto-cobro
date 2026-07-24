@@ -602,6 +602,15 @@ class _MoedaLinha extends StatelessWidget {
   static String _taxaFmt(double t) =>
       'R\$ ${t.toStringAsFixed(2).replaceAll('.', ',')}';
 
+  /// De onde veio a cotação, dito com verdade: PTAX oficial (com a data do
+  /// boletim, que é de um dia útil, não "hoje"), taxa de mercado, ou a última
+  /// conhecida quando está offline.
+  static String _origemCotacao(FxRate fx) {
+    if (fx.stale) return 'última cotação, de ${dataCurta(fx.at)} (offline)';
+    if (fx.ehPtax) return 'PTAX do Banco Central, de ${dataCurta(fx.at)}';
+    return 'cotação de mercado de hoje';
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -680,8 +689,7 @@ class _MoedaLinha extends StatelessWidget {
                         ),
                       ),
                     Text(
-                      '1 ${moeda.simbolo} = ${_taxaFmt(fx!.taxa)}  ·  '
-                      '${fx!.stale ? 'cotação de ${dataCurta(fx!.at)} (offline)' : 'cotação de hoje'}',
+                      '1 ${moeda.simbolo} = ${_taxaFmt(fx!.taxa)}  ·  ${_origemCotacao(fx!)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: fx!.stale ? d.staleFg : cs.onSurfaceVariant,
                         fontFeatures: AppType.tnum,

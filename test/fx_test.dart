@@ -8,6 +8,19 @@ import 'package:quantocobro/core/fx/fx_repository.dart';
 import 'package:quantocobro/core/fx/fx_service.dart';
 import 'package:quantocobro/core/model/moeda.dart';
 
+/// Resposta da PTAX (Olinda/BCB): compra 5,42, boletim de fechamento.
+http.Response _ptaxOk() => http.Response(
+  '{"value":[{"cotacaoCompra":5.42,"cotacaoVenda":5.43,'
+      '"dataHoraCotacao":"2026-07-18 13:05:00.0","tipoBoletim":"Fechamento"}]}',
+  200,
+);
+
+/// Resposta do fallback de mercado (open.er-api).
+http.Response _mercadoOk() =>
+    http.Response('{"result":"success","rates":{"BRL":5.0}}', 200);
+
+bool _ehBcb(http.Request r) => r.url.host.contains('bcb.gov.br');
+
 void main() {
   final DateTime agora = DateTime(2026, 7, 19, 12);
 
@@ -15,11 +28,49 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  test('sucesso: busca a taxa, devolve fresca e cacheia no repo', () async {
+  test('PTAX é a fonte primária: usa a cotação de compra do BC', () async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final FxRepository repo = FxRepository(prefs);
     final MockClient client = MockClient((http.Request request) async {
-      return http.Response('{"result":"success","rates":{"BRL":5.0}}', 200);
+      return _ehBcb(request) ? _ptaxOk() : _mercadoOk();
+    });
+    final FxService service = FxService(repo, client: client);
+
+    final FxRate rate = await service.cotacao(Moeda.usd, Moeda.brl, agora: agora);
+
+    expect(rate.taxa, 5.42); // a PTAX, não os 5,0 do mercado
+    expect(rate.fonte, 'ptax');
+    expect(rate.ehPtax, isTrue);
+    expect(rate.stale, isFalse);
+    expect(rate.at, DateTime(2026, 7, 18, 13, 5)); // a data do boletim
+    expect(repo.get('USD->BRL')!.taxa, 5.42);
+  });
+
+  test('PTAX indisponível: cai pro fallback de mercado, marcado como tal',
+      () async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final FxRepository repo = FxRepository(prefs);
+    final MockClient client = MockClient((http.Request request) async {
+      // BCB sem cotação na janela (fim de semana, feriado, API fora):
+      if (_ehBcb(request)) return http.Response('{"value":[]}', 200);
+      return _mercadoOk();
+    });
+    final FxService service = FxService(repo, client: client);
+
+    final FxRate rate = await service.cotacao(Moeda.usd, Moeda.brl, agora: agora);
+
+    expect(rate.taxa, 5.0); // o fallback
+    expect(rate.fonte, 'mercado');
+    expect(rate.stale, isFalse);
+  });
+
+  test('sucesso (via fallback): devolve fresca e cacheia no repo', () async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final FxRepository repo = FxRepository(prefs);
+    // Só o mercado responde (a PTAX falha) — o caminho do teste antigo.
+    final MockClient client = MockClient((http.Request request) async {
+      if (_ehBcb(request)) return http.Response('erro', 500);
+      return _mercadoOk();
     });
     final FxService service = FxService(repo, client: client);
 

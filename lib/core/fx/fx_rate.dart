@@ -7,10 +7,14 @@ class FxRate {
     required this.at,
     this.manual = false,
     this.stale = false,
+    this.fonte,
   });
 
   final String par; // 'USD->BRL'
   final double taxa;
+
+  /// Data de REFERÊNCIA da cotação: pra PTAX é o dia útil do boletim (que é
+  /// anterior a hoje, de propósito); pra mercado é o momento da busca.
   final DateTime at;
 
   /// O usuário digitou essa taxa na mão (não veio da API).
@@ -19,12 +23,19 @@ class FxRate {
   /// A busca falhou/está offline; essa é a última cotação conhecida.
   final bool stale;
 
+  /// De onde veio a taxa: `'ptax'` (oficial do Banco Central, a primária) ou
+  /// `'mercado'` (open.er-api, o fallback). Null em registro antigo/manual.
+  final String? fonte;
+
+  bool get ehPtax => fonte == 'ptax';
+
   FxRate copyWith({
     String? par,
     double? taxa,
     DateTime? at,
     bool? manual,
     bool? stale,
+    String? fonte,
   }) {
     return FxRate(
       par: par ?? this.par,
@@ -32,6 +43,7 @@ class FxRate {
       at: at ?? this.at,
       manual: manual ?? this.manual,
       stale: stale ?? this.stale,
+      fonte: fonte ?? this.fonte,
     );
   }
 
@@ -41,6 +53,7 @@ class FxRate {
     'at': at.toIso8601String(),
     'manual': manual,
     'stale': stale,
+    if (fonte != null) 'fonte': fonte,
   };
 
   factory FxRate.fromJson(Map<String, dynamic> json) => FxRate(
@@ -49,5 +62,6 @@ class FxRate {
     at: DateTime.parse(json['at'] as String),
     manual: json['manual'] as bool? ?? false,
     stale: json['stale'] as bool? ?? false,
+    fonte: json['fonte'] as String?,
   );
 }

@@ -67,8 +67,8 @@ void main() {
       await tester.enterText(find.byType(TextField).first, '100');
       await tester.pumpAndSettle();
 
-      // A conversão aparece — cotação de hoje, taxa visível.
-      expect(find.textContaining('cotação de hoje'), findsOneWidget);
+      // A conversão aparece — fonte da cotação dita com verdade, taxa visível.
+      expect(find.textContaining('cotação de mercado'), findsOneWidget);
 
       final Finder guardar = find.widgetWithText(FilledButton, 'Guardar');
       await tester.ensureVisible(guardar);
@@ -122,7 +122,12 @@ class _FxFake extends FxService {
     Moeda de,
     Moeda para, {
     required DateTime agora,
-  }) async => FxRate(par: '${de.codigo}->${para.codigo}', taxa: 5.5, at: agora);
+  }) async => FxRate(
+    par: '${de.codigo}->${para.codigo}',
+    taxa: 5.5,
+    at: agora,
+    fonte: 'mercado',
+  );
 }
 
 const String _umaArea =
