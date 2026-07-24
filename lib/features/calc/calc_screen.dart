@@ -924,7 +924,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               children: <Widget>[
                 Flexible(
                   child: Text(
-                    'Seu pró-labore decide o imposto',
+                    'Tem pró-labore? Você pode reservar menos',
                     style: theme.textTheme.titleSmall,
                   ),
                 ),
@@ -934,8 +934,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
             const SizedBox(height: Space.x1),
             Text(
               atual > 0
-                  ? 'Com pró-labore, você tende ao Anexo III (mais barato). Sem, ao Anexo V.'
-                  : 'Quanto você tira de salário da empresa por mês? Com pelo menos 28% do que fatura, seu imposto é o Anexo III (mais barato). Sem informar, assumimos o Anexo V.',
+                  ? 'Com um pró-labore alto (a partir de 28% do que você fatura), '
+                        'seu imposto cai no Anexo III, mais barato.'
+                  : 'É o quanto você já tira de salário da empresa por mês — não '
+                        'some de novo, é parte da sua renda. A partir de 28% do que '
+                        'fatura, seu imposto fica mais barato (Anexo III). Sem informar, '
+                        'usamos o mais caro (Anexo V), pra não faltar.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
@@ -966,9 +970,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     );
   }
 
-  /// Edita o pró-labore como o custo 'prolabore' do rascunho — mesmo número que
-  /// vira folha do Fator R. Sem campo de nome (o rótulo é fixo): é uma pergunta
-  /// só, "quanto você tira por mês".
+  /// Edita o pró-labore do rascunho — a folha do Fator R (F6). Vai pro campo
+  /// próprio (Area.proLabore), INFORMATIVO: não soma na base do cálculo (já é
+  /// parte da renda). Uma pergunta só, "quanto você tira por mês".
   Future<void> _editarProLabore() async {
     final double atual = proLaboreDe(_draft);
     final TextEditingController valorC = TextEditingController(
@@ -1018,21 +1022,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     Future<void>.delayed(const Duration(milliseconds: 600), valorC.dispose);
     if (valor == null || !mounted) return;
     Haptics.select();
-    setState(() {
-      final List<Custo> custos = _draft.custos
-          .where((Custo x) => x.id != 'prolabore')
-          .toList();
-      if (valor > 0) {
-        custos.add(
-          Custo(
-            id: 'prolabore',
-            label: 'Pró-labore (seu salário)',
-            valor: valor,
-          ),
-        );
-      }
-      _draft = _draft.copyWith(custos: custos);
-    });
+    setState(() => _draft = _draft.copyWith(proLabore: valor));
   }
 
   Widget _regimeOption(Regime r) {

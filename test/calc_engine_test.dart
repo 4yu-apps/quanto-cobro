@@ -135,17 +135,27 @@ void main() {
       expect(semFolha, greaterThanOrEqualTo(14));
 
       // Declara pró-labore (folha) bem acima de 28% → Fator R leva ao Anexo III.
-      final Area comFolha = Area.padrao().copyWith(
-        custos: <Custo>[
-          const Custo(id: 'prolabore', label: 'Pró-labore', valor: 6000),
-        ],
-      );
+      // O pró-labore é INFORMATIVO (campo próprio): decide o anexo, mas não soma
+      // na base — não cobra o salário duas vezes.
+      final Area comFolha = Area.padrao().copyWith(proLabore: 6000);
       final int comFolhaPct = computeValorHora(
         comFolha,
         RegimeId.simples,
       ).reservaPct;
       expect(comFolhaPct, lessThan(semFolha)); // Anexo III é mais barato
       expect(comFolhaPct, closeTo(6, 1)); // 1ª faixa do Anexo III
+    });
+
+    test('pró-labore NÃO soma na base (não cobra o salário duas vezes)', () {
+      // Duas áreas idênticas, uma com pró-labore declarado: no MEI (onde o
+      // anexo não muda nada) o faturamento tem que ser IGUAL — prova que o
+      // pró-labore é informativo, não um custo.
+      final Area sem = Area.padrao();
+      final Area com = Area.padrao().copyWith(proLabore: 3000);
+      expect(
+        computeValorHora(com, RegimeId.mei).faturamento,
+        computeValorHora(sem, RegimeId.mei).faturamento,
+      );
     });
 
     test('horas 0 não estoura (usa mínimo 1, sem divisão por zero)', () {

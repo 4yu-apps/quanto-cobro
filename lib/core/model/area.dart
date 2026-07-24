@@ -27,6 +27,7 @@ class Area {
     this.diasSemana,
     this.horasDia,
     required this.custos,
+    this.proLabore,
   });
 
   final String id;
@@ -52,6 +53,13 @@ class Area {
   final int? horasDia;
 
   final List<Custo> custos;
+
+  /// Pró-labore mensal declarado (só Simples) — a folha do Fator R (F6), que
+  /// decide o anexo. É INFORMATIVO: **não** entra em [custosTotal] nem na base
+  /// do cálculo. O pró-labore já é parte da sua renda (o que você tira pra
+  /// você), não um custo a mais — somá-lo cobraria o seu salário duas vezes.
+  /// Null = não informado → Anexo V (a estimativa conservadora).
+  final double? proLabore;
 
   double get custosTotal => custos.fold(0, (double s, Custo c) => s + c.valor);
 
@@ -90,6 +98,7 @@ class Area {
     int? diasSemana,
     int? horasDia,
     List<Custo>? custos,
+    double? proLabore,
   }) {
     return Area(
       id: id ?? this.id,
@@ -102,6 +111,7 @@ class Area {
       diasSemana: diasSemana ?? this.diasSemana,
       horasDia: horasDia ?? this.horasDia,
       custos: custos ?? this.custos,
+      proLabore: proLabore ?? this.proLabore,
     );
   }
 
@@ -116,6 +126,7 @@ class Area {
     if (diasSemana != null) 'diasSemana': diasSemana,
     if (horasDia != null) 'horasDia': horasDia,
     'custos': custos.map((Custo c) => c.toJson()).toList(),
+    if (proLabore != null) 'proLabore': proLabore,
   };
 
   factory Area.fromJson(Map<String, dynamic> json) => Area(
@@ -131,5 +142,6 @@ class Area {
     custos: (json['custos'] as List<dynamic>)
         .map((dynamic e) => Custo.fromJson(e as Map<String, dynamic>))
         .toList(),
+    proLabore: (json['proLabore'] as num?)?.toDouble(),
   );
 }

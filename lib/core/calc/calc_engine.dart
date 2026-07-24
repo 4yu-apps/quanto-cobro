@@ -1,20 +1,14 @@
 import 'dart:math' as math;
 
 import '../model/area.dart';
-import '../model/custo.dart';
 import '../model/regime.dart';
 import 'tax_tables.dart';
 
-/// O pró-labore mensal que a pessoa declarou como custo (o "salário" que tira da
-/// empresa). É a folha do Fator R (F6): decide se o Simples cai no Anexo III ou
-/// V. Mesmo número, dois papéis — custo do negócio E folha —, sem duplicar nada.
-/// Sem o custo declarado: 0 → Anexo V (a estimativa conservadora).
-double proLaboreDe(Area p) {
-  for (final Custo c in p.custos) {
-    if (c.id == 'prolabore') return c.valor;
-  }
-  return 0;
-}
+/// O pró-labore mensal declarado (só Simples) — a folha do Fator R (F6). É
+/// INFORMATIVO: decide o anexo, mas NÃO entra na base do cálculo. O pró-labore
+/// já é parte da renda (o que a pessoa tira pra si), não um custo a mais — por
+/// isso não soma. Sem declarar: 0 → Anexo V (a estimativa conservadora).
+double proLaboreDe(Area p) => p.proLabore ?? 0;
 
 /// Motor de cálculo — PURO e testável. É a conta que sustenta a confiança do
 /// app; dinheiro errado destrói o diferencial. v0.4: modelo fiscal honesto por

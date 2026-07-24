@@ -41,14 +41,14 @@ void main() {
       await _ateORegime(tester);
 
       // Default é MEI: nada de Fator R.
-      expect(find.text('Seu pró-labore decide o imposto'), findsNothing);
+      expect(find.text('Tem pró-labore? Você pode reservar menos'), findsNothing);
 
       // Escolhe Simples → a pergunta aparece.
       final Finder simples = find.text('Tenho empresa no Simples');
       await tester.ensureVisible(simples);
       await tester.tap(simples);
       await tester.pumpAndSettle();
-      expect(find.text('Seu pró-labore decide o imposto'), findsOneWidget);
+      expect(find.text('Tem pró-labore? Você pode reservar menos'), findsOneWidget);
       expect(find.text('Definir'), findsOneWidget);
 
       // Volta pra MEI → a pergunta some de novo.
@@ -56,11 +56,11 @@ void main() {
       await tester.ensureVisible(mei);
       await tester.tap(mei);
       await tester.pumpAndSettle();
-      expect(find.text('Seu pró-labore decide o imposto'), findsNothing);
+      expect(find.text('Tem pró-labore? Você pode reservar menos'), findsNothing);
     });
   });
 
-  testWidgets('definir o pró-labore grava o custo e reflete na pergunta', (
+  testWidgets('definir o pró-labore grava o campo e reflete na pergunta', (
     WidgetTester tester,
   ) async {
     await comTela(tester, Tela.tabletEmPe, () async {

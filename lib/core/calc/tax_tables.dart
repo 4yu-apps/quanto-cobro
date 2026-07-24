@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
-/// Tabelas fiscais embutidas — ano-base 2026. Fontes (validadas em 2026-07-19):
+/// Tabelas fiscais embutidas — ano-base 2026. Fontes (validadas em 2026-07-19;
+/// re-conferidas em 2026-07-23 contra gov.br/fazenda e a Lei 15.270/2025 —
+/// teto INSS, faixas IRPF, redutor e DAS batem com o oficial):
 /// - DAS MEI: Receita/Simples Nacional + Sebrae (salário mínimo 2026 R$ 1.621:
 ///   INSS 5% = R$ 81,05; serviços +R$ 5 ISS = R$ 86,05; vencimento dia 20).
 /// - IRPF mensal: gov.br/receitafederal (tabelas/2026) + redutor Lei 15.270/2025

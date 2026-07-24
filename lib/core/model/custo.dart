@@ -52,12 +52,10 @@ class CostChip {
       sugg: 100,
     ),
     CostChip(id: 'equip', label: 'Equipamento', icon: 'devices', sugg: 150),
-    CostChip(
-      id: 'prolabore',
-      label: 'Pró-labore (seu salário)',
-      icon: 'account_balance',
-      sugg: 0,
-    ),
+    // Pró-labore saiu da lista de custos (F6): ele já é parte da SUA renda, não
+    // um custo a mais — somá-lo cobraria o seu salário duas vezes. Agora vive
+    // como campo próprio (Area.proLabore), informativo, só pro Fator R do
+    // Simples, perguntado no passo do regime.
     CostChip(
       id: 'saude',
       label: 'Plano de saúde',
