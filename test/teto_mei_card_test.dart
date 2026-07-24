@@ -21,9 +21,21 @@ Future<void> _pump(
   required bool pro,
   double faturadoAno = 60000,
   bool comEntrada = true,
+  int meses = 3, // meses distintos com registro (>=3 libera a projeção)
   double textScale = 1.0,
 }) async {
   final int ano = DateTime.now().year;
+  // Espalha o faturado em [meses] meses distintos (jan, fev, mar…) — é o que
+  // a projeção do teto usa pra saber se tem dado suficiente.
+  final List<Map<String, dynamic>> entradas = <Map<String, dynamic>>[
+    for (int m = 1; m <= meses; m++)
+      Entrada(
+        valor: faturadoAno / meses,
+        separado: 86,
+        regimeTag: 'MEI',
+        at: DateTime(ano, m, 15),
+      ).toJson(),
+  ];
   SharedPreferences.setMockInitialValues(<String, Object>{
     'onboarding_done': true,
     'regime': regime,
@@ -32,15 +44,7 @@ Future<void> _pump(
       'activeId': 'a1',
       'areas': <Map<String, dynamic>>[Area.padrao(nome: 'Meu trabalho').toJson()],
     }),
-    if (comEntrada)
-      'entradas_v1': jsonEncode(<Map<String, dynamic>>[
-        Entrada(
-          valor: faturadoAno,
-          separado: 86,
-          regimeTag: 'MEI',
-          at: DateTime(ano, 1, 15),
-        ).toJson(),
-      ]),
+    if (comEntrada) 'entradas_v1': jsonEncode(entradas),
   });
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(
@@ -87,6 +91,20 @@ void main() {
       await _pump(tester, regime: 'mei', pro: true);
       expect(find.textContaining('Nesse ritmo'), findsOneWidget);
       expect(find.text('Ver a projeção do ano (Pro)'), findsNothing);
+    });
+  });
+
+  testWidgets('poucos meses de dado: a projeção espera, sem gate nem chute', (
+    WidgetTester tester,
+  ) async {
+    await comTela(tester, Tela.tabletEmPe, () async {
+      await _pump(tester, regime: 'mei', pro: false, meses: 1);
+      // O cartão aparece (zona + quanto falta seguem grátis)...
+      expect(find.text('TETO DO MEI'), findsOneWidget);
+      // ...mas a projeção não vira nem gate nem "nesse ritmo": só um aviso.
+      expect(find.textContaining('vem com alguns meses'), findsOneWidget);
+      expect(find.text('Ver a projeção do ano (Pro)'), findsNothing);
+      expect(find.textContaining('Nesse ritmo'), findsNothing);
     });
   });
 

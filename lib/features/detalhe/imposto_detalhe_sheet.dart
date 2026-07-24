@@ -150,11 +150,13 @@ class _DetalheImposto extends StatelessWidget {
         final String anexo = d.simplesAnexo3 ? 'Anexo III' : 'Anexo V';
         return <Widget>[
           _Linha(
-            'Seu anexo: $anexo',
+            d.simplesAnexo3
+                ? 'Você paga no barato (Anexo III)'
+                : 'Reservando com folga (Anexo V)',
             pctTexto: 'Fator R ${_pct(d.fatorR)}',
             nota: d.simplesAnexo3
-                ? 'Seu pró-labore passa de 28% do que você fatura, então cai no Anexo III (mais barato).'
-                : 'Seu pró-labore não chega a 28% do que você fatura, então cai no Anexo V (mais caro).',
+                ? 'Seu pró-labore passa de 28% do que você fatura, então entra no anexo mais barato.'
+                : 'Seu pró-labore não chega a 28% do que fatura. Na dúvida usamos o anexo mais caro, pra não faltar — informar seu pró-labore pode baixar isso.',
             help: 'fator_r',
           ),
           _Linha(

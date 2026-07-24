@@ -699,7 +699,9 @@ class _MoedaLinha extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Space.x2),
-              const HelpDot(verbeteId: 'cambio'),
+              // O "?" explica exatamente o que está na tela: PTAX quando a
+              // cotação é a oficial, câmbio em geral quando é a de mercado.
+              HelpDot(verbeteId: fx!.ehPtax ? 'ptax' : 'cambio'),
             ],
           )
         else

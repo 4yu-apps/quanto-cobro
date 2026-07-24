@@ -149,6 +149,14 @@ class _Corpo extends ConsumerWidget {
     final TetoMei? teto = (regime == RegimeId.mei && faturadoAno > 0)
         ? avaliarTetoMei(faturado: faturadoAno, mesAtual: now.month)
         : null;
+    // A projeção ("nesse ritmo, encosta em outubro") só é honesta com alguns
+    // meses de registro — com 1 mês, o ritmo é chute e engana. Conta os meses
+    // DISTINTOS com recebimento no ano.
+    final int mesesComDado = entradas
+        .where((Entrada e) => e.at.year == now.year)
+        .map((Entrada e) => e.at.month)
+        .toSet()
+        .length;
     final bool isPro = ref.watch(proProvider);
 
     return _ambientWash(
@@ -197,6 +205,7 @@ class _Corpo extends ConsumerWidget {
                 child: _TetoMeiCard(
                   teto: teto,
                   isPro: isPro,
+                  projecaoPronta: mesesComDado >= 3,
                   onVerPro: () {
                     telemetry.evento(
                       Evento.proParedeVista,
@@ -812,11 +821,16 @@ class _TetoMeiCard extends StatelessWidget {
   const _TetoMeiCard({
     required this.teto,
     required this.isPro,
+    required this.projecaoPronta,
     required this.onVerPro,
   });
 
   final TetoMei teto;
   final bool isPro;
+
+  /// Só mostra a projeção quando há meses de registro suficientes pra ela não
+  /// ser um chute (senão, um aviso calmo de que ela vem com mais dados).
+  final bool projecaoPronta;
   final VoidCallback onVerPro;
 
   @override
@@ -933,6 +947,16 @@ class _TetoMeiCard extends StatelessWidget {
   /// acima, então isto nunca é uma parede na frente do que importa.
   Widget _projecao(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    // Sem meses suficientes, a projeção seria chute: um aviso calmo pra todos,
+    // sem gate (não faz sentido vender o Pro por algo que ainda não dá pra ver).
+    if (!projecaoPronta) {
+      return Text(
+        'A projeção de quando você encosta no teto vem com alguns meses de registro.',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
     if (!isPro) {
       return Align(
         alignment: Alignment.centerLeft,
