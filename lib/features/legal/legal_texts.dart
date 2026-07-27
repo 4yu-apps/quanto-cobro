@@ -185,16 +185,27 @@ a partir da renda que você quer, dos seus custos e das horas que você consegue
 vender, e mostra quanto separar de imposto a cada recebimento. É uma ferramenta
 de apoio à decisão.
 
-2. Os números são estimativas, não são consultoria fiscal
+2. App independente, sem vínculo com o governo; os números são estimativas
 
-Este é o ponto mais importante destes termos. Os valores do app são estimativas
-de planejamento. Não são consultoria contábil, não são consultoria fiscal e não
-são declaração de imposto. As alíquotas e regras (MEI e DAS, Simples Nacional,
-IRPF, INSS, carnê-leão) mudam com o tempo e variam conforme a sua situação.
+Este é o ponto mais importante destes termos. O ${AppConfig.appName} é um
+aplicativo independente, desenvolvido pela ${AppConfig.parentBrand}. Ele NÃO é
+afiliado, associado, autorizado nem endossado pela Receita Federal, pelo Governo
+Federal ou por qualquer órgão público, e não representa nenhuma entidade
+governamental. O app não emite guias oficiais (DAS ou DARF), não faz declaração
+de imposto e não substitui os canais do governo.
 
-Confirme nas fontes oficiais da Receita Federal, ou com o seu contador, antes de
-recolher qualquer tributo. Não nos responsabilizamos por tributo recolhido a
-menor ou a maior com base nas estimativas do app.
+Os valores do app são estimativas de planejamento. Não são consultoria contábil,
+não são consultoria fiscal e não são declaração de imposto. As alíquotas e regras
+(MEI e DAS, Simples Nacional, IRPF, INSS, carnê-leão) são definidas pela Receita
+Federal, mudam com o tempo e variam conforme a sua situação. Consulte as regras
+vigentes e emita guias e declarações oficiais nos canais do governo:
+· Receita Federal: ${AppConfig.govReceitaUrl}
+· Portal do Empreendedor (MEI): ${AppConfig.govMeiUrl}
+· Simples Nacional: ${AppConfig.govSimplesUrl}
+
+Confirme nessas fontes oficiais, ou com o seu contador, antes de recolher
+qualquer tributo. Não nos responsabilizamos por tributo recolhido a menor ou a
+maior com base nas estimativas do app.
 
 3. Cotação de câmbio
 

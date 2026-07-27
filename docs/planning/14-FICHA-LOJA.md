@@ -11,7 +11,13 @@
 Descubra seu preço de freela: quanto cobrar, guardar de imposto e o que sobra.
 ```
 
-## Descrição longa (1633/4000)
+## Descrição longa (2439/4000)
+
+> **Atualizada em 27/07/2026** após rejeição por Política de Declarações
+> Enganosas da Play (app exibe regra governamental sem link oficial nem
+> disclaimer de não-afiliação). Adicionados os blocos FONTES OFICIAIS (links
+> gov.br) e AVISO IMPORTANTE (não-afiliação). Publicada via `play-sa` com
+> `changesNotSentForReview=true` — falta **enviar para revisão** na Play Console.
 
 ```
 Você abre a conversa do cliente pra passar um orçamento e trava na primeira pergunta: quanto cobrar? O Quanto Cobro? responde isso com número, não com achismo.
@@ -37,7 +43,14 @@ O Quanto Cobro? é grátis no que importa. O Pro, opcional, libera o envio de pr
 
 Pare de trabalhar de graça. Descubra quanto você vale por hora.
 
-Os cálculos de imposto são estimativas pra te orientar. Para fechar o ano, confirme com seu contador.
+FONTES OFICIAIS
+As regras de MEI, DAS, Simples Nacional, carnê-leão e IRPF são definidas pela Receita Federal. Para consultar as regras vigentes e emitir guias e declarações oficiais, use os canais do governo:
+Receita Federal: https://www.gov.br/receitafederal
+Portal do Empreendedor (MEI): https://www.gov.br/empresas-e-negocios/pt-br/empreendedor
+Simples Nacional: https://www8.receita.fazenda.gov.br/SimplesNacional
+
+AVISO IMPORTANTE
+O Quanto Cobro? é um aplicativo independente. Ele NÃO é afiliado, associado, autorizado nem endossado pela Receita Federal, pelo Governo Federal ou por qualquer órgão público, e não representa nenhuma entidade governamental. O app não emite guias oficiais (DAS ou DARF) nem faz declaração de imposto. Os cálculos são estimativas de planejamento para orientar você. Para fechar o ano e recolher qualquer tributo, confirme nas fontes oficiais acima ou com o seu contador.
 ```
 
 ## Assets

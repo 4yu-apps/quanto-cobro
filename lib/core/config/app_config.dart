@@ -26,4 +26,20 @@ abstract final class AppConfig {
   /// Host das páginas públicas (política, termos).
   static const String webHost = '4yu.com.br';
   static const String webBasePath = '/quanto-cobro';
+
+  // Conformidade com a Política de Declarações Enganosas da Play: todo app que
+  // exibe informação governamental (MEI, DAS, Simples, carnê-leão) precisa (1)
+  // linkar a fonte oficial .gov e (2) deixar claro, em lugar fácil de achar, que
+  // NÃO representa o governo. As duas coisas moram aqui pra não divergirem.
+  static const String govReceitaUrl = 'https://www.gov.br/receitafederal';
+  static const String govMeiUrl =
+      'https://www.gov.br/empresas-e-negocios/pt-br/empreendedor';
+  static const String govSimplesUrl =
+      'https://www8.receita.fazenda.gov.br/SimplesNacional';
+
+  /// Frase curta de não-afiliação, reusada onde o app fala de imposto.
+  static const String disclaimerGov =
+      'App independente, sem vínculo com a Receita Federal ou qualquer órgão '
+      'público. As regras fiscais são da Receita; não emitimos guias oficiais '
+      'nem declaração de imposto.';
 }
