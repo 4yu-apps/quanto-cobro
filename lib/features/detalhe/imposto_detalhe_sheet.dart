@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/routes.dart';
+import '../../core/config/app_config.dart';
 import '../../core/calc/calc_engine.dart';
 import '../../core/common/money.dart';
 import '../../core/model/regime.dart';
@@ -95,6 +97,25 @@ class _DetalheImposto extends StatelessWidget {
             ..._linhas(context),
             const SizedBox(height: Space.x5),
             const EstimativaSeal(),
+            const SizedBox(height: Space.x2),
+            // Fonte oficial: as regras acima são da Receita. Link direto pra ela
+            // (Play, Declarações Enganosas) e reforço de que não somos o governo.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(AppConfig.govReceitaUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('Regras oficiais na Receita Federal'),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
             const SizedBox(height: Space.x4),
             Align(
               alignment: Alignment.centerRight,

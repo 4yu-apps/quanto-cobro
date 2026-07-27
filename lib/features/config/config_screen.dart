@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/routes.dart';
 import '../../core/config/app_config.dart';
@@ -348,10 +349,51 @@ class ConfigScreen extends ConsumerWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: Space.x4),
+            // Disclaimer de não-afiliação + fonte oficial, sempre visível e sem
+            // Pro: exigência da Política de Declarações Enganosas da Play pra
+            // apps que exibem regra governamental (MEI/DAS/Simples/carnê-leão).
+            Text(
+              AppConfig.disclaimerGov,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Space.x1),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _abrir(context, AppConfig.govReceitaUrl),
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('Fontes oficiais (Receita Federal)'),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Abre um link oficial no navegador. Falha silenciosa vira um aviso curto,
+  /// nunca um crash (R1).
+  Future<void> _abrir(BuildContext context, String url) async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final bool ok = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(content: Text('Não consegui abrir o link. Acesse: $url')),
+        );
+    }
   }
 
   /// As seções de Ajustes são a lista mais longa do app — e é justamente numa
