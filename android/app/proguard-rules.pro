@@ -78,6 +78,27 @@
 -dontwarn com.dexterous.**
 
 # ---------------------------------------------------------------------------
+# Nota de ofuscacao: reempacotar tudo numa raiz sem nome. E o item que a Play
+# Console mostra como "Classes de reempacotamento" desmarcado no painel de
+# otimizacao do app.
+#
+# Expectativa honesta do ganho: o R8 so mexe no dex, que neste AAB e 1,8 MB dos
+# ~13 MB que o aparelho baixa (o resto e libflutter/libapp, codigo nativo que o
+# R8 nem enxerga). Sobe alguns pontos na nota do console; nao muda tamanho de
+# download nem desempenho de forma perceptivel. Entrou de carona numa versao que
+# ia subir de todo jeito, e nao valeria um release proprio.
+#
+# O RISCO mora aqui: reempacotar renomeia pacote de classe. Quem quebra com isso
+# e codigo que procura classe por NOME de pacote em runtime (reflexao de plugin,
+# Gson, service loader) — e quebra na tela, nao no build, como todo erro de R8.
+# Por isso: ao subir a versao que levar estas linhas, abrir no aparelho e
+# percorrer notificacao agendada (com.dexterous), compartilhar PDF (share_plus),
+# backup/restore (file_picker) e a compra do Pro (billing). Se algo cair, a
+# primeira coisa a testar e comentar as duas linhas abaixo.
+-repackageclasses ''
+-allowaccessmodification
+
+# ---------------------------------------------------------------------------
 # NAO tem aqui, de proposito (ver 11-HANDOFF.md §6): AdMob, Maps, ML Kit,
 # foreground service. Billing entra quando o in_app_purchase entrar — a regra e
 # -keep class com.android.billingclient.api.** { *; }.
