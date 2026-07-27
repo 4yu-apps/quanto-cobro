@@ -58,7 +58,10 @@ O Quanto Cobro? é um aplicativo independente. Ele NÃO é afiliado, associado, 
 - ✅ Ícone 512: `docs/screenshots/loja/icone-play-512.png`
 - ✅ Feature graphic 1024×500: `docs/screenshots/loja/feature-graphic-1024x500.png`
   (gerado por `test/ferramentas/feature_graphic.dart`, identidade Cofre Aberto)
-- ✅ 5 capturas: `docs/screenshots/loja/celular-*.png`, `tablet-*.png`
+- ✅ Capturas: `docs/screenshots/loja/celular-*.png` (2), `tablet7-*.png` (6, em
+  pé 1080×1920) e `tablet10-*.png` (6, deitado 2560×1440). Todas em **16:9 ou
+  9:16** — a Play recusa 16:10, que era a proporção dos `tablet-*.png` antigos.
+  Regenera com `flutter test test/ferramentas/prints_loja.dart --update-goldens`.
 
 ## Regra de estilo
 

@@ -12,6 +12,10 @@ import 'package:quantocobro/core/providers.dart';
 import 'package:quantocobro/app/app.dart';
 import 'package:quantocobro/core/theme/app_theme.dart';
 import 'package:quantocobro/features/calc/calc_screen.dart';
+import 'package:quantocobro/features/entrada/entrada_screen.dart';
+import 'package:quantocobro/features/historico/historico_screen.dart';
+import 'package:quantocobro/features/resultado/resultado_screen.dart';
+import 'package:quantocobro/features/simulador/simulador_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Gera as capturas da ficha da Play — **celular e tablet**.
@@ -42,8 +46,8 @@ void main() {
 
   for (final _Print p in _prints) {
     testWidgets('print · ${p.arquivo}', (WidgetTester tester) async {
-      tester.view.devicePixelRatio = 2.0;
-      tester.view.physicalSize = p.tamanho * 2.0;
+      tester.view.devicePixelRatio = p.dpr;
+      tester.view.physicalSize = p.tamanho * p.dpr;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -80,24 +84,71 @@ void main() {
 typedef _Print = ({
   String arquivo,
   Size tamanho,
+  double dpr,
   bool solta,
   Widget Function()? tela,
   Future<void> Function(WidgetTester)? depois,
 });
 
-/// Formatos da ficha: celular (9:16) e tablet 10" (16:10 deitado).
+/// Formatos da ficha. **A Play só aceita 16:9 ou 9:16** em captura de celular e
+/// de tablet — 16:10 (o formato físico de tablet Android) é recusado no upload.
+/// Por isso o tablet aqui é 16:9, não a proporção do aparelho: a ficha é uma
+/// vitrine com régua própria.
+///
+/// E o lado mínimo muda por bloco: 320px no celular, mas **1080px** pra
+/// qualificar à promoção da Play (o aviso do console) e 1080px é o piso do
+/// bloco de tablet. Daí o `dpr` por print em vez de 2.0 fixo — o que importa é
+/// o PIXEL final, e a largura LÓGICA é o que decide o layout que aparece
+/// (`WindowClass`, em core/ui/breakpoints.dart).
 const Size _celular = Size(414, 736);
-const Size _tablet = Size(1280, 800);
+
+/// 720dp de largura → `medium`: trilho lateral e uma coluna. É o tablet de 7"
+/// em pé, e é o enquadramento que PREENCHE — em pé não sobra faixa vazia.
+/// 720×1280 @1.5 = **1080×1920** (9:16).
+const Size _tablet7 = Size(720, 1280);
+const double _dpr7 = 1.5;
+
+/// 1280dp → `expanded`: duas colunas de verdade (mestre-detalhe, calculadora).
+/// 1280×720 @2 = **2560×1440** (16:9).
+const Size _tablet10 = Size(1280, 720);
+const double _dpr10 = 2.0;
 
 Future<void> _irPraAba(WidgetTester t, IconData icone) async {
   await t.tap(find.byIcon(icone));
   await t.pumpAndSettle();
 }
 
+/// Casca mínima pra uma tela que é empilhada ACIMA da navegação no app real
+/// (fluxo focado). Sem ela a tela solta sai sem tema e sem Material.
+Widget _solta(Widget tela) => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  theme: AppTheme.dark,
+  home: tela,
+);
+
+Future<void> _continuar(WidgetTester t, int vezes) async {
+  for (int i = 0; i < vezes; i++) {
+    await t.tap(find.text('Continuar'));
+    await t.pumpAndSettle();
+  }
+}
+
+/// Digita nos campos de texto na ordem em que eles aparecem. Formulário vazio é
+/// print ruim: o que vende é o RESULTADO — "guarde R$ 279" só existe depois de
+/// alguém digitar o valor.
+Future<void> _digitar(WidgetTester t, List<String> valores) async {
+  final Finder campos = find.byType(TextField);
+  for (int i = 0; i < valores.length; i++) {
+    await t.enterText(campos.at(i), valores[i]);
+    await t.pumpAndSettle();
+  }
+}
+
 final List<_Print> _prints = <_Print>[
   (
     arquivo: 'celular-1-inicio',
     tamanho: _celular,
+    dpr: 2.0,
     solta: false,
     tela: null,
     depois: null,
@@ -105,22 +156,78 @@ final List<_Print> _prints = <_Print>[
   (
     arquivo: 'celular-2-trabalhos',
     tamanho: _celular,
+    dpr: 2.0,
+    solta: false,
+    tela: null,
+    depois: (WidgetTester t) => _irPraAba(t, Icons.work_outline),
+  ),
+
+  // ---------------------------------------------------------------- tablet 7"
+  // Em pé, 720dp: trilho lateral + uma coluna. Em pé sobra menos fundo, então
+  // aqui entram também as telas de fluxo focado (uma coluna por natureza).
+  (
+    arquivo: 'tablet7-1-inicio',
+    tamanho: _tablet7,
+    dpr: _dpr7,
+    solta: false,
+    tela: null,
+    depois: null,
+  ),
+  (
+    arquivo: 'tablet7-2-entrada',
+    tamanho: _tablet7,
+    dpr: _dpr7,
+    solta: true,
+    tela: () => _solta(const EntradaScreen()),
+    depois: (WidgetTester t) => _digitar(t, <String>['2500']),
+  ),
+  (
+    arquivo: 'tablet7-3-calculadora',
+    tamanho: _tablet7,
+    dpr: _dpr7,
+    solta: true,
+    tela: () => _solta(CalcScreen(initialDraft: Area.padrao())),
+    depois: (WidgetTester t) => _continuar(t, 2),
+  ),
+  (
+    arquivo: 'tablet7-4-simulador',
+    tamanho: _tablet7,
+    dpr: _dpr7,
+    solta: true,
+    tela: () => _solta(const SimuladorScreen()),
+    depois: (WidgetTester t) => _digitar(t, <String>['4000', '30', '350']),
+  ),
+  (
+    arquivo: 'tablet7-5-trabalhos',
+    tamanho: _tablet7,
+    dpr: _dpr7,
     solta: false,
     tela: null,
     depois: (WidgetTester t) => _irPraAba(t, Icons.work_outline),
   ),
   (
-    arquivo: 'tablet-1-inicio',
-    tamanho: _tablet,
-    solta: false,
-    tela: null,
+    arquivo: 'tablet7-6-historico',
+    tamanho: _tablet7,
+    dpr: _dpr7,
+    solta: true,
+    tela: () => _solta(const HistoricoScreen()),
     depois: null,
   ),
-  // O print que justifica o bloco de tablet inteiro: lista à esquerda,
-  // trabalho aberto à direita, trilho de navegação na lateral.
+
+  // --------------------------------------------------------------- tablet 10"
+  // Deitado, 720dp de ALTURA — o enquadramento mais apertado na vertical. Duas
+  // regras de curadoria saíram de olhar os renders:
+  //
+  //  1. Painel e proposta em tela deitada põem uma coluna centralizada com
+  //     faixa preta nas duas laterais. É o layout correto do app e uma captura
+  //     ruim de loja: eles vão no bloco de 7", em pé.
+  //  2. Tela cujo BOTÃO primário fica cortado na borda de baixo está fora (Pro
+  //     e simulador caem aqui). Lista cortada no meio lê como rolagem e passa;
+  //     botão cortado lê como app quebrado.
   (
-    arquivo: 'tablet-2-mestre-detalhe',
-    tamanho: _tablet,
+    arquivo: 'tablet10-1-mestre-detalhe',
+    tamanho: _tablet10,
+    dpr: _dpr10,
     solta: false,
     tela: null,
     depois: (WidgetTester t) async {
@@ -129,22 +236,45 @@ final List<_Print> _prints = <_Print>[
     },
   ),
   // A calculadora em duas colunas — o valor-hora vivo parado à direita.
-  // Tela solta de propósito: fluxo focado cobre a casca.
   (
-    arquivo: 'tablet-3-calculadora',
-    tamanho: _tablet,
+    arquivo: 'tablet10-2-calculadora',
+    tamanho: _tablet10,
+    dpr: _dpr10,
     solta: true,
-    tela: () => MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      home: CalcScreen(initialDraft: Area.padrao()),
-    ),
-    depois: (WidgetTester t) async {
-      for (int i = 0; i < 2; i++) {
-        await t.tap(find.text('Continuar'));
-        await t.pumpAndSettle();
-      }
-    },
+    tela: () => _solta(CalcScreen(initialDraft: Area.padrao())),
+    depois: (WidgetTester t) => _continuar(t, 2),
+  ),
+  (
+    arquivo: 'tablet10-3-entrada',
+    tamanho: _tablet10,
+    dpr: _dpr10,
+    solta: true,
+    tela: () => _solta(const EntradaScreen()),
+    depois: (WidgetTester t) => _digitar(t, <String>['2500']),
+  ),
+  (
+    arquivo: 'tablet10-4-resultado',
+    tamanho: _tablet10,
+    dpr: _dpr10,
+    solta: true,
+    tela: () => _solta(ResultadoScreen(area: Area.padrao())),
+    depois: null,
+  ),
+  (
+    arquivo: 'tablet10-5-historico',
+    tamanho: _tablet10,
+    dpr: _dpr10,
+    solta: true,
+    tela: () => _solta(const HistoricoScreen()),
+    depois: null,
+  ),
+  (
+    arquivo: 'tablet10-6-ajustes',
+    tamanho: _tablet10,
+    dpr: _dpr10,
+    solta: false,
+    tela: null,
+    depois: (WidgetTester t) => _irPraAba(t, Icons.settings_outlined),
   ),
 ];
 
@@ -201,8 +331,33 @@ String? _acharFlutterRoot() {
 }
 
 /// Dados de vitrine: números redondos e nomes plausíveis. Nada de "Teste 1".
+///
+/// **Por que seis trabalhos e meio ano de entradas** e não os dois de antes: em
+/// tela de tablet, lista curta vira dois terços de fundo preto — a captura
+/// parece um app vazio. E o gráfico "quanto entrou por mês" só existe com
+/// movimento: com um mês só ele sai como uma barra sozinha. A semente é a arte
+/// da ficha, não um fixture de teste; ela precisa ser densa o bastante pra
+/// PREENCHER o enquadramento mais largo.
 Map<String, Object> _semente() {
-  final DateTime agora = DateTime(2026, 7, 15);
+  DateTime mes(int m, int dia) => DateTime(2026, m, dia);
+
+  // 1% do valor. **Isto tem que casar com o regime da semente (MEI)**: o painel
+  // calcula a meta do anel de reserva como `entrou * reservaPct/100`, e no MEI
+  // o DAS é boleto fixo — dá ~1% do faturado, não os ~11% de um regime por
+  // percentual. Com 11% aqui, o print saía com "guardei R$ 469 de ~R$ 42": uma
+  // conta que não fecha, estampada na ficha da loja.
+  int reserva(double valor) => (valor * 0.01).round();
+
+  Map<String, dynamic> entrada(double valor, DateTime at, String trabalho) =>
+      Entrada(
+        valor: valor,
+        separado: reserva(valor),
+        regimeTag: 'MEI',
+        at: at,
+        areaId: 'a1',
+        trabalhoId: trabalho,
+      ).toJson();
+
   return <String, Object>{
     'onboarding_done': true,
     'areas_v1': jsonEncode(<String, dynamic>{
@@ -214,39 +369,49 @@ Map<String, Object> _semente() {
         id: 't1',
         areaId: 'a1',
         nome: 'Augusto',
-        criadoEm: agora,
+        criadoEm: mes(7, 2),
         valorCombinado: 4800,
       ).toJson(),
       Trabalho(
         id: 't2',
         areaId: 'a1',
         nome: 'Loja da Ana',
-        criadoEm: agora,
+        criadoEm: mes(6, 18),
+        valorCombinado: 3200,
       ).toJson(),
       Trabalho(
         id: 't3',
         areaId: 'a1',
-        nome: 'Padaria Central',
-        criadoEm: agora,
+        nome: 'Studio Lume',
+        criadoEm: mes(5, 9),
+        valorCombinado: 2600,
+      ).toJson(),
+      Trabalho(
+        id: 't4',
+        areaId: 'a1',
+        nome: 'Clínica Nova',
+        criadoEm: mes(4, 21),
+        valorCombinado: 1900,
+      ).toJson(),
+      Trabalho(
+        id: 't5',
+        areaId: 'a1',
+        nome: 'Café do Porto',
+        criadoEm: mes(3, 14),
+        valorCombinado: 1450,
       ).toJson(),
     ]),
     'entradas_v1': jsonEncode(<Map<String, dynamic>>[
-      Entrada(
-        valor: 2400,
-        separado: 268,
-        regimeTag: 'MEI',
-        at: agora,
-        areaId: 'a1',
-        trabalhoId: 't1',
-      ).toJson(),
-      Entrada(
-        valor: 1800,
-        separado: 200,
-        regimeTag: 'MEI',
-        at: agora.subtract(const Duration(days: 6)),
-        areaId: 'a1',
-        trabalhoId: 't2',
-      ).toJson(),
+      entrada(2400, mes(7, 15), 't1'),
+      entrada(1800, mes(7, 9), 't2'),
+      entrada(2400, mes(6, 27), 't1'),
+      entrada(1400, mes(6, 12), 't3'),
+      entrada(2600, mes(5, 22), 't3'),
+      entrada(1900, mes(5, 6), 't4'),
+      entrada(1450, mes(4, 24), 't5'),
+      entrada(2100, mes(4, 8), 't2'),
+      entrada(1600, mes(3, 19), 't5'),
+      entrada(2200, mes(2, 26), 't4'),
     ]),
   };
 }

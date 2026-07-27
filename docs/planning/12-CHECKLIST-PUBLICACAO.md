@@ -22,7 +22,8 @@
 - ✅ Assinatura de release lê `key.properties`; R8 ligado com regras de keep.
 - ✅ Telemetria escrita e opt-in (desligada por padrão) — falta só o destino.
 - ✅ Ícone adaptativo (todas as densidades) + `icone-play-512.png`.
-- ✅ 5 capturas da ficha em `docs/screenshots/loja/`.
+- ✅ 14 capturas da ficha em `docs/screenshots/loja/` (2 celular · 6 tablet 7" ·
+  6 tablet 10"), todas em 16:9/9:16 como a Play exige.
 - ✅ Fluxo de vínculo (entrada↔trabalho), Pro premium, três bugs do teste.
 
 ---
