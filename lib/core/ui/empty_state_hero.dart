@@ -4,7 +4,7 @@ import '../theme/tokens.dart';
 import 'cena.dart';
 
 /// Estado vazio do primeiro uso (DS §6.16): fisga a dor, mostra a assinatura
-/// (a Divisão de exemplo) antes mesmo de calcular, e promete pouco esforço.
+/// da casa (a [Cena]) antes mesmo de calcular, e promete pouco esforço.
 class EmptyStateHero extends StatelessWidget {
   const EmptyStateHero({super.key, required this.onComecar});
 
