@@ -4,6 +4,8 @@ import '../model/area.dart';
 import '../model/regime.dart';
 import 'tax_tables.dart';
 
+export '../model/area.dart' show kDiasFolgaPadrao;
+
 /// A folha de salários dos funcionários (só Simples). É custo REAL — você fatura
 /// pra pagar —, então soma na base do cálculo. Sem funcionários: 0.
 double folhaFuncionariosDe(Area p) => p.folhaFuncionarios ?? 0;
@@ -473,18 +475,26 @@ class SimuladorResult {
   final bool isMei;
 }
 
-/// Horas cobráveis/mês a partir da ROTINA real (Passo 2, v0.5). Um leigo não
-/// sabe "horas faturáveis" — mas sabe quantos dias por semana trabalha e quantas
-/// horas num dia normal. O app deduz, aplicando o desconto honesto do tempo
-/// não-pago (e-mail, proposta, imprevisto, férias, feriados) num fator só, que a
-/// pessoa NUNCA vê. Regra de segurança: na dúvida, MENOS horas (o valor-hora
-/// sobe; o app existe pra provar que a pessoa cobra pouco, nunca pra baratear).
+/// Horas que a pessoa SENTA pra trabalhar por mês, sem desconto nenhum. É o
+/// número que ela reconhece ("130 h? é, faz sentido") e que abre a explicação
+/// de por que só uma parte dá pra cobrar.
+int horasBrutasPorRotina({required int diasSemana, required int horasDia}) =>
+    (diasSemana * horasDia * 52 / 12).round();
+
+/// Horas cobráveis/mês a partir da ROTINA real. Dois descontos, agora
+/// separados e explicáveis: a FOLGA (dias por ano, visível no passo 2) e o
+/// tempo não pago dentro da semana de trabalho (e-mail, proposta, imprevisto),
+/// num fator só. Antes era um 0,65 que embutia os dois e ninguém entendia.
+/// Regra de segurança: na dúvida, MENOS horas (o valor-hora sobe).
 int horasFaturaveisPorRotina({
   required int diasSemana,
   required int horasDia,
-  double fatorPago = 0.65,
+  int diasFolgaAno = kDiasFolgaPadrao,
+  double fatorPago = 0.74,
 }) {
-  final double brutasMes = diasSemana * horasDia * 52 / 12;
+  final double semanasFolga = diasFolgaAno / math.max(1, diasSemana);
+  final double semanas = (52 - semanasFolga).clamp(1, 52);
+  final double brutasMes = diasSemana * horasDia * semanas / 12;
   return (brutasMes * fatorPago).round().clamp(1, 400);
 }
 

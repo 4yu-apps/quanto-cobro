@@ -1,5 +1,15 @@
 import 'custo.dart';
 
+/// Dias de folga por ano que o app assume quando a pessoa não disse (férias
+/// de 30 dias, o que a CLT dá e o freelancer esquece de se dar).
+///
+/// Mora aqui (e não em `calc_engine.dart`, que é quem a usa como default de
+/// [horasFaturaveisPorRotina]) porque o engine já importa este arquivo pra
+/// [Area] — importar de volta criaria um ciclo. O engine reexporta esta
+/// constante (`export '../model/area.dart' show kDiasFolgaPadrao;`) pra quem
+/// importa só o engine continuar enxergando o nome.
+const int kDiasFolgaPadrao = 30;
+
 /// Uma **área de trabalho**: "Design", "Consultoria", "Fotografia".
 ///
 /// É onde o CÁLCULO mora — quanto você quer ganhar, quantas horas consegue
@@ -26,6 +36,7 @@ class Area {
     this.provisaoCustom = false,
     this.diasSemana,
     this.horasDia,
+    this.diasFolgaAno,
     required this.custos,
     this.proLabore,
     this.folhaFuncionarios,
@@ -52,6 +63,13 @@ class Area {
   /// passo abre em "digitar na mão" com o `horas` salvo.
   final int? diasSemana;
   final int? horasDia;
+
+  /// Dias de folga por ano (férias + feriados + ponte). Explícito desde a
+  /// v0.10: antes morava escondido no fator 0,65 e o leigo achava que o app
+  /// tinha errado a conta. Null = dado antigo, cai em [kDiasFolgaPadrao].
+  final int? diasFolgaAno;
+
+  int get diasFolgaEfetivos => diasFolgaAno ?? kDiasFolgaPadrao;
 
   final List<Custo> custos;
 
@@ -85,6 +103,7 @@ class Area {
     provisaoCustom: false,
     diasSemana: 5,
     horasDia: 6,
+    diasFolgaAno: 30,
     custos: const <Custo>[
       Custo(id: 'software', label: 'Software/ferramentas', valor: 120),
       Custo(id: 'internet', label: 'Internet/telefone', valor: 100),
@@ -104,6 +123,7 @@ class Area {
     bool? provisaoCustom,
     int? diasSemana,
     int? horasDia,
+    int? diasFolgaAno,
     List<Custo>? custos,
     double? proLabore,
     double? folhaFuncionarios,
@@ -118,6 +138,7 @@ class Area {
       provisaoCustom: provisaoCustom ?? this.provisaoCustom,
       diasSemana: diasSemana ?? this.diasSemana,
       horasDia: horasDia ?? this.horasDia,
+      diasFolgaAno: diasFolgaAno ?? this.diasFolgaAno,
       custos: custos ?? this.custos,
       proLabore: proLabore ?? this.proLabore,
       folhaFuncionarios: folhaFuncionarios ?? this.folhaFuncionarios,
@@ -134,6 +155,7 @@ class Area {
     'provisaoCustom': provisaoCustom,
     if (diasSemana != null) 'diasSemana': diasSemana,
     if (horasDia != null) 'horasDia': horasDia,
+    if (diasFolgaAno != null) 'diasFolgaAno': diasFolgaAno,
     'custos': custos.map((Custo c) => c.toJson()).toList(),
     if (proLabore != null) 'proLabore': proLabore,
     if (folhaFuncionarios != null) 'folhaFuncionarios': folhaFuncionarios,
@@ -149,6 +171,7 @@ class Area {
     provisaoCustom: json['provisaoCustom'] as bool? ?? false,
     diasSemana: (json['diasSemana'] as num?)?.toInt(),
     horasDia: (json['horasDia'] as num?)?.toInt(),
+    diasFolgaAno: (json['diasFolgaAno'] as num?)?.toInt(),
     custos: (json['custos'] as List<dynamic>)
         .map((dynamic e) => Custo.fromJson(e as Map<String, dynamic>))
         .toList(),

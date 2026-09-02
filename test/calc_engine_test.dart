@@ -292,6 +292,48 @@ void main() {
     });
   });
 
+  group('rotina → horas (v0.10, folga explícita)', () {
+    test('brutas: 5 dias × 6 h = 130 h/mês', () {
+      expect(horasBrutasPorRotina(diasSemana: 5, horasDia: 6), 130);
+    });
+
+    test('cobráveis com 30 dias de folga continua 85 (o default histórico)', () {
+      expect(
+        horasFaturaveisPorRotina(diasSemana: 5, horasDia: 6),
+        85,
+      );
+    });
+
+    test('mais folga = menos horas cobráveis; zero folga = mais', () {
+      final int base = horasFaturaveisPorRotina(diasSemana: 5, horasDia: 6);
+      expect(
+        horasFaturaveisPorRotina(diasSemana: 5, horasDia: 6, diasFolgaAno: 60),
+        lessThan(base),
+      );
+      expect(
+        horasFaturaveisPorRotina(diasSemana: 5, horasDia: 6, diasFolgaAno: 0),
+        greaterThan(base),
+      );
+    });
+
+    test('folga absurda não zera nem fica negativa', () {
+      expect(
+        horasFaturaveisPorRotina(diasSemana: 1, horasDia: 1, diasFolgaAno: 365),
+        greaterThanOrEqualTo(1),
+      );
+    });
+
+    test('Area serializa diasFolgaAno e usa 30 quando ausente', () {
+      final Area a = Area.padrao().copyWith(diasFolgaAno: 45);
+      expect(Area.fromJson(a.toJson()).diasFolgaAno, 45);
+      expect(Area.padrao().diasFolgaEfetivos, 30);
+      final Map<String, dynamic> antigo = Area.padrao().toJson()
+        ..remove('diasFolgaAno');
+      expect(Area.fromJson(antigo).diasFolgaAno, isNull);
+      expect(Area.fromJson(antigo).diasFolgaEfetivos, 30);
+    });
+  });
+
   group('regime carnê-leão puro', () {
     // O regime saiu da Área e virou ajuste da PESSOA (settings) — duas áreas
     // não podem gerar dois DAS pro mesmo CNPJ. O round-trip que importa agora
