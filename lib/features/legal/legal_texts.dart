@@ -45,10 +45,10 @@ Encarregado (DPO) e pede, no lugar, um canal direto com você. É este.
 2. O princípio: seus dados ficam no seu aparelho
 
 Tudo o que você cria no app fica armazenado somente no seu aparelho: a sua renda
-desejada, os seus custos, as suas horas, os valores que você recebe, o nome dos
-seus clientes, as suas propostas e a sua marca. Não temos servidor recebendo
-esses dados, não os acessamos, não os copiamos e não conseguimos vê-los. Não é
-preciso criar conta nem fazer login.
+desejada, o seu nome (se você informar), os seus custos, as suas horas, os
+valores que você recebe, o nome dos seus clientes, as suas propostas e a sua
+marca. Não temos servidor recebendo esses dados, não os acessamos, não os
+copiamos e não conseguimos vê-los. Não é preciso criar conta nem fazer login.
 
 Isso vale pro conteúdo que você cria, e é a regra principal do app. Existe uma
 categoria diferente e menor: dados de uso e de falha, que ajudam a consertar

@@ -52,12 +52,21 @@ class PainelScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Flexible(
-              child: Text(
-                AppConfig.appName,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontFamily: AppType.numberFamily,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Consumer(
+                builder: (BuildContext context, WidgetRef ref, _) {
+                  final String nome = ref.watch(nomeProvider);
+                  return Text(
+                    nome.isEmpty
+                        ? AppConfig.appName
+                        : '${saudacao(DateTime.now())}, $nome',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontFamily: AppType.numberFamily,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                },
               ),
             ),
             if (isPro) ...<Widget>[

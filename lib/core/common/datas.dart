@@ -62,6 +62,14 @@ String mesAno(DateTime data, {DateTime? hoje}) {
   return data.year == ref.year ? nome : '$nome de ${data.year}';
 }
 
+/// A saudação do cabeçalho. Sem "Olá": é o que todo app diz.
+String saudacao(DateTime agora) {
+  final int h = agora.hour;
+  if (h >= 5 && h < 12) return 'Bom dia';
+  if (h >= 12 && h < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
 /// A frase do prazo: conta os dias e diz. Sem cor de perigo no texto: atrasar
 /// entrega é conversa com o cliente, não emergência do app.
 String? prazoEntregaTexto(DateTime? entregaEm, {required DateTime hoje}) {

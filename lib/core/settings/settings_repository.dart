@@ -80,4 +80,9 @@ class SettingsRepository {
   static const String _kLembrete = 'lembrete_enabled';
   bool lembreteEnabled() => _prefs.getBool(_kLembrete) ?? false;
   Future<void> setLembrete(bool v) => _prefs.setBool(_kLembrete, v);
+
+  // Nome da pessoa, opcional, só pra saudação. Fica no aparelho como tudo.
+  static const String _kNome = 'nome';
+  String nome() => _prefs.getString(_kNome)?.trim() ?? '';
+  Future<void> setNome(String v) => _prefs.setString(_kNome, v.trim());
 }

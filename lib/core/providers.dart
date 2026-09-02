@@ -390,6 +390,21 @@ class TelemetryNotifier extends Notifier<bool> {
 final NotifierProvider<TelemetryNotifier, bool> telemetryProvider =
     NotifierProvider<TelemetryNotifier, bool>(TelemetryNotifier.new);
 
+/// O primeiro nome da pessoa, opcional, só pra saudação do Painel. Fica no
+/// aparelho como tudo — nunca sai pra telemetria (ver `telemetry/eventos.dart`).
+class NomeNotifier extends Notifier<String> {
+  @override
+  String build() => ref.read(settingsRepositoryProvider).nome();
+
+  Future<void> set(String value) async {
+    await ref.read(settingsRepositoryProvider).setNome(value);
+    state = value.trim();
+  }
+}
+
+final NotifierProvider<NomeNotifier, String> nomeProvider =
+    NotifierProvider<NomeNotifier, String>(NomeNotifier.new);
+
 class ReduceTransparencyNotifier extends Notifier<bool> {
   @override
   bool build() => ref.read(settingsRepositoryProvider).reduceTransparency();

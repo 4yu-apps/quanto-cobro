@@ -241,6 +241,10 @@ Map<String, Object> _semente() {
   final DateTime agora = DateTime(2026, 7, 15);
   return <String, Object>{
     'onboarding_done': true,
+    // Nome longo de propósito: é o que estoura a saudação do AppBar do
+    // Início ("Boa tarde, <nome>") em 320dp com fonte 200% se o
+    // maxLines/ellipsis da Task 13 algum dia sumir dali.
+    'nome': 'Maria Eduarda Nascimento Albuquerque',
     'areas_v1': jsonEncode(<String, dynamic>{
       'activeId': 'a1',
       'areas': <Map<String, dynamic>>[

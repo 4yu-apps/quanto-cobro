@@ -47,6 +47,7 @@ class ConfigScreen extends ConsumerWidget {
     final double textScale = ref.watch(textScaleProvider);
     final Marca marca = ref.watch(marcaProvider);
     final AreasData areas = ref.watch(areasProvider);
+    final String nome = ref.watch(nomeProvider);
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
     final ProColors pc = theme.extension<ProColors>()!;
@@ -195,6 +196,53 @@ class ConfigScreen extends ConsumerWidget {
               color: theme.colorScheme.surfaceContainer,
               child: Column(
                 children: <Widget>[
+                  // Só pra saudação do Painel ("Boa tarde, Gabriel"). Opcional,
+                  // e fica no aparelho como tudo — nunca vai pra telemetria.
+                  ListTile(
+                    leading: const Icon(Icons.person_outline),
+                    title: const Text('Seu nome'),
+                    subtitle: Text(
+                      nome.isEmpty ? 'Só pra te chamar pelo nome.' : nome,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final TextEditingController c = TextEditingController(
+                        text: nome,
+                      );
+                      try {
+                        final String? novo = await showDialog<String>(
+                          context: context,
+                          builder: (BuildContext ctx) => AlertDialog(
+                            title: const Text('Como posso te chamar?'),
+                            content: TextField(
+                              controller: c,
+                              autofocus: true,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                hintText: 'Seu primeiro nome',
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Cancelar'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, c.text),
+                                child: const Text('Salvar'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (novo != null) {
+                          await ref.read(nomeProvider.notifier).set(novo);
+                        }
+                      } finally {
+                        c.dispose();
+                      }
+                    },
+                  ),
+                  const Divider(height: 1, indent: Space.x4),
                   // O regime é da PESSOA, e é daqui que ele se ajusta: duas
                   // áreas não geram dois DAS pro mesmo CNPJ.
                   ListTile(

@@ -73,4 +73,19 @@ void main() {
     expect(c.read(telemetryProvider), isFalse);
     expect(find.text('Me ajuda a melhorar?'), findsNothing);
   });
+
+  testWidgets('nome digitado no onboarding vira saudação no Painel', (
+    WidgetTester tester,
+  ) async {
+    final ProviderContainer c = await boot(tester);
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Gabriel');
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Agora não'));
+    await tester.pumpAndSettle();
+    expect(c.read(nomeProvider), 'Gabriel');
+    expect(find.textContaining(', Gabriel'), findsOneWidget);
+  });
 }

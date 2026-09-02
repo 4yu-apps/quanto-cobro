@@ -20,6 +20,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pc = PageController();
+  final TextEditingController _nome = TextEditingController();
   int _page = 0;
   String _modo = 'br';
 
@@ -34,10 +35,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _pc.dispose();
+    _nome.dispose();
     super.dispose();
   }
 
   Future<void> _finish() async {
+    await ref.read(nomeProvider.notifier).set(_nome.text);
     await ref.read(settingsRepositoryProvider).setModo(_modo);
     await ref.read(settingsRepositoryProvider).setOnboardingDone();
     if (mounted) context.go(Routes.painel);
@@ -261,6 +264,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     extra: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        TextField(
+          controller: _nome,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Como posso te chamar? (opcional)',
+            hintText: 'Seu primeiro nome',
+          ),
+        ),
+        const SizedBox(height: Space.x5),
         Text(
           'Você trabalha mais pra clientes:',
           style: theme.textTheme.titleSmall,
