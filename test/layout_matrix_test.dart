@@ -236,6 +236,10 @@ Map<String, Object> _semente() {
         nome: 'Augusto da Padaria Central',
         criadoEm: agora,
         valorCombinado: 4800,
+        // Bem longe no futuro de propósito: "Faltam 1095 dias pra entrega" é
+        // o texto mais comprido que prazoEntregaTexto produz, e é o caso que
+        // de fato estoura sem Flexible na Row do detalhe.
+        entregaEm: agora.add(const Duration(days: 1095)),
       ).toJson(),
       Trabalho(
         id: 't2',

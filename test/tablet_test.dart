@@ -131,6 +131,7 @@ Future<void> _pump(WidgetTester tester) async {
         areaId: 'a1',
         nome: 'Augusto',
         criadoEm: agora,
+        entregaEm: agora.add(const Duration(days: 1095)),
       ).toJson(),
       Trabalho(
         id: 't2',

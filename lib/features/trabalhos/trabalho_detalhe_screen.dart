@@ -164,9 +164,11 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
                     children: <Widget>[
                       Icon(Icons.event_outlined, size: 16, color: cs.onSurfaceVariant),
                       const SizedBox(width: Space.x2),
-                      Text(
-                        prazoEntregaTexto(trabalho.entregaEm, hoje: DateTime.now())!,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                      Flexible(
+                        child: Text(
+                          prazoEntregaTexto(trabalho.entregaEm, hoje: DateTime.now())!,
+                          style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                        ),
                       ),
                     ],
                   ),

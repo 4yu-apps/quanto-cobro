@@ -99,10 +99,10 @@ void main() {
 
   group('a fronteira do produto', () {
     test('o Trabalho não carrega nada que exija alimentação semanal', () {
-      // Este teste é uma TRAVA DE PRODUTO, não de código. Data de vencimento,
-      // status de 4 estados e recorrência configurável já existiram aqui e
-      // foram cortados: todos exigiam que a pessoa mantivesse o app atualizado
-      // pra ter valor, e isso é gestão — não é o que este app é.
+      // Este teste é uma TRAVA DE PRODUTO, não de código. Status de 4 estados
+      // e recorrência configurável já existiram aqui e foram cortados: ambos
+      // exigiam que a pessoa mantivesse o app atualizado pra ter valor, e
+      // isso é gestão — não é o que este app é.
       //
       // A régua: lembrar o que a pessoa disse uma vez = calculadora com
       // memória ✅ · exigir que ela alimente toda semana = gestão ❌

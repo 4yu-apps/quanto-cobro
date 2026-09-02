@@ -149,11 +149,22 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
                     ),
               onTap: () async {
                 final DateTime agora = DateTime.now();
+                final DateTime primeiro = DateTime(agora.year - 1);
+                final DateTime ultimo = DateTime(agora.year + 3);
+                // O prazo salvo pode ter envelhecido pra fora dessa janela (um
+                // trabalho antigo, editado hoje). O calendário some, mas o
+                // `initialDate` do showDatePicker EXIGE estar dentro do
+                // intervalo — sem o clamp, abrir editar derruba o app.
+                final DateTime sugerido =
+                    _entregaEm ?? agora.add(const Duration(days: 15));
+                final DateTime inicial = sugerido.isBefore(primeiro)
+                    ? primeiro
+                    : (sugerido.isAfter(ultimo) ? ultimo : sugerido);
                 final DateTime? d = await showDatePicker(
                   context: context,
-                  initialDate: _entregaEm ?? agora.add(const Duration(days: 15)),
-                  firstDate: DateTime(agora.year - 1),
-                  lastDate: DateTime(agora.year + 3),
+                  initialDate: inicial,
+                  firstDate: primeiro,
+                  lastDate: ultimo,
                   locale: const Locale('pt', 'BR'),
                   helpText: 'Quando você combinou entregar?',
                 );

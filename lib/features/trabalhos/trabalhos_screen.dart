@@ -395,10 +395,9 @@ class _TrabalhoCard extends StatelessWidget {
     } else {
       sb.write('Nenhuma entrada ainda. ');
     }
-    final String? prazo = prazoEntregaTexto(
-      trabalho.entregaEm,
-      hoje: DateTime.now(),
-    );
+    final String? prazo = trabalho.encerrado
+        ? null
+        : prazoEntregaTexto(trabalho.entregaEm, hoje: DateTime.now());
     if (prazo != null) {
       sb.write('$prazo. ');
     } else {
