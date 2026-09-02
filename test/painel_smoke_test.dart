@@ -1,11 +1,36 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantocobro/app/app.dart';
+import 'package:quantocobro/core/model/area.dart';
 import 'package:quantocobro/core/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/tela.dart';
+
+/// Monta o app inteiro (casca + Painel) já com um preço calculado — é o que
+/// permite afirmar, no mesmo teste, que o "Recebi" saiu do Painel E continua
+/// alcançável na navbar.
+Future<void> _pumpComPreco(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues(<String, Object>{
+    'onboarding_done': true,
+    'regime': 'cpf',
+    'areas_v1': jsonEncode(<String, dynamic>{
+      'activeId': 'a1',
+      'areas': <Map<String, dynamic>>[Area.padrao().toJson()],
+    }),
+  });
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      child: const QuantoCobroApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('sem perfil: Painel mostra o estado vazio com "Começar"', (
@@ -129,4 +154,28 @@ void main() {
       });
     });
   }
+
+  // L6: as ações do Painel viram quatro círculos com rótulo, e o gesto mais
+  // frequente ("Recebi") deixa de morar aqui — ele é da navbar (Task 12), onde
+  // é alcançável de qualquer aba. Este teste é o que impede o botão voltar pro
+  // Painel e a tela ficar com dois caminhos pro mesmo lugar.
+  testWidgets(
+    'com preço: quatro ações rápidas redondas, e o Recebi mora na navbar',
+    (WidgetTester tester) async {
+      await comTela(tester, Tela.celularEmPe, () async {
+        await _pumpComPreco(tester);
+        for (final String a in <String>[
+          'Orçar',
+          'Folga',
+          'Histórico',
+          'Recalcular',
+        ]) {
+          expect(find.text(a), findsOneWidget, reason: a);
+        }
+        expect(find.text('Recebi um pagamento'), findsNothing);
+        expect(find.text('Vou orçar um projeto'), findsNothing);
+        expect(find.text('Recebi'), findsOneWidget);
+      });
+    },
+  );
 }

@@ -54,7 +54,7 @@ void main() {
     await comTela(tester, Tela.celularEmPe, () async {
       final ProviderContainer container = await _abrir(tester);
 
-      await tester.tap(find.text('Recebi um pagamento'));
+      await tester.tap(find.text('Recebi'));
       await tester.pumpAndSettle();
 
       // Abre o seletor de moeda e escolhe dólar.

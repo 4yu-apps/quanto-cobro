@@ -52,8 +52,15 @@ void main() {
     return container;
   }
 
+  /// O "Recebi" da navbar. Achado pelo tooltip, não pelo texto: em celular em
+  /// pé o botão mostra "Recebi" embaixo do círculo, mas de `medium` pra cima a
+  /// casca vira trilho e ele fica só com o ícone. O tooltip é o mesmo nos dois,
+  /// e estes testes não fixam tamanho de tela de propósito.
+  ///
+  /// (`bySemanticsLabel` não serve aqui: sem `SemanticsHandle` ligado a árvore
+  /// de semântica não existe, e o finder acha zero mesmo com o botão na tela.)
   Future<void> irPraEntrada(WidgetTester tester) async {
-    await tester.tap(find.text('Recebi um pagamento'));
+    await tester.tap(find.byTooltip('Recebi um pagamento'));
     await tester.pumpAndSettle();
   }
 
@@ -69,7 +76,7 @@ void main() {
   }
 
   /// Depois de salvar, a pessoa está em Meus Trabalhos. Pra registrar OUTRO
-  /// pagamento ela volta ao Início e toca "Recebi um pagamento" de novo — que é
+  /// pagamento ela volta ao Início e toca "Recebi" na navbar de novo — que é
   /// o fluxo real, no lugar do antigo "registrar outro" na mesma tela.
   Future<void> registrarDeNovo(WidgetTester tester) async {
     await tester.tap(find.text('Início'));

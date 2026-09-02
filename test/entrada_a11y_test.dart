@@ -96,7 +96,7 @@ Future<ProviderContainer> _abrirNaEntrada(WidgetTester tester) async {
     ),
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Recebi um pagamento'));
+  await tester.tap(find.text('Recebi'));
   await tester.pumpAndSettle();
   return container;
 }

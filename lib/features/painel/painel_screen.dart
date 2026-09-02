@@ -194,12 +194,15 @@ class _Corpo extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            // 2) AÇÕES — assimétricas: primária (accent) + fantasma.
+            // 2) AÇÕES — quatro círculos com rótulo. O "Recebi" saiu daqui:
+            // é da navbar, alcançável de qualquer aba.
             StaggerIn(
               index: 1,
-              child: _Acoes(
-                onRecebi: () => context.push(Routes.entrada),
+              child: _AcoesRapidas(
                 onOrcar: () => context.push(Routes.simulador),
+                onFolga: () => context.push(Routes.folga),
+                onHistorico: () => context.push(Routes.historico),
+                onRecalcular: () => context.push(Routes.calc),
               ),
             ),
             const SizedBox(height: Space.x6),
@@ -258,14 +261,6 @@ class _Corpo extends ConsumerWidget {
             ),
             const SizedBox(height: Space.x6),
 
-            Center(
-              child: TextButton.icon(
-                onPressed: () => context.push(Routes.calc),
-                icon: const Icon(Icons.calculate_outlined),
-                label: const Text('Recalcular'),
-              ),
-            ),
-            const SizedBox(height: Space.x2),
             const EstimativaSeal(),
           ],
         ),
@@ -431,43 +426,128 @@ class _PerfilChip extends StatelessWidget {
   }
 }
 
-/// As duas ações recorrentes, agora ASSIMÉTRICAS: "Recebi" é a primária (o
-/// acento verde, os 10%), "Vou orçar" é fantasma. Empilhadas e full-width pra
-/// não estourar em fonte grande (antes eram dois cards iguais competindo).
-class _Acoes extends StatelessWidget {
-  const _Acoes({required this.onRecebi, required this.onOrcar});
+/// Quatro ações rápidas em círculo, com rótulo. Terceira natureza de elemento
+/// na tela depois do número solto e do anel — é o que quebra o card-soup sem
+/// inventar mais um card.
+///
+/// O "Recebi" NÃO está aqui: mora na navbar (Task 12), que é onde o gesto mais
+/// frequente merece ficar, alcançável de qualquer aba. Dois caminhos pro mesmo
+/// lugar não é generosidade, é dúvida sobre qual é o certo.
+class _AcoesRapidas extends StatelessWidget {
+  const _AcoesRapidas({
+    required this.onOrcar,
+    required this.onFolga,
+    required this.onHistorico,
+    required this.onRecalcular,
+  });
 
-  final VoidCallback onRecebi;
   final VoidCallback onOrcar;
+  final VoidCallback onFolga;
+  final VoidCallback onHistorico;
+  final VoidCallback onRecalcular;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: onRecebi,
-            icon: const Icon(Icons.payments_outlined),
-            label: const Text('Recebi um pagamento'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: Space.x4),
-            ),
+        Expanded(
+          child: _Acao(
+            icon: Icons.request_quote_outlined,
+            label: 'Orçar',
+            hint: 'simula um projeto',
+            onTap: onOrcar,
           ),
         ),
-        const SizedBox(height: Space.x3),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: onOrcar,
-            icon: const Icon(Icons.request_quote_outlined),
-            label: const Text('Vou orçar um projeto'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: Space.x4),
-            ),
+        Expanded(
+          child: _Acao(
+            icon: Icons.beach_access_outlined,
+            label: 'Folga',
+            hint: 'simula uma folga',
+            onTap: onFolga,
+          ),
+        ),
+        Expanded(
+          child: _Acao(
+            icon: Icons.receipt_long_outlined,
+            label: 'Histórico',
+            hint: 'abre o histórico do mês',
+            onTap: onHistorico,
+          ),
+        ),
+        Expanded(
+          child: _Acao(
+            icon: Icons.calculate_outlined,
+            label: 'Recalcular',
+            hint: 'refaz o cálculo',
+            onTap: onRecalcular,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _Acao extends StatelessWidget {
+  const _Acao({
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String hint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    return SemanticButton(
+      label: label,
+      tapHint: hint,
+      onTap: onTap,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () {
+            Haptics.select();
+            onTap();
+          },
+          borderRadius: const BorderRadius.all(Radii.md),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: Space.x2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: cs.surfaceContainerHigh,
+                    border: Border.all(color: cs.outlineVariant),
+                  ),
+                  child: Icon(icon, color: cs.onSurface),
+                ),
+                const SizedBox(height: Space.x2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
