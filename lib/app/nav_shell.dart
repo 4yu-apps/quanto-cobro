@@ -8,7 +8,9 @@ import '../core/providers.dart';
 import '../core/theme/materials.dart';
 import '../core/theme/motion.dart';
 import '../core/theme/tokens.dart';
+import '../core/ui/a11y.dart';
 import '../core/ui/breakpoints.dart';
+import 'routes.dart';
 
 /// Casca de navegação (v0.5): dá ao app um MAPA visível em 1 olhada — o que um
 /// leigo precisa. Três abas, cada uma um balde mental limpo:
@@ -147,6 +149,95 @@ bool _solido(BuildContext context, WidgetRef ref) =>
     MediaQuery.of(context).accessibleNavigation ||
     ref.watch(reduceTransparencyProvider);
 
+/// O gesto mais frequente do app, alcançável de QUALQUER aba: um círculo
+/// esmeralda colado na pílula, com rótulo (público leigo: rótulo é o mapa).
+/// Some enquanto não existe preço calculado: sem valor-hora não há reserva a
+/// fazer, e um botão que abre uma tela que pede pra "calcular primeiro" é
+/// promessa quebrada no primeiro toque.
+///
+/// A checagem de visibilidade mora só AQUI, não em quem chama: `_GlassRail`
+/// não tem `Consumer` nenhum, então já dependia deste retorno vazio; duplicar
+/// a mesma condição lá fora (como no bruto do plano) é duas cópias que
+/// divergem na primeira mudança. O vão de 12dp antes do círculo também mora
+/// aqui dentro — sem preço, sem botão e sem vão.
+class _BotaoRecebi extends ConsumerWidget {
+  const _BotaoRecebi({this.compacto = false});
+
+  /// No trilho lateral não cabe o rótulo embaixo: só o círculo, com tooltip.
+  final bool compacto;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(areaAtivaProvider) is! AreaPronta) {
+      return const SizedBox.shrink();
+    }
+
+    void aoTocar() {
+      Haptics.select();
+      context.push(Routes.entrada);
+    }
+
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
+    final Widget circulo = SizedBox(
+      width: 56,
+      height: 56,
+      child: FilledButton(
+        onPressed: aoTocar,
+        style: FilledButton.styleFrom(
+          shape: const CircleBorder(),
+          padding: EdgeInsets.zero,
+          elevation: 0,
+        ),
+        child: const Icon(Icons.payments_outlined, size: 26),
+      ),
+    );
+    // O rótulo fica ABAIXO do círculo, fora da área do `FilledButton` — sem
+    // isto só o círculo responderia ao toque, e "Recebi" pareceria parte do
+    // botão sem ser. `HitTestBehavior.opaque` estende a área tocável ao vão
+    // entre os dois também, não só ao texto.
+    final Widget visual = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: aoTocar,
+      child: Tooltip(
+        message: 'Recebi um pagamento',
+        child: compacto
+            ? circulo
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  circulo,
+                  const SizedBox(height: Space.x1),
+                  Text(
+                    'Recebi',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+    // `SemanticButton` é a casa (ver `core/ui/a11y.dart`): a ação de toque é
+    // obrigatória por assinatura, ao contrário de um `Semantics(button:) +
+    // ExcludeSemantics` cru, que apagaria a `SemanticsAction.tap` de dentro e
+    // deixaria um nó que diz "é botão" sem oferecer ação nenhuma — invisível
+    // pro Switch Access, mudo pro VoiceOver.
+    final Widget botao = SemanticButton(
+      label: 'Recebi um pagamento',
+      onTap: aoTocar,
+      child: visual,
+    );
+    return compacto
+        ? botao
+        : Padding(
+            padding: const EdgeInsets.only(left: Space.x3, bottom: 2),
+            child: botao,
+          );
+  }
+}
+
 /// A pílula de vidro que envolve a `NavigationBar` nativa — o layout de
 /// celular em pé.
 class _GlassBottomBar extends ConsumerWidget {
@@ -177,9 +268,21 @@ class _GlassBottomBar extends ConsumerWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Space.x4, 0, Space.x4, Space.x3),
-        child: _pilula(
-          context,
-          child: _vidro(context, solido: _solido(context, ref), child: bar),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            Expanded(
+              child: _pilula(
+                context,
+                child: _vidro(
+                  context,
+                  solido: _solido(context, ref),
+                  child: bar,
+                ),
+              ),
+            ),
+            const _BotaoRecebi(),
+          ],
         ),
       ),
     );
@@ -200,6 +303,10 @@ class _GlassRail extends ConsumerWidget {
       selectedIndex: navigationShell.currentIndex,
       onDestinationSelected: (int i) => _irPara(navigationShell, i),
       backgroundColor: Colors.transparent,
+      leading: const Padding(
+        padding: EdgeInsets.only(top: Space.x2, bottom: Space.x2),
+        child: _BotaoRecebi(compacto: true),
+      ),
       // Em `expanded` sobra largura: o rótulo fica sempre visível, que é uma
       // parada de leitura a menos. Em `medium` — inclusive o celular deitado —
       // o rótulo só aparece no selecionado, pra não roubar largura do conteúdo.
