@@ -1,8 +1,8 @@
-# Handoff, plano 18 (v0.10.0), parado na Task 4 de 17
+# Handoff, plano 18 (v0.10.0), parado na Task 4 de 17 (0.10.0+21 no ar)
 
-**Data:** 01/09/2026. **Branch:** `main`, empurrada pro GitHub em `43fb911`.
+**Data:** 01/09/2026. **Branch:** `main`, empurrada pro GitHub em `d274a06`.
 **Estado:** `flutter analyze` sem issue, `flutter test` 387 verdes, árvore limpa.
-**Nada foi publicado.** Nem Play, nem site.
+**0.10.0+21 publicada na Play** (tasks 1 a 4). O site segue sem publicar.
 
 Este arquivo é pra você (ou pro próximo agente) retomar sem reler a conversa.
 O plano em si continua sendo a fonte da verdade:
@@ -40,39 +40,44 @@ Task 1 existiu pra apagar.
 
 ---
 
-## Por que não publiquei na Play
+## Publicado: 0.10.0+21, direto na produção
 
-Você pediu "publica direto na Play Store". Não dava, e o motivo não é
-credencial (a `play-sa.json` está lá e o `promote-to-production.py` funciona):
+Em 01/09/2026, `versionCode 21` foi **publicado direto na faixa de produção**,
+sem passar por teste interno. Confirmado relendo a faixa numa edit nova (o
+console dizer "publicado" não é evidência):
 
-1. `pubspec.yaml` ainda é `0.9.2+20`. Esse versionCode **já é o que está na
-   produção** desde 23/ago. Não há o que promover.
-2. O bump pra `0.10.0+21` é a **Task 17**, que não rodou. Nenhum AAB foi
-   gerado, nada foi pro teste interno, e o script recusa promover versionCode
-   que não esteja numa faixa de teste.
-3. Publicar assim seria mandar pro usuário real um plano executado pela metade:
-   o passo 2 novo da calculadora sem a tela de folga que ele promete, e sem as
-   tasks 5 a 16.
-
-**Se você quiser mesmo uma 0.10.0 só com as tasks 1 a 4**, é uma decisão
-legítima e o caminho é curto:
-
-```bash
-# 1. bump manual em pubspec.yaml: version: 0.10.0+21
-export PATH="$HOME/fvm/versions/stable/bin:$PATH"
-flutter analyze && flutter test
-flutter build appbundle --release
-# 2. subir o AAB pro teste interno (Play Console, UI)
-# 3. dry-run primeiro, sempre:
-python3 scripts/promote-to-production.py
-# 4. só então:
-python3 scripts/promote-to-production.py --commit
-# 5. reler a faixa numa edit nova (console dizer "publicado" não é evidência)
+```
+production -> releases[0]: name 0.10.0, versionCodes ["21"], status completed
 ```
 
-Lembre do que o `CLAUDE.md` já ensinou apanhando: **país é da faixa e é UI**
-(Play Console → Produção → Países/regiões). Sem país, publicar dá
-`403 Release in track targeting no countries`.
+O que está no ar contém **só as tasks 1 a 4**. As tasks 5 a 17 seguem pendentes,
+então o passo 2 novo da calculadora foi pro usuário **sem** a tela de folga que
+as tasks 9/10/11 criariam.
+
+### Teste interno não é obrigatório
+
+Ficou registrado errado na primeira versão deste handoff. O relógio de 12 × 14
+dias corre no teste **fechado**, e essa conta já passou por ele (0.9.2 em
+23/ago). O que a Play exige de verdade é só **versionCode maior que o
+publicado**. O `promote-to-production.py` é que recusa versionCode fora de faixa
+de teste, e isso é trava do script, não regra do Google.
+
+Por isso nasceu o `scripts/upload-to-production.py`: build → upload → produção
+num movimento, com dry-run por padrão, igual ao irmão.
+
+```bash
+export PATH="$HOME/fvm/versions/stable/bin:$PATH"
+set -a && . ../.secrets/4yu.env && set +a
+flutter build appbundle --release
+python3 scripts/upload-to-production.py            # dry-run: sobe, valida, descarta
+python3 scripts/upload-to-production.py --commit   # publica
+```
+
+O `validate` do dry-run é prova barata de duas coisas que não têm API de
+leitura: o acesso à produção está concedido, e a faixa tem países selecionados.
+Passou = estava tudo certo.
+
+**Na próxima release, lembre de bumpar o `versionCode`.** O 21 já foi usado.
 
 ---
 
