@@ -24,6 +24,71 @@ class Proposta {
   static const String kFormaPagamentoPadrao =
       'PIX · 50% de sinal, 50% na entrega';
 
+  static const List<String> kMeios = <String>[
+    'PIX',
+    'Transferência',
+    'Cartão',
+    'Boleto',
+  ];
+
+  /// A primeira é o default: sinal protege o freelancer de sumiço.
+  static const List<String> kCondicoes = <String>[
+    '50% de sinal, 50% na entrega',
+    'À vista na entrega',
+    'Parcelado',
+  ];
+
+  static String prazoDe(int dias, {bool uteis = true}) {
+    final String unidade = dias == 1 ? 'dia' : 'dias';
+    final String tipo = uteis
+        ? (dias == 1 ? 'útil' : 'úteis')
+        : (dias == 1 ? 'corrido' : 'corridos');
+    return '$dias $unidade $tipo';
+  }
+
+  static (int?, bool) prazoParse(String s) {
+    final RegExpMatch? m = RegExp(
+      r'^\s*(\d+)\s*dias?\s*(úteis|útil|uteis|util|corridos?)?\s*$',
+      caseSensitive: false,
+    ).firstMatch(s);
+    if (m == null) return (null, true);
+    final String tipo = (m.group(2) ?? 'úteis').toLowerCase();
+    return (int.parse(m.group(1)!), !tipo.startsWith('corrid'));
+  }
+
+  static String formaPagamentoDe({
+    required List<String> meios,
+    required String condicao,
+    String extra = '',
+  }) {
+    final List<String> partes = <String>[
+      if (meios.isNotEmpty) meios.join(' ou '),
+      condicao,
+      if (extra.trim().isNotEmpty) extra.trim(),
+    ];
+    return partes.join(' · ');
+  }
+
+  static ({List<String> meios, String condicao, String extra})
+  formaPagamentoParse(String s) {
+    final String baixo = s.toLowerCase();
+    final List<String> meios = kMeios
+        .where((String m) => baixo.contains(m.toLowerCase()))
+        .toList();
+    final String condicao = kCondicoes.firstWhere(
+      (String c) => baixo.contains(c.toLowerCase()),
+      orElse: () => kCondicoes.first,
+    );
+    final bool reconhecido =
+        meios.isNotEmpty ||
+        kCondicoes.any((String c) => baixo.contains(c.toLowerCase()));
+    return (
+      meios: meios,
+      condicao: condicao,
+      extra: reconhecido || s.trim().isEmpty ? '' : s.trim(),
+    );
+  }
+
   final String servico;
   final String descricao;
 
