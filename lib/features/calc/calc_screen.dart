@@ -717,7 +717,19 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _title('O que você gasta pra trabalhar?'),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(child: _title('O que você gasta pra trabalhar?')),
+            const SizedBox(width: Space.x2),
+            IconButton.filledTonal(
+              tooltip: 'Adicionar um custo meu',
+              onPressed: () => _editarCusto(null),
+              icon: const Icon(Icons.add),
+              style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+            ),
+          ],
+        ),
         _subtitle(
           'Tudo que sai do seu bolso todo mês por causa do trabalho. A gente soma aqui pra nada ficar escondido.',
         ),
