@@ -556,16 +556,37 @@ class FolgaResult {
   });
 
   final int diasFolga;
+
+  /// Horas cobráveis que a folga come.
   final double horasPerdidas;
+
+  /// Bruto: o que aquele pedaço de mês traria.
   final double faturamentoPerdido;
+
+  /// Bruto: o que a provisão férias/13º já cobre.
   final double cobertoPelaProvisao;
+
+  /// Custo da folga, com gross-up de imposto.
   final double custoFolgaBruto;
+
+  /// Bruto a mais que precisa entrar antes da folga.
   final double faltaTotal;
+
+  /// [faltaTotal] dividido pelos meses até lá.
   final double faltaPorMes;
+
   final int valorHoraAtual;
+
+  /// Opção A: hora mais cara nos meses até lá.
   final int valorHoraNovo;
+
+  /// Opção B: horas a mais por mês na hora atual.
   final int horasExtrasMes;
+
+  /// Verdadeiro quando a opção B não cabe na semana da pessoa.
   final bool estouraCapacidade;
+
+  /// Verdadeiro quando [faltaTotal] ≈ 0: a provisão já paga a folga.
   final bool jaCoberto;
 }
 
@@ -579,7 +600,7 @@ FolgaResult computeFolga({
   final ValorHoraResult r = computeValorHora(area, regime);
   final int diasSemana = area.diasSemana ?? 5;
   final int horasDia = area.horasDia ?? 6;
-  final double diasUteisMes = diasSemana * 52 / 12;
+  final double diasUteisMes = math.max(1, diasSemana) * 52 / 12;
   final double fracao = math.max(0, diasFolga) / diasUteisMes;
   // Gross-up com a alíquota efetiva do plano. Teto em 0,95 pra nunca dividir
   // por ~0 num regime absurdo.

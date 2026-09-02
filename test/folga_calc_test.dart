@@ -60,4 +60,19 @@ void main() {
     );
     expect(f.estouraCapacidade, isTrue);
   });
+
+  test('diasSemana zero (dado malformado) não produz Infinity/NaN', () {
+    final Area malformada = a.copyWith(diasSemana: 0);
+    final FolgaResult f = computeFolga(
+      area: malformada, regime: regime, diasFolga: 10, mesesAte: 3, custoFolga: 500,
+    );
+    expect(f.horasPerdidas.isFinite, isTrue);
+    expect(f.faturamentoPerdido.isFinite, isTrue);
+    expect(f.cobertoPelaProvisao.isFinite, isTrue);
+    expect(f.custoFolgaBruto.isFinite, isTrue);
+    expect(f.faltaTotal.isFinite, isTrue);
+    expect(f.faltaPorMes.isFinite, isTrue);
+    expect(f.valorHoraNovo.isFinite, isTrue);
+    expect(f.horasExtrasMes.isFinite, isTrue);
+  });
 }
