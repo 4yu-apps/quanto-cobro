@@ -532,3 +532,86 @@ SimuladorResult computeSimulador(
     ),
   );
 }
+
+/// Simulador de folga: férias como decisão de PREÇO, não como cofrinho.
+///
+/// A pergunta que responde: "pra parar N dias daqui a M meses, quanto minha
+/// hora precisa valer nos contratos até lá?" (opção A) e "ou quantas horas a
+/// mais por mês na hora de hoje?" (opção B). O entregável é uma ação
+/// comercial, nunca um saldo. Vocabulário: "folga", "parar", nunca "poupar".
+class FolgaResult {
+  const FolgaResult({
+    required this.diasFolga,
+    required this.horasPerdidas,
+    required this.faturamentoPerdido,
+    required this.cobertoPelaProvisao,
+    required this.custoFolgaBruto,
+    required this.faltaTotal,
+    required this.faltaPorMes,
+    required this.valorHoraAtual,
+    required this.valorHoraNovo,
+    required this.horasExtrasMes,
+    required this.estouraCapacidade,
+    required this.jaCoberto,
+  });
+
+  final int diasFolga;
+  final double horasPerdidas;
+  final double faturamentoPerdido;
+  final double cobertoPelaProvisao;
+  final double custoFolgaBruto;
+  final double faltaTotal;
+  final double faltaPorMes;
+  final int valorHoraAtual;
+  final int valorHoraNovo;
+  final int horasExtrasMes;
+  final bool estouraCapacidade;
+  final bool jaCoberto;
+}
+
+FolgaResult computeFolga({
+  required Area area,
+  required RegimeId regime,
+  required int diasFolga,
+  required int mesesAte,
+  double custoFolga = 0,
+}) {
+  final ValorHoraResult r = computeValorHora(area, regime);
+  final int diasSemana = area.diasSemana ?? 5;
+  final int horasDia = area.horasDia ?? 6;
+  final double diasUteisMes = diasSemana * 52 / 12;
+  final double fracao = math.max(0, diasFolga) / diasUteisMes;
+  // Gross-up com a alíquota efetiva do plano. Teto em 0,95 pra nunca dividir
+  // por ~0 num regime absurdo.
+  final double rate = r.rate.clamp(0.0, 0.95).toDouble();
+
+  final double horasPerdidas = fracao * area.horas;
+  final double faturamentoPerdido = fracao * r.faturamento;
+  final double coberto = area.provisaoOn
+      ? math.min(fracao, 1.0) * area.renda / (1 - rate)
+      : 0;
+  final double custoBruto = math.max(0, custoFolga) / (1 - rate);
+  final double falta = math.max(0, faturamentoPerdido - coberto + custoBruto);
+  final int meses = math.max(1, mesesAte);
+  final double faltaPorMes = falta / meses;
+
+  final int horas = math.max(1, area.horas);
+  final int valorHoraNovo = ((r.faturamento + faltaPorMes) / horas).ceil();
+  final int horasExtrasMes = (faltaPorMes / math.max(1, r.valorHora)).ceil();
+  final int brutas = horasBrutasPorRotina(diasSemana: diasSemana, horasDia: horasDia);
+
+  return FolgaResult(
+    diasFolga: diasFolga,
+    horasPerdidas: horasPerdidas,
+    faturamentoPerdido: faturamentoPerdido,
+    cobertoPelaProvisao: coberto,
+    custoFolgaBruto: custoBruto,
+    faltaTotal: falta,
+    faltaPorMes: faltaPorMes,
+    valorHoraAtual: r.valorHora,
+    valorHoraNovo: falta < 0.5 ? r.valorHora : valorHoraNovo,
+    horasExtrasMes: falta < 0.5 ? 0 : horasExtrasMes,
+    estouraCapacidade: area.horas + horasExtrasMes > brutas,
+    jaCoberto: falta < 0.5,
+  );
+}
