@@ -1,9 +1,10 @@
-/// Monetização por anúncio — **DECIDIDO: não tem.**
+/// Monetização por anúncio — **decidido em 01/09/2026: entra DEPOIS, não agora.**
 ///
-/// O app foi desenhado com um slot de banner ancorado nas abas e um
-/// intersticial no retorno pós-salvar. Ambos saíram em 19/07/2026, e este
-/// arquivo continua existindo pra que a decisão não seja desfeita por engano
-/// daqui a seis meses "só pra testar uma receitinha".
+/// Até 01/09 a decisão era "nunca" (o raciocínio dos reviews está abaixo e
+/// continua verdadeiro). O Gabriel decidiu que a versão grátis vai ter anúncio
+/// numa versão futura e que o Pro vende "sem anúncios" desde já. Os termos já
+/// dizem isso. Antes de ligar qualquer SDK, ler o Apêndice A do
+/// `docs/planning/18-PLANO-FLUXO-FOLGA-E-VISUAL.md` (Data Safety, AD_ID, R6).
 ///
 /// **O motivo é dado, não gosto.** Na mineração de 16.961 reviews de
 /// concorrentes (`docs/research/ANALISE-QUANTITATIVA-REVIEWS.md`), "anúncio"

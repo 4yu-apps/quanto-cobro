@@ -56,12 +56,14 @@ problemas. Eles são opcionais, ficam desligados até você ligar, e nunca
 acompanham os seus valores. O item 4 explica exatamente o quê, quem recebe e
 como desligar.
 
-3. Este app não exibe anúncios
+3. Anúncios
 
-O ${AppConfig.appName} não tem anúncios e não integra nenhuma rede de
-publicidade. Não existe SDK de anúncio no app, e o seu identificador de
-publicidade não é lido. A receita do app vem da assinatura Pro, descrita no
-item 6.
+Hoje o ${AppConfig.appName} não conta com anúncios e não integra nenhuma rede de
+publicidade: não existe SDK de anúncio no app, e o seu identificador de
+publicidade não é lido. A versão gratuita pode passar a exibir anúncios em uma
+versão futura. Se isso acontecer, esta política será atualizada antes,
+descrevendo a rede usada e os dados envolvidos, e o Pro continuará sem anúncios.
+A receita do app hoje vem da assinatura Pro, descrita no item 6.
 
 4. Dados de uso e de falha (opcionais, desligados por padrão)
 
@@ -238,13 +240,7 @@ nas estimativas. O uso é por sua conta e risco.
 
 8. Assinatura Pro
 
-O Pro é uma assinatura recorrente, cobrada pela Google Play, que libera recursos
-adicionais. A cobrança se renova automaticamente ao fim de cada período, pelo
-preço vigente, até que você cancele. O cancelamento e eventuais reembolsos seguem
-as regras da Google Play, e você gerencia a assinatura na sua conta da loja —
-cancelar ali interrompe as próximas cobranças e o Pro continua até o fim do
-período já pago. Preços e recursos podem mudar em versões futuras, com aviso
-prévio na forma exigida pela loja.
+O Pro é uma assinatura recorrente, cobrada pela Google Play, que libera recursos adicionais e garante o uso sem anúncios. A cobrança se renova automaticamente ao fim de cada período, pelo preço vigente, até que você cancele. O cancelamento e eventuais reembolsos seguem as regras da Google Play, e você gerencia a assinatura na sua conta da loja, cancelar ali interrompe as próximas cobranças e o Pro continua até o fim do período já pago. Preços e recursos podem mudar em versões futuras, com aviso prévio na forma exigida pela loja.
 
 9. Uso correto
 

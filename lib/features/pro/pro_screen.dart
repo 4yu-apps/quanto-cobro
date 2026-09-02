@@ -99,18 +99,14 @@ class _ProScreenState extends ConsumerState<ProScreen> {
       Icons.switch_account_outlined,
       'Vários trabalhos (cliente recorrente x avulso)',
     ),
-    // A proposta em PDF ficou listada como "chegando" DEPOIS de estar pronta e
-    // já gated por Pro (proposta_preview_screen). Vender como promessa o que já
-    // se entrega é o pior dos dois mundos: parece que o Pro tem menos do que
-    // tem, e a pessoa que assina esperando "algo que vem" já recebe.
     (Icons.picture_as_pdf_outlined, 'Orçamento em PDF pra mandar ao cliente'),
+    (Icons.tune, 'Detalhamento do imposto (faixas, INSS, deduções)'),
+    (Icons.public, 'Recebimento em dólar, convertido pela PTAX'),
+    (Icons.trending_up, 'Projeção do ano no teto do MEI'),
     (Icons.block, 'Sem anúncios: quando eles chegarem, você nunca os verá'),
   ];
 
-  static const List<(IconData, String)> _chegando = <(IconData, String)>[
-    (Icons.tune, 'Modo avançado por regime (faixas, INSS, deduções)'),
-    (Icons.public, 'Módulo freela pra gringo (USD)'),
-  ];
+  static const List<(IconData, String)> _chegando = <(IconData, String)>[];
 
   @override
   Widget build(BuildContext context) {
@@ -228,26 +224,28 @@ class _ProScreenState extends ConsumerState<ProScreen> {
             const SizedBox(height: Space.x3),
             for (final (IconData icon, String label) in _hoje)
               _beneficio(context, icon, label),
-            const SizedBox(height: Space.x3),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    'Chegando: já incluso no seu Pro',
-                    style: theme.textTheme.titleMedium,
+            if (_chegando.isNotEmpty) ...<Widget>[
+              const SizedBox(height: Space.x3),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      'Chegando: já incluso no seu Pro',
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
-                ),
-                Text(
-                  'em desenvolvimento',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant,
+                  Text(
+                    'em desenvolvimento',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Space.x3),
-            for (final (IconData icon, String label) in _chegando)
-              _beneficio(context, icon, label),
+                ],
+              ),
+              const SizedBox(height: Space.x3),
+              for (final (IconData icon, String label) in _chegando)
+                _beneficio(context, icon, label),
+            ],
             if (!isPro) ...<Widget>[
               const SizedBox(height: Space.x4),
               // Um plano só (decisão de 19/07/2026). Três opções obrigavam a
