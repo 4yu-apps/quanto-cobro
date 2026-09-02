@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantocobro/core/model/area.dart';
 import 'package:quantocobro/core/model/entrada.dart';
+import 'package:quantocobro/core/model/proposta.dart';
 import 'package:quantocobro/core/model/trabalho.dart';
 import 'package:quantocobro/core/providers.dart';
 import 'package:quantocobro/core/theme/app_theme.dart';
@@ -18,6 +19,8 @@ import 'package:quantocobro/features/onboarding/onboarding_screen.dart';
 import 'package:quantocobro/features/painel/painel_screen.dart';
 import 'package:quantocobro/features/pro/pro_screen.dart';
 import 'package:quantocobro/features/proposta/marca_screen.dart';
+import 'package:quantocobro/features/proposta/proposta_flow.dart';
+import 'package:quantocobro/features/proposta/proposta_screen.dart';
 import 'package:quantocobro/features/resultado/resultado_screen.dart';
 import 'package:quantocobro/features/simulador/simulador_screen.dart';
 import 'package:quantocobro/features/trabalhos/trabalho_detalhe_screen.dart';
@@ -95,6 +98,31 @@ final List<_Cena> _telas = <_Cena>[
   (nome: 'Simulador', build: SimuladorScreen.new, chegarAte: null),
   (nome: 'Resultado', build: ResultadoScreen.new, chegarAte: null),
   (nome: 'Marca', build: MarcaScreen.new, chegarAte: null),
+  // Prazo em dias (MoneyField + SegmentedButton) e forma de pagamento por
+  // chips (todos os `kMeios`/`kCondicoes` sempre desenham, selecionados ou
+  // não): é o `SizedBox(width: 120)` do prazo, na largura ≥360dp, que corre
+  // mais risco de estourar com fonte 200%.
+  (
+    nome: 'Proposta',
+    build: () => PropostaScreen(
+      args: PropostaArgs(
+        inicial: const Proposta(
+          servico: 'Identidade visual completa: logo, paleta e manual de marca',
+          descricao:
+              'Duas rodadas de revisão inclusas, entrega em PDF e arquivos '
+              'editáveis em camadas',
+          valor: 4800,
+          prazo: '15 dias úteis',
+          formaPagamento: 'PIX ou Cartão ou Boleto · Parcelado',
+          cliente: 'Padaria Central do bairro',
+          observacoes: 'Inclui reunião de alinhamento antes de começar',
+          horas: 40,
+          valorHora: 120,
+        ),
+      ),
+    ),
+    chegarAte: null,
+  ),
   (nome: 'Pro', build: ProScreen.new, chegarAte: null),
   (nome: 'Calc passo 1', build: CalcScreen.new, chegarAte: null),
   // v0.10: o passo 2 ganhou um terceiro stepper (folga) e o cartão de

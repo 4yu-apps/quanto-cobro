@@ -134,6 +134,40 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
         (widget.args.inicial.horas ?? 0) > 0 &&
         widget.args.inicial.valorHora != null;
 
+    final Widget prazoDiasField = MoneyField(
+      controller: _prazoDias,
+      label: 'Dias',
+      suffix: 'dias',
+      onChanged: (_) => setState(() {}),
+    );
+    final Widget prazoSegmentado = SegmentedButton<bool>(
+      segments: const <ButtonSegment<bool>>[
+        ButtonSegment<bool>(value: true, label: Text('úteis')),
+        ButtonSegment<bool>(value: false, label: Text('corridos')),
+      ],
+      selected: <bool>{_prazoUteis},
+      onSelectionChanged: (Set<bool> s) {
+        Haptics.select();
+        setState(() => _prazoUteis = s.first);
+      },
+    );
+    final Widget prazoCampos = MediaQuery.sizeOf(context).width < 360
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              prazoDiasField,
+              const SizedBox(height: Space.x3),
+              prazoSegmentado,
+            ],
+          )
+        : Row(
+            children: <Widget>[
+              SizedBox(width: 120, child: prazoDiasField),
+              const SizedBox(width: Space.x3),
+              Expanded(child: prazoSegmentado),
+            ],
+          );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Proposta pro cliente'),
@@ -184,64 +218,7 @@ class _PropostaScreenState extends ConsumerState<PropostaScreen> {
             ),
             const SizedBox(height: Space.x4),
             SecaoTitulo('Prazo de entrega', bottom: Space.x2),
-            if (MediaQuery.sizeOf(context).width < 360)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  MoneyField(
-                    controller: _prazoDias,
-                    label: 'Dias',
-                    suffix: 'dias',
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: Space.x3),
-                  SegmentedButton<bool>(
-                    segments: const <ButtonSegment<bool>>[
-                      ButtonSegment<bool>(value: true, label: Text('úteis')),
-                      ButtonSegment<bool>(
-                        value: false,
-                        label: Text('corridos'),
-                      ),
-                    ],
-                    selected: <bool>{_prazoUteis},
-                    onSelectionChanged: (Set<bool> s) {
-                      Haptics.select();
-                      setState(() => _prazoUteis = s.first);
-                    },
-                  ),
-                ],
-              )
-            else
-              Row(
-                children: <Widget>[
-                  SizedBox(
-                    width: 120,
-                    child: MoneyField(
-                      controller: _prazoDias,
-                      label: 'Dias',
-                      suffix: 'dias',
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: Space.x3),
-                  Expanded(
-                    child: SegmentedButton<bool>(
-                      segments: const <ButtonSegment<bool>>[
-                        ButtonSegment<bool>(value: true, label: Text('úteis')),
-                        ButtonSegment<bool>(
-                          value: false,
-                          label: Text('corridos'),
-                        ),
-                      ],
-                      selected: <bool>{_prazoUteis},
-                      onSelectionChanged: (Set<bool> s) {
-                        Haptics.select();
-                        setState(() => _prazoUteis = s.first);
-                      },
-                    ),
-                  ),
-                ],
-              ),
+            prazoCampos,
             const SizedBox(height: Space.x6),
 
             SecaoTitulo('Validade da proposta', bottom: Space.x1),
