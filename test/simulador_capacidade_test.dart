@@ -48,4 +48,56 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('mais hora do que você tem'), findsNothing);
   });
+
+  testWidgets('exatamente no limite do mês (85h), sem aviso: fronteira', (
+    WidgetTester tester,
+  ) async {
+    await _pump(tester);
+    await tester.enterText(find.byType(TextField).at(0), '5000');
+    await tester.enterText(find.byType(TextField).at(1), '85'); // == o mês
+    await tester.pumpAndSettle();
+    expect(find.textContaining('mais hora do que você tem'), findsNothing);
+    // Drena o debounce do anúncio de lucro que ficou pendente.
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets(
+    'aviso de capacidade anuncia pro leitor de tela na transição, sem repetir',
+    (WidgetTester tester) async {
+      await _pump(tester);
+      await tester.enterText(find.byType(TextField).at(0), '10000');
+      await tester.enterText(find.byType(TextField).at(1), '200'); // acima do mês
+      await tester.pumpAndSettle();
+      // Drena o debounce de 900ms dos dois anúncios (lucro e capacidade).
+      await tester.pump(const Duration(seconds: 1));
+
+      final List<CapturedAccessibilityAnnouncement> primeiras = tester
+          .takeAnnouncements();
+      expect(
+        primeiras.any(
+          (CapturedAccessibilityAnnouncement a) =>
+              a.message.contains('mais hora do que você tem'),
+        ),
+        isTrue,
+        reason: 'esperava o anúncio na transição pra "estourado"',
+      );
+
+      // Continua digitando acima da capacidade: a transição já aconteceu,
+      // não deve repetir o anúncio (senão fica tagarela a cada tecla).
+      await tester.enterText(find.byType(TextField).at(1), '250');
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      final List<CapturedAccessibilityAnnouncement> seguintes = tester
+          .takeAnnouncements();
+      expect(
+        seguintes.any(
+          (CapturedAccessibilityAnnouncement a) =>
+              a.message.contains('mais hora do que você tem'),
+        ),
+        isFalse,
+        reason: 'não deve repetir enquanto o aviso continua visível',
+      );
+    },
+  );
 }

@@ -96,6 +96,19 @@ final List<_Cena> _telas = <_Cena>[
   (nome: 'Configurações', build: ConfigScreen.new, chegarAte: null),
   (nome: 'Detalhamento', build: DetalheScreen.new, chegarAte: null),
   (nome: 'Simulador', build: SimuladorScreen.new, chegarAte: null),
+  // O aviso "mais hora do que você tem" (aço, AnimatedSize) só nasce depois
+  // que a pessoa digita horas acima da capacidade do mês (85h do
+  // `Area.padrao()` semeado abaixo). Vazio, o simulador nunca mostrou esse
+  // texto — e sem esta cena a matriz não cobre o card em 320×640/fonte 200%.
+  (
+    nome: 'Simulador (capacidade)',
+    build: SimuladorScreen.new,
+    chegarAte: (WidgetTester t) async {
+      await t.enterText(find.byType(TextField).at(0), '10000');
+      await t.enterText(find.byType(TextField).at(1), '200');
+      await t.pumpAndSettle();
+    },
+  ),
   (nome: 'Resultado', build: ResultadoScreen.new, chegarAte: null),
   (nome: 'Marca', build: MarcaScreen.new, chegarAte: null),
   // Prazo em dias (MoneyField + SegmentedButton) e forma de pagamento por

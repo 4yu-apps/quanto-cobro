@@ -40,7 +40,9 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
   final TextEditingController _horas = TextEditingController();
   final TextEditingController _custos = TextEditingController();
   Timer? _announceTimer;
+  Timer? _capacidadeAnnounceTimer;
   bool _alertaVisivel = false;
+  bool _estouraVisivel = false;
 
   @override
   void dispose() {
@@ -48,11 +50,32 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
     _horas.dispose();
     _custos.dispose();
     _announceTimer?.cancel();
+    _capacidadeAnnounceTimer?.cancel();
     super.dispose();
   }
 
   int _digits(String s) =>
       int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
+  bool _estoura(int horas, int horasDoMes) =>
+      horasDoMes > 0 && horas > horasDoMes;
+
+  /// Irmão do alerta "abaixo do alvo" em `_result`: anuncia só na transição
+  /// pra visível, não a cada tecla — senão fica tagarela enquanto a pessoa
+  /// ainda está digitando.
+  void _announceCapacidade(bool estoura, int horasDoMes) {
+    if (estoura && !_estouraVisivel) {
+      _capacidadeAnnounceTimer?.cancel();
+      _capacidadeAnnounceTimer = Timer(const Duration(milliseconds: 900), () {
+        if (!mounted) return;
+        announce(
+          context,
+          'Atenção: isso é mais hora do que você tem pra cobrar no mês, umas $horasDoMes h. Cobre mais por hora, ou combine um prazo maior.',
+        );
+      });
+    }
+    _estouraVisivel = estoura;
+  }
 
   void _announceResult(SimuladorResult? result) {
     _announceTimer?.cancel();
@@ -85,7 +108,7 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
     final int horas = _digits(_horas.text);
     final int custos = _digits(_custos.text);
     final int horasDoMes = st is AreaPronta ? st.area.horas : 0;
-    final bool estouraMes = horasDoMes > 0 && horas > horasDoMes;
+    final bool estouraMes = _estoura(horas, horasDoMes);
     final bool pronto = valor > 0 && horas > 0;
     final SimuladorResult? res = pronto
         ? computeSimulador(
@@ -131,6 +154,10 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
               suffix: 'h',
               onChanged: (_) {
                 setState(() {});
+                _announceCapacidade(
+                  _estoura(_digits(_horas.text), horasDoMes),
+                  horasDoMes,
+                );
                 _announceResult(
                   _result(
                     valor: _digits(_valor.text),
@@ -161,7 +188,7 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                           children: <Widget>[
                             Icon(Icons.schedule_outlined, color: d.staleFg, size: 20),
                             const SizedBox(width: Space.x2),
-                            Expanded(
+                            Flexible(
                               child: Text(
                                 'Isso é mais hora do que você tem pra cobrar no mês (umas $horasDoMes h). Cobre mais por hora, ou combine um prazo maior.',
                                 style: theme.textTheme.bodyMedium?.copyWith(color: d.staleFg),
