@@ -33,6 +33,21 @@ Future<void> _pump(WidgetTester tester, {bool provisao = true}) async {
   await tester.pumpAndSettle();
 }
 
+/// Rola até o cartão da resposta. Em celular em pé (320×640) ele mora abaixo
+/// da dobra: acima dele vêm a cena, dois steppers e o campo de custo. A tela é
+/// uma `ListView`, então o que está fora da viewport nem chega a ser construído
+/// — sem rolar, `find` acha zero e o teste mente sobre o motivo.
+Future<void> _ateAResposta(WidgetTester tester, Finder alvo) async {
+  // `scrollable:` explícito: o campo de custo carrega um Scrollable próprio, e
+  // sem apontar a ListView o helper acha dois e morre com "Too many elements".
+  await tester.scrollUntilVisible(
+    alvo,
+    120,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('abre com 10 dias, 3 meses, e já mostra a hora nova', (
     WidgetTester tester,
@@ -41,6 +56,7 @@ void main() {
       await _pump(tester, provisao: false);
       expect(find.text('Vou tirar uma folga'), findsOneWidget);
       expect(find.text('10 dias'), findsOneWidget);
+      await _ateAResposta(tester, find.textContaining('SUA HORA PRECISA SER'));
       expect(find.textContaining('SUA HORA PRECISA SER'), findsOneWidget);
       expect(find.textContaining('hoje: R\$'), findsOneWidget);
       expect(find.textContaining('ou +'), findsOneWidget);
@@ -171,6 +187,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await _ateAResposta(tester, find.textContaining('já cobre'));
       expect(find.textContaining('já cobre'), findsOneWidget);
     });
   });

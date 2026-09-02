@@ -14,6 +14,7 @@ import '../../core/theme/divisao_colors.dart';
 import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/cena.dart';
 import '../../core/ui/estimativa_seal.dart';
 import '../../core/ui/help_dot.dart';
 import '../../core/ui/money_field.dart';
@@ -84,7 +85,12 @@ class _FolgaScreenState extends ConsumerState<FolgaScreen> {
         child: ListView(
           padding: const EdgeInsets.all(Space.x4),
           children: <Widget>[
-            // Cena.folga entra aqui (Task 16)
+            // 120dp, não os 180 do padrão: numa tela de 640dp, 180 de
+            // ilustração empurram a resposta ("SUA HORA PRECISA SER") pra fora
+            // da primeira dobra, e a resposta é o motivo desta tela existir.
+            // A cena ambienta; ela não disputa o número.
+            const Cena(tipo: CenaTipo.folga, altura: 120),
+            const SizedBox(height: Space.x4),
             _stepper(
               context,
               label: 'Quantos dias você quer parar?',

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
-import 'divisao_bar.dart';
+import 'cena.dart';
 
 /// Estado vazio do primeiro uso (DS §6.16): fisga a dor, mostra a assinatura
 /// (a Divisão de exemplo) antes mesmo de calcular, e promete pouco esforço.
@@ -20,16 +20,11 @@ class EmptyStateHero extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // A assinatura como emblema: o usuário vê a Divisão antes de calcular.
-            Card(
-              color: theme.colorScheme.surfaceContainer,
-              child: const Padding(
-                padding: EdgeInsets.all(Space.x5),
-                child: ExcludeSemantics(
-                  child: DivisaoBar(lucro: 5000, reserva: 1600, custo: 850),
-                ),
-              ),
-            ),
+            // A assinatura da casa como emblema. Antes era uma DivisaoBar de
+            // exemplo dentro de um Card: números inventados que a pessoa ainda
+            // não tem jeito de conferir, no lugar mais nobre da primeira tela.
+            // A Cena diz a mesma coisa sem fingir dado.
+            const Cena(tipo: CenaTipo.inicio),
             const SizedBox(height: Space.x6),
             Text(
               'Você provavelmente cobra menos do que deveria.',

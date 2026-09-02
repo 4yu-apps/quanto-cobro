@@ -8,6 +8,7 @@ import '../../core/theme/motion.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/ui/a11y.dart';
 import '../../core/ui/breakpoints.dart';
+import '../../core/ui/cena.dart';
 
 /// Onboarding (Blueprint §2.3): curto. Fisga a dor, ensina "A Divisão" uma vez,
 /// promete privacidade e captura o modo (Brasil x exterior). Mostrado uma vez.
@@ -166,6 +167,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     required String title,
     required String body,
     Widget? extra,
+    Widget? topo,
   }) {
     // Este corpo era uma Column NÃO-ROLÁVEL entre um "Pular" fixo e um botão
     // fixo. Contas: 360dp de altura menos a moldura deixavam ~170dp pra um
@@ -183,19 +185,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: c.maxHeight),
               child: ContentWidth(
-                child: _pageColumn(theme, icon, title, body, extra),
+                child: _pageColumn(theme, icon, title, body, extra, topo),
               ),
             ),
           ),
     );
   }
 
+  /// [topo] é o lugar de uma ilustração no alto da página, no lugar do
+  /// círculo com ícone. Os dois são mutuamente exclusivos na prática: a página
+  /// que traz [topo] passa `icon: null`.
   Widget _pageColumn(
     ThemeData theme,
     IconData? icon,
     String title,
     String body,
     Widget? extra,
+    Widget? topo,
   ) {
     return Padding(
       padding: const EdgeInsets.all(Space.x8),
@@ -203,6 +209,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (topo != null) ...<Widget>[topo, const SizedBox(height: Space.x6)],
           if (icon != null) ...<Widget>[
             Container(
               width: 96,
@@ -236,9 +243,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  /// A primeira tela do app é a que decide se ele parece ter dono. O círculo
+  /// com ícone de cofrinho é o default de qualquer template; a [Cena] é nossa.
   Widget _page1(ThemeData theme) => _pageBody(
     theme,
-    icon: Icons.savings_outlined,
+    icon: null,
+    topo: const Cena(tipo: CenaTipo.inicio),
     title: 'Pare de trabalhar de graça.',
     body:
         'Descubra quanto cobrar por hora, quanto guardar pro imposto e quanto realmente sobra.',
