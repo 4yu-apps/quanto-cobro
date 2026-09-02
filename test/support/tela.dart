@@ -39,8 +39,14 @@ Future<void> comTela(
 }) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = tela.size;
+  // `textScaleFactorTestValue` mora no `platformDispatcher`, não no `view`,
+  // mas é o mesmo tipo de estado global do binding que `physicalSize`: sem o
+  // reset, o próximo teste do arquivo herda a fonte grande e o motivo da
+  // falha fica escondido três testes adiante.
+  tester.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
   await corpo();
 }
 

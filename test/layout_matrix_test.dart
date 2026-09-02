@@ -97,6 +97,18 @@ final List<_Cena> _telas = <_Cena>[
   (nome: 'Marca', build: MarcaScreen.new, chegarAte: null),
   (nome: 'Pro', build: ProScreen.new, chegarAte: null),
   (nome: 'Calc passo 1', build: CalcScreen.new, chegarAte: null),
+  // v0.10: o passo 2 ganhou um terceiro stepper (folga) e o cartão de
+  // resposta com a conta à vista (duas frases + números inline em
+  // AppType.valueMd). É o card que motivou este cenário: sem ele, a matriz
+  // nunca renderiza a nova resposta em 320×640 com fonte 200%.
+  (
+    nome: 'Calc passo 2',
+    build: () => CalcScreen(initialDraft: Area.padrao()),
+    chegarAte: (WidgetTester t) async {
+      await t.tap(find.text('Continuar'));
+      await t.pumpAndSettle();
+    },
+  ),
   // O passo 3 lista os custos (o "Total: R$ X /mês") e é do passo 3 em
   // diante que existe a prévia do valor-hora no topo. Dois dos cinco
   // estouros de fonte 200% da auditoria moram aqui.
