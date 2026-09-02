@@ -109,7 +109,7 @@ de folga com um `HelpDot('folga')` sem o verbete **crasha**, não degrada.
 | 14 | Anel no Teto do MEI | Médio | Barra vira anel com % no centro |
 | 15 | Ações rápidas no Painel | Médio | Orçar · Folga · Histórico · Recalcular; "Recebi" sai do Painel |
 | 16 | `Cena`, ilustração assinatura | Médio | Onboarding, vazio e folga |
-| 17 | Release 0.10.0+21 | Pequeno | Bump, prints, ficha. **Para antes de publicar** |
+| 17 | Release | Pequeno | O bump já foi feito e publicado. Sobra: prints da loja e a nota "Novidades" na ficha. **A próxima release precisa de versionCode 22** |
 
 As tasks 12 e 15 são um par: a 12 põe o "Recebi" na navbar e a 15 tira o do
 Painel. Entre uma e outra os dois coexistem por um commit, e isso é aceitável
