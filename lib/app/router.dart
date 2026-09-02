@@ -10,6 +10,7 @@ import '../features/calc/calc_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/detalhe/detalhe_screen.dart';
 import '../features/entrada/entrada_screen.dart';
+import '../features/folga/folga_screen.dart';
 import '../features/historico/historico_screen.dart';
 import '../features/legal/legal_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -173,6 +174,10 @@ GoRouter createAppRouter({String initialLocation = Routes.painel}) {
         path: Routes.simulador,
         pageBuilder: (_, GoRouterState s) =>
             _toolPage(s, const SimuladorScreen()),
+      ),
+      GoRoute(
+        path: Routes.folga,
+        pageBuilder: (_, GoRouterState s) => _toolPage(s, const FolgaScreen()),
       ),
       GoRoute(
         path: Routes.trabalhoDetalhe,

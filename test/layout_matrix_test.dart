@@ -14,6 +14,7 @@ import 'package:quantocobro/features/calc/calc_screen.dart';
 import 'package:quantocobro/features/config/config_screen.dart';
 import 'package:quantocobro/features/detalhe/detalhe_screen.dart';
 import 'package:quantocobro/features/entrada/entrada_screen.dart';
+import 'package:quantocobro/features/folga/folga_screen.dart';
 import 'package:quantocobro/features/historico/historico_screen.dart';
 import 'package:quantocobro/features/onboarding/onboarding_screen.dart';
 import 'package:quantocobro/features/painel/painel_screen.dart';
@@ -109,6 +110,11 @@ final List<_Cena> _telas = <_Cena>[
       await t.pumpAndSettle();
     },
   ),
+  // A área semeada (Area.padrao, custos não-zero, provisão ligada) cai na
+  // resposta "SUA HORA PRECISA SER" (o card comprido, com o valor grande em
+  // AppType.valueXl e a frase "ou +N h por mês") — não no vazio "calcule seu
+  // valor-hora primeiro", que nunca estourou nada.
+  (nome: 'Folga', build: FolgaScreen.new, chegarAte: null),
   (nome: 'Resultado', build: ResultadoScreen.new, chegarAte: null),
   (nome: 'Marca', build: MarcaScreen.new, chegarAte: null),
   // Prazo em dias (MoneyField + SegmentedButton) e forma de pagamento por

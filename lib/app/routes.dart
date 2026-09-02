@@ -16,6 +16,7 @@ abstract final class Routes {
   static const String entrada = '/entrada';
 
   static const String simulador = '/simulador';
+  static const String folga = '/folga';
   static const String trabalhoForm = '/trabalho/editar';
   static const String trabalhoDetalhe = '/trabalho';
 

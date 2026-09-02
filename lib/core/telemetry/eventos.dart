@@ -41,6 +41,10 @@ abstract final class Evento {
   /// Abriu um verbete do glossário. Param: `verbete`. Diz QUAL palavra confunde.
   static const String glossarioAberto = 'glossario_aberto';
 
+  /// Abriu o simulador de folga. Sem params: nenhum número da simulação sai
+  /// daqui, só que a ferramenta foi usada.
+  static const String folgaSimulada = 'folga_simulada';
+
   // ---- Sinal 4: conversão Pro por gatilho ----
   /// A parede Pro apareceu. Param: `gatilho` (ver [GatilhoPro]).
   static const String proParedeVista = 'pro_parede_vista';
