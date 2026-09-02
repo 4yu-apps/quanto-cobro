@@ -275,7 +275,11 @@ void main() {
   group('horasFaturaveisPorRotina', () {
     test('rotina padrão 5×6 cai na faixa realista (~85h, nunca 160h)', () {
       final int h = horasFaturaveisPorRotina(diasSemana: 5, horasDia: 6);
-      expect(h, 85); // 5*6*52/12 = 130 → ×0,65 = 84,5 → 85
+      // Dois descontos, não um: 30 dias de folga/ano tiram 6 semanas de
+      // 52 (30/5 dias por semana), sobram 46 semanas úteis → 5×6×46/12 =
+      // 115 h brutas/mês; dessas, o fatorPago 0,74 é o que dá pra cobrar de
+      // fato (e-mail, proposta, imprevisto): 115 × 0,74 = 85,1 → 85.
+      expect(h, 85);
     });
 
     test('mais dias/horas = mais horas cobráveis (monotônico)', () {
