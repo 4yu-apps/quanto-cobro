@@ -206,10 +206,10 @@ class _ResultadoScreenState extends ConsumerState<ResultadoScreen> {
                     ),
                     const SizedBox(height: Space.x2),
                     Text(
-                      '≈ ${moneyBRL(r.valorDia)}/dia · ${moneyBRL(r.faturamento)}/mês faturados',
+                      '≈ ${moneyBRL(r.valorDia)} por dia · você precisa cobrar ${moneyBRL(r.faturamento)} por mês',
                       style: theme.textTheme.bodyMedium,
                       semanticsLabel:
-                          'Cerca de ${moneyBRL(r.valorDia)} por dia, faturando ${moneyBRL(r.faturamento)} por mês',
+                          'Cerca de ${moneyBRL(r.valorDia)} por dia. Pra fechar o mês, você precisa cobrar ${moneyBRL(r.faturamento)} no total.',
                     ),
                   ],
                 ),
