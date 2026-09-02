@@ -27,4 +27,10 @@ void main() {
       expect(Glossario.ids, contains(id), reason: 'falta o verbete "$id"');
     }
   });
+
+  test('v0.10: verbetes de folga e horas cobráveis existem e falam de gente', () {
+    expect(Glossario.of('folga').titulo, isNotEmpty);
+    expect(Glossario.of('horas_cobraveis').texto, contains('e-mail'));
+    expect(Glossario.of('folga').texto, isNot(contains('poup')));
+  });
 }

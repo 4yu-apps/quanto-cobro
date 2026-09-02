@@ -124,6 +124,20 @@ abstract final class Glossario {
           'todo dia útil. É a taxa que a Receita manda usar pra converter o que '
           'você recebeu de fora e calcular o imposto. Por isso ela vem primeiro.',
     ),
+    'folga': Verbete(
+      'Como o app calcula a folga?',
+      'Ele vê quanto os dias parados deixariam de trazer, desconta o que a '
+          'sua provisão de férias já cobre e espalha o resto pelos meses até '
+          'lá. Sai uma hora mais cara nos próximos contratos, ou horas a mais '
+          'por mês. Conta pelo lado seguro.',
+    ),
+    'horas_cobraveis': Verbete(
+      'O que são "horas cobráveis"?',
+      'As horas do mês que dá pra cobrar de alguém. Não é todo o tempo que '
+          'você trabalha: e-mail, orçamento, imprevisto e folga ninguém paga. '
+          'Por isso o app tira uma parte antes de calcular a sua hora. Na '
+          'dúvida, tira mais.',
+    ),
   };
 
   static Verbete of(String id) => _all[id]!;
