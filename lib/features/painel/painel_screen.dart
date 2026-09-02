@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,10 +71,7 @@ class PainelScreen extends ConsumerWidget {
                 },
               ),
             ),
-            if (isPro) ...<Widget>[
-              const SizedBox(width: 8),
-              const ProSelo(),
-            ],
+            if (isPro) ...<Widget>[const SizedBox(width: 8), const ProSelo()],
           ],
         ),
       ),
@@ -407,7 +406,11 @@ class _PerfilChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(Icons.folder_outlined, size: 15, color: cs.onSurfaceVariant),
+                Icon(
+                  Icons.folder_outlined,
+                  size: 15,
+                  color: cs.onSurfaceVariant,
+                ),
                 const SizedBox(width: Space.x2),
                 Flexible(
                   child: Text(
@@ -483,8 +486,18 @@ class _GraficoMensal extends StatelessWidget {
   final double entrouMes;
 
   static const List<String> _mes = <String>[
-    'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
-    'jul', 'ago', 'set', 'out', 'nov', 'dez',
+    'jan',
+    'fev',
+    'mar',
+    'abr',
+    'mai',
+    'jun',
+    'jul',
+    'ago',
+    'set',
+    'out',
+    'nov',
+    'dez',
   ];
 
   @override
@@ -510,7 +523,12 @@ class _GraficoMensal extends StatelessWidget {
     );
 
     return PanelCard(
-      padding: const EdgeInsets.fromLTRB(Space.x4, Space.x4, Space.x4, Space.x3),
+      padding: const EdgeInsets.fromLTRB(
+        Space.x4,
+        Space.x4,
+        Space.x4,
+        Space.x3,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -547,16 +565,15 @@ class _GraficoMensal extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
-                for (final ({String label, double valor, bool atual}) e in dados)
+                for (final ({String label, double valor, bool atual}) e
+                    in dados)
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       child: Container(
                         height: maxV > 0 ? 8 + 56 * (e.valor / maxV) : 8,
                         decoration: BoxDecoration(
-                          color: e.atual
-                              ? d.lucro
-                              : cs.surfaceContainerHighest,
+                          color: e.atual ? d.lucro : cs.surfaceContainerHighest,
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                             bottom: Radius.circular(3),
@@ -740,7 +757,11 @@ class _DivisaoBloco extends StatelessWidget {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ],
               ),
               const SizedBox(height: Space.x3),
@@ -754,7 +775,13 @@ class _DivisaoBloco extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   _seg(context, d.lucro, 'É seu', div.lucro, pct(div.lucro)),
-                  _seg(context, d.reserva, 'Imposto', div.reserva, pct(div.reserva)),
+                  _seg(
+                    context,
+                    d.reserva,
+                    'Imposto',
+                    div.reserva,
+                    pct(div.reserva),
+                  ),
                   _seg(context, d.custo, 'Custos', div.custo, pct(div.custo)),
                 ],
               ),
@@ -873,37 +900,53 @@ class _TetoMeiCard extends StatelessWidget {
               const HelpDot(verbeteId: 'teto_mei', size: 18),
             ],
           ),
-          const SizedBox(height: Space.x1),
-          // O número: faturado do ano de encontro ao teto fixo.
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(
-                    text: moneyBRL(teto.faturado),
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontFamily: AppType.numberFamily,
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: AppType.tnum,
-                    ),
+          const SizedBox(height: Space.x3),
+          // O anel do teto (higiene de raster da casa: Row inteira sob
+          // RepaintBoundary) + o número e o status, lado a lado.
+          RepaintBoundary(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _AnelTeto(faturado: teto.faturado, cor: zonaCor),
+                const SizedBox(width: Space.x4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      // O número: faturado do ano de encontro ao teto fixo.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text.rich(
+                          TextSpan(
+                            children: <InlineSpan>[
+                              TextSpan(
+                                text: moneyBRL(teto.faturado),
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontFamily: AppType.numberFamily,
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: AppType.tnum,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' de ${moneyBRL(kTetoAnualMei)}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  fontFeatures: AppType.tnum,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: Space.x1),
+                      _status(context, zonaCor),
+                    ],
                   ),
-                  TextSpan(
-                    text: ' de ${moneyBRL(kTetoAnualMei)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      fontFeatures: AppType.tnum,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: Space.x3),
-          _BarraTeto(faturado: teto.faturado, cor: zonaCor),
-          const SizedBox(height: Space.x3),
-          _status(context, zonaCor),
           const SizedBox(height: Space.x3),
           _projecao(context),
         ],
@@ -977,11 +1020,11 @@ class _TetoMeiCard extends StatelessWidget {
       );
     }
     final String texto = switch (teto.zona) {
-      ZonaTeto.verde => teto.mesEncosta != null
-          ? 'Nesse ritmo, você encosta no teto por volta de ${kMeses[teto.mesEncosta! - 1]}.'
-          : 'Nesse ritmo, você não encosta no teto este ano.',
-      ZonaTeto.amarela ||
-      ZonaTeto.vermelha =>
+      ZonaTeto.verde =>
+        teto.mesEncosta != null
+            ? 'Nesse ritmo, você encosta no teto por volta de ${kMeses[teto.mesEncosta! - 1]}.'
+            : 'Nesse ritmo, você não encosta no teto este ano.',
+      ZonaTeto.amarela || ZonaTeto.vermelha =>
         'No ritmo atual, você fecha o ano em ~${moneyBRL(teto.projecaoAno)}.',
     };
     return Row(
@@ -1006,56 +1049,114 @@ class _TetoMeiCard extends StatelessWidget {
   }
 }
 
-/// A barra de três zonas: trilho neutro, preenchimento na cor da zona atual, e
-/// um traço no ponto do teto (R$ 81 mil) — a fronteira verde→amarela. A escala
-/// vai até o limite dos 20% (R$ 97,2 mil); acima disso o preenchimento satura.
-class _BarraTeto extends StatelessWidget {
-  const _BarraTeto({required this.faturado, required this.cor});
+/// O teto como ANEL: trilho neutro, arco na cor da zona, um traço onde fica o
+/// teto (81 mil) e o % no centro. A escala vai até o limite dos 20% (97,2 mil).
+class _AnelTeto extends StatelessWidget {
+  const _AnelTeto({required this.faturado, required this.cor});
 
   final double faturado;
   final Color cor;
 
   @override
   Widget build(BuildContext context) {
-    final DivisaoColors d = Theme.of(context).extension<DivisaoColors>()!;
-    final ColorScheme cs = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final DivisaoColors d = theme.extension<DivisaoColors>()!;
     final double fill = (faturado / kTetoMeiComTolerancia).clamp(0.0, 1.0);
-    final double tetoPos = kTetoAnualMei / kTetoMeiComTolerancia; // ~0,833
-
-    return ExcludeSemantics(
-      child: SizedBox(
-        height: 10,
-        child: Stack(
-          children: <Widget>[
-            // Trilho vazio.
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: d.track,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: const SizedBox.expand(),
+    final int pctTeto = (faturado / kTetoAnualMei * 100).round();
+    // O anel é ExcludeSemantics (só decoração), então o % que ele mostra
+    // precisa sobreviver em algum lugar audível: o label aqui mesmo.
+    return Semantics(
+      label: '$pctTeto% do teto do MEI usado.',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          key: const ValueKey('anel-teto'),
+          width: 72,
+          height: 72,
+          child: CustomPaint(
+            painter: _AnelTetoPainter(
+              fill: fill,
+              marca: kTetoAnualMei / kTetoMeiComTolerancia,
+              cor: cor,
+              trilho: d.track,
+              traco: theme.colorScheme.surface,
             ),
-            // Preenchimento na cor da zona.
-            FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: fill,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: cor,
-                  borderRadius: BorderRadius.circular(5),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$pctTeto%',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: cor,
+                    fontFamily: AppType.numberFamily,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
-            // O traço do teto (81 mil).
-            Align(
-              alignment: Alignment(2 * tetoPos - 1, 0),
-              child: Container(width: 2, color: cs.surface),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _AnelTetoPainter extends CustomPainter {
+  const _AnelTetoPainter({
+    required this.fill,
+    required this.marca,
+    required this.cor,
+    required this.trilho,
+    required this.traco,
+  });
+
+  final double fill;
+  final double marca;
+  final Color cor;
+  final Color trilho;
+  final Color traco;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double stroke = 7;
+    final Rect rect = Offset.zero & size;
+    final Rect arco = rect.deflate(stroke / 2);
+    const double inicio = -math.pi / 2;
+    final Paint pTrilho = Paint()
+      ..color = trilho
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    final Paint pFill = Paint()
+      ..color = cor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(arco, inicio, 2 * math.pi, false, pTrilho);
+    if (fill > 0) {
+      canvas.drawArc(arco, inicio, 2 * math.pi * fill, false, pFill);
+    }
+    // O traço do teto (81 mil): um risco radial na cor do fundo, atravessando o anel.
+    final double ang = inicio + 2 * math.pi * marca;
+    final Offset c = rect.center;
+    final double r = arco.width / 2;
+    final Paint pTraco = Paint()
+      ..color = traco
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      c + Offset(math.cos(ang), math.sin(ang)) * (r - stroke / 2 - 1),
+      c + Offset(math.cos(ang), math.sin(ang)) * (r + stroke / 2 + 1),
+      pTraco,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_AnelTetoPainter old) =>
+      old.fill != fill ||
+      old.marca != marca ||
+      old.cor != cor ||
+      old.trilho != trilho ||
+      old.traco != traco;
 }
 
 Widget _ambientWash(BuildContext context, Widget child) {

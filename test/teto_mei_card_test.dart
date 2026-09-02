@@ -42,7 +42,9 @@ Future<void> _pump(
     'entitlement_pro': pro,
     'areas_v1': jsonEncode(<String, dynamic>{
       'activeId': 'a1',
-      'areas': <Map<String, dynamic>>[Area.padrao(nome: 'Meu trabalho').toJson()],
+      'areas': <Map<String, dynamic>>[
+        Area.padrao(nome: 'Meu trabalho').toJson(),
+      ],
     }),
     if (comEntrada) 'entradas_v1': jsonEncode(entradas),
   });
@@ -71,6 +73,9 @@ void main() {
       expect(find.text('TETO DO MEI'), findsOneWidget);
       // Zona verde (60k): mostra o quanto falta — grátis.
       expect(find.textContaining('Faltam'), findsOneWidget);
+      // v0.10: o teto é um anel, não uma barra (doutrina: elemento circular).
+      expect(find.byKey(const ValueKey('anel-teto')), findsOneWidget);
+      expect(find.text('74%'), findsOneWidget); // 60.000 / 81.000
     });
   });
 
@@ -148,6 +153,36 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('TETO DO MEI'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('anel do teto: % acima de 100 cabe no anel a 320dp/fonte 2x', (
+    WidgetTester tester,
+  ) async {
+    // faturado passa o teto (81.000): pctTeto vira 112%, mais largo que os
+    // casos normais, e o labelMedium a 2x não pode estourar o anel de 72dp.
+    await comTela(tester, Tela.celularEmPe, () async {
+      await _pump(
+        tester,
+        regime: 'mei',
+        pro: true,
+        faturadoAno: 90720, // 112% de 81.000
+        textScale: 2.0,
+      );
+      await tester.scrollUntilVisible(
+        find.text('TETO DO MEI'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('112%'), findsOneWidget);
+      // O texto do centro precisa estar dentro de um FittedBox que o encolhe
+      // pra caber no anel — sem isso, a 2x ele estoura os 72dp.
+      expect(
+        find.ancestor(of: find.text('112%'), matching: find.byType(FittedBox)),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     });
   });
