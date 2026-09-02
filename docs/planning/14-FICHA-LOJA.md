@@ -63,6 +63,23 @@ O Quanto Cobro? é um aplicativo independente. Ele NÃO é afiliado, associado, 
   9:16** — a Play recusa 16:10, que era a proporção dos `tablet-*.png` antigos.
   Regenera com `flutter test test/ferramentas/prints_loja.dart --update-goldens`.
 
+## Novidades (0.11.0)
+
+O campo "Novidades desta versão" da Play aceita 500 caracteres. Este texto tem
+que caber lá inteiro, sem travessão e sem jargão.
+
+```
+O passo das horas ficou claro: agora dá pra ver a conta antes de aceitar a resposta.
+
+Novo: Simulador de folga. Diga quantos dias quer parar e o app mostra quanto a sua hora precisa subir pra pagar essa folga.
+
+A proposta ganhou prazo de entrega e forma de pagamento. O trabalho ganhou data de entrega, com o quanto falta.
+
+O orçamento avisa quando o projeto pede mais hora do que o mês tem.
+
+Visual novo: o Teto do MEI virou anel, o "Recebi" agora fica sempre à mão, e o Início ganhou atalhos.
+```
+
 ## Regra de estilo
 
 Sem travessão (—) em nenhum texto visível. Ver [[sem-travessoes-no-texto]] na
