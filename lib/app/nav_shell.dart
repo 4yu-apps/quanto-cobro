@@ -179,44 +179,49 @@ class _BotaoRecebi extends ConsumerWidget {
 
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    final Widget circulo = SizedBox(
+    // Puramente decorativo: quem escuta o toque é o único `InkWell` abaixo,
+    // que cobre o círculo E o rótulo. Antes o círculo era um `FilledButton`
+    // com `onPressed` próprio, dentro de um `GestureDetector` externo — dois
+    // donos de toque na mesma geometria, e só funcionava porque a arena de
+    // gestos escolhe um vencedor. `cs.primary` é o mesmo valor que o
+    // `FilledButton` já resolvia por padrão: nenhuma cor nova na paleta.
+    final Widget circulo = Container(
       width: 56,
       height: 56,
-      child: FilledButton(
-        onPressed: aoTocar,
-        style: FilledButton.styleFrom(
-          shape: const CircleBorder(),
-          padding: EdgeInsets.zero,
-          elevation: 0,
-        ),
-        child: const Icon(Icons.payments_outlined, size: 26),
-      ),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+      child: Icon(Icons.payments_outlined, size: 26, color: cs.onPrimary),
     );
-    // O rótulo fica ABAIXO do círculo, fora da área do `FilledButton` — sem
-    // isto só o círculo responderia ao toque, e "Recebi" pareceria parte do
-    // botão sem ser. `HitTestBehavior.opaque` estende a área tocável ao vão
-    // entre os dois também, não só ao texto.
-    final Widget visual = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: aoTocar,
-      child: Tooltip(
-        message: 'Recebi um pagamento',
-        child: compacto
-            ? circulo
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  circulo,
-                  const SizedBox(height: Space.x1),
-                  Text(
-                    'Recebi',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+    final Widget miolo = compacto
+        ? circulo
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              circulo,
+              const SizedBox(height: Space.x1),
+              Text(
+                'Recebi',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+            ],
+          );
+    // Um `InkWell` só, do tamanho do círculo + rótulo: mesmo padrão de
+    // `_AnelReserva` (`painel_screen.dart`) e `ToolActionCard`
+    // (`tool_action_card.dart`) — visual puramente decorativo, um único
+    // widget interativo por baixo, `SemanticButton` por cima. Dá ripple no
+    // rótulo também, que um `GestureDetector` cru não dava.
+    final Widget interativo = Tooltip(
+      message: 'Recebi um pagamento',
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: aoTocar,
+          borderRadius: const BorderRadius.all(Radii.lg),
+          child: miolo,
+        ),
       ),
     );
     // `SemanticButton` é a casa (ver `core/ui/a11y.dart`): a ação de toque é
@@ -227,10 +232,16 @@ class _BotaoRecebi extends ConsumerWidget {
     final Widget botao = SemanticButton(
       label: 'Recebi um pagamento',
       onTap: aoTocar,
-      child: visual,
+      child: interativo,
     );
+    // O vão/padding mora aqui, não em quem chama: um botão escondido
+    // (`SizedBox.shrink()` acima) não pode deixar vão nenhum pra trás, nem na
+    // barra de baixo (Ruling E) nem no trilho lateral.
     return compacto
-        ? botao
+        ? Padding(
+            padding: const EdgeInsets.only(top: Space.x2, bottom: Space.x2),
+            child: botao,
+          )
         : Padding(
             padding: const EdgeInsets.only(left: Space.x3, bottom: 2),
             child: botao,
@@ -303,10 +314,7 @@ class _GlassRail extends ConsumerWidget {
       selectedIndex: navigationShell.currentIndex,
       onDestinationSelected: (int i) => _irPara(navigationShell, i),
       backgroundColor: Colors.transparent,
-      leading: const Padding(
-        padding: EdgeInsets.only(top: Space.x2, bottom: Space.x2),
-        child: _BotaoRecebi(compacto: true),
-      ),
+      leading: const _BotaoRecebi(compacto: true),
       // Em `expanded` sobra largura: o rótulo fica sempre visível, que é uma
       // parada de leitura a menos. Em `medium` — inclusive o celular deitado —
       // o rótulo só aparece no selecionado, pra não roubar largura do conteúdo.
