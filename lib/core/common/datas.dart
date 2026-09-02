@@ -61,3 +61,17 @@ String mesAno(DateTime data, {DateTime? hoje}) {
   final String nome = mesNome(data);
   return data.year == ref.year ? nome : '$nome de ${data.year}';
 }
+
+/// A frase do prazo: conta os dias e diz. Sem cor de perigo no texto: atrasar
+/// entrega é conversa com o cliente, não emergência do app.
+String? prazoEntregaTexto(DateTime? entregaEm, {required DateTime hoje}) {
+  if (entregaEm == null) return null;
+  final DateTime alvo = DateTime(entregaEm.year, entregaEm.month, entregaEm.day);
+  final DateTime dia = DateTime(hoje.year, hoje.month, hoje.day);
+  final int dias = alvo.difference(dia).inDays;
+  if (dias == 0) return 'Entrega hoje';
+  if (dias == 1) return 'Entrega amanhã';
+  if (dias > 1) return 'Faltam $dias dias pra entrega';
+  if (dias == -1) return 'Entrega passou ontem';
+  return 'Entrega passou há ${-dias} dias';
+}

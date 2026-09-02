@@ -38,6 +38,20 @@ void main() {
       expect(volta.criadoEm, DateTime(2026, 3, 4));
     });
 
+    test('entregaEm serializa e é opcional', () {
+      final Trabalho t = Trabalho(
+        id: 't1',
+        areaId: 'a1',
+        nome: 'Augusto',
+        criadoEm: DateTime(2026, 1, 1),
+        entregaEm: DateTime(2026, 10, 15),
+      );
+      expect(Trabalho.fromJson(t.toJson()).entregaEm, DateTime(2026, 10, 15));
+      final Map<String, dynamic> antigo = t.toJson()..remove('entregaEm');
+      expect(Trabalho.fromJson(antigo).entregaEm, isNull);
+      expect(t.copyWith(limparEntrega: true).entregaEm, isNull);
+    });
+
     test('JSON incompleto não derruba a lista', () {
       final Trabalho volta = Trabalho.fromJson(<String, dynamic>{'id': 'x'});
       expect(volta.nome, 'Trabalho');

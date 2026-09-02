@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/common/datas.dart';
 import '../../core/data/area_repository.dart';
 import '../../core/model/area.dart';
 import '../../core/model/trabalho.dart';
@@ -36,6 +37,7 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
   String? _areaId;
   String? _erroNome;
   Trabalho? _original;
+  DateTime? _entregaEm;
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
       _valor.text = moneyFieldText(t.valorCombinado);
       _observacoes.text = t.observacoes ?? '';
       _areaId = t.areaId;
+      _entregaEm = t.entregaEm;
     }
     _areaId ??= ref.read(areasProvider).activeId;
   }
@@ -84,6 +87,7 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
       observacoes: _observacoes.text.trim().isEmpty
           ? null
           : _observacoes.text.trim(),
+      entregaEm: _entregaEm,
     );
 
     await ref.read(trabalhosProvider.notifier).save(trabalho);
@@ -124,6 +128,37 @@ class _TrabalhoFormScreenState extends ConsumerState<TrabalhoFormScreen> {
               label: 'Valor combinado (opcional)',
               prefix: r'R$ ',
               helper: 'Serve só pra já vir preenchido quando você registrar.',
+            ),
+
+            const SizedBox(height: Space.x4),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event_outlined),
+              title: const Text('Prazo de entrega (opcional)'),
+              subtitle: Text(
+                _entregaEm == null
+                    ? 'O app conta os dias pra você.'
+                    : dataPorExtenso(_entregaEm!),
+              ),
+              trailing: _entregaEm == null
+                  ? const Icon(Icons.chevron_right)
+                  : IconButton(
+                      tooltip: 'Tirar o prazo',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() => _entregaEm = null),
+                    ),
+              onTap: () async {
+                final DateTime agora = DateTime.now();
+                final DateTime? d = await showDatePicker(
+                  context: context,
+                  initialDate: _entregaEm ?? agora.add(const Duration(days: 15)),
+                  firstDate: DateTime(agora.year - 1),
+                  lastDate: DateTime(agora.year + 3),
+                  locale: const Locale('pt', 'BR'),
+                  helpText: 'Quando você combinou entregar?',
+                );
+                if (d != null) setState(() => _entregaEm = d);
+              },
             ),
 
             // O seletor de área só existe pra quem TEM mais de uma. Pra todo o

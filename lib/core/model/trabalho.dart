@@ -5,10 +5,10 @@
 ///
 /// ## O que este objeto NÃO tem, e é a parte importante
 ///
-/// Não tem data de vencimento, status de quatro estados, recorrência
-/// configurável nem previsão de caixa. Tudo isso existiu e foi cortado em
-/// 19/07/2026, porque cada um exigia que a pessoa **alimentasse o app toda
-/// semana** pra ter valor — e essa é exatamente a fronteira do produto:
+/// Não tem status de quatro estados, recorrência configurável nem previsão de
+/// caixa. Tudo isso existiu e foi cortado em 19/07/2026, porque cada um
+/// exigia que a pessoa **alimentasse o app toda semana** pra ter valor — e
+/// essa é exatamente a fronteira do produto:
 ///
 /// > Lembrar o que a pessoa disse uma vez = calculadora com memória. ✅
 /// > Exigir que ela alimente o app toda semana = gestão. ❌
@@ -24,6 +24,7 @@ class Trabalho {
     this.valorCombinado = 0,
     this.encerrado = false,
     this.observacoes,
+    this.entregaEm,
   });
 
   final String id;
@@ -48,12 +49,19 @@ class Trabalho {
 
   final String? observacoes;
 
+  /// Data combinada de entrega, quando existe. Informada UMA vez (na criação
+  /// ou na edição), nunca "alimentada": o app só conta os dias e mostra. Sem
+  /// cronômetro, sem status, sem alerta vermelho.
+  final DateTime? entregaEm;
+
   Trabalho copyWith({
     String? areaId,
     String? nome,
     double? valorCombinado,
     bool? encerrado,
     String? observacoes,
+    DateTime? entregaEm,
+    bool limparEntrega = false,
   }) => Trabalho(
     id: id,
     areaId: areaId ?? this.areaId,
@@ -62,6 +70,7 @@ class Trabalho {
     valorCombinado: valorCombinado ?? this.valorCombinado,
     encerrado: encerrado ?? this.encerrado,
     observacoes: observacoes ?? this.observacoes,
+    entregaEm: limparEntrega ? null : (entregaEm ?? this.entregaEm),
   );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -72,6 +81,7 @@ class Trabalho {
     'valorCombinado': valorCombinado,
     'encerrado': encerrado,
     if (observacoes != null) 'observacoes': observacoes,
+    if (entregaEm != null) 'entregaEm': entregaEm!.toIso8601String(),
   };
 
   factory Trabalho.fromJson(Map<String, dynamic> json) => Trabalho(
@@ -83,5 +93,6 @@ class Trabalho {
     valorCombinado: (json['valorCombinado'] as num?)?.toDouble() ?? 0,
     encerrado: json['encerrado'] as bool? ?? false,
     observacoes: json['observacoes'] as String?,
+    entregaEm: DateTime.tryParse(json['entregaEm'] as String? ?? ''),
   );
 }

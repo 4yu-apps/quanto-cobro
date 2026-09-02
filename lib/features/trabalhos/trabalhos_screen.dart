@@ -378,6 +378,11 @@ class _TrabalhoCard extends StatelessWidget {
 
   String _linhaApoio() {
     if (trabalho.encerrado) return 'Encerrado';
+    final String? prazo = prazoEntregaTexto(
+      trabalho.entregaEm,
+      hoje: DateTime.now(),
+    );
+    if (prazo != null) return prazo;
     final DateTime? u = ultima;
     if (u == null) return 'Nenhuma entrada ainda';
     return 'Última entrada em ${dataCurta(u)}';
@@ -390,8 +395,16 @@ class _TrabalhoCard extends StatelessWidget {
     } else {
       sb.write('Nenhuma entrada ainda. ');
     }
-    final DateTime? u = ultima;
-    if (u != null) sb.write('Última entrada em ${dataPorExtenso(u)}. ');
+    final String? prazo = prazoEntregaTexto(
+      trabalho.entregaEm,
+      hoje: DateTime.now(),
+    );
+    if (prazo != null) {
+      sb.write('$prazo. ');
+    } else {
+      final DateTime? u = ultima;
+      if (u != null) sb.write('Última entrada em ${dataPorExtenso(u)}. ');
+    }
     if (trabalho.encerrado) sb.write('Encerrado.');
     return sb.toString();
   }

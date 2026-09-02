@@ -157,6 +157,20 @@ class TrabalhoDetalheScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+                if (!trabalho.encerrado &&
+                    prazoEntregaTexto(trabalho.entregaEm, hoje: DateTime.now()) != null) ...<Widget>[
+                  const SizedBox(height: Space.x2),
+                  Row(
+                    children: <Widget>[
+                      Icon(Icons.event_outlined, size: 16, color: cs.onSurfaceVariant),
+                      const SizedBox(width: Space.x2),
+                      Text(
+                        prazoEntregaTexto(trabalho.entregaEm, hoje: DateTime.now())!,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
                 if (trabalho.encerrado) ...<Widget>[
                   const SizedBox(height: Space.x2),
                   Text(
