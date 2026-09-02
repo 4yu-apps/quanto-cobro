@@ -26,6 +26,8 @@ saber, a cada pagamento, o que é dele.
 | 06 | [Fundação técnica](06-FUNDACAO-TECNICA.md) | Stack, dados locais, decisões de engenharia |
 | 07 | [Proposta & gestão](07-PROPOSTA-E-GESTAO-DE-PROJETOS.md) | Proposta em PDF + a gestão ancorada na reserva |
 | **08** | **[PLANO OFICIAL](08-PLANO-OFICIAL.md)** | **⭐ O documento vigente: as fases, o inventário de defeitos e as decisões abertas** |
+| 17 | [Redesign + features](17-PLANO-REDESIGN-E-FEATURES.md) | Plano de obra da doutrina de contenção + USD/teto MEI/Fator R/lembrete (entregue na 0.9.x) |
+| **18** | **[Fluxo claro + folga + visual](18-PLANO-FLUXO-FOLGA-E-VISUAL.md)** | **⭐ O plano vigente (v0.10.0): passo das horas, termos de anúncio, proposta, folga, visual com personalidade. Executável por agente, task a task** |
 
 ### Revisões que corrigem os documentos acima
 
