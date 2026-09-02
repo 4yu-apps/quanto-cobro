@@ -84,6 +84,8 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
     final int valor = _digits(_valor.text);
     final int horas = _digits(_horas.text);
     final int custos = _digits(_custos.text);
+    final int horasDoMes = st is AreaPronta ? st.area.horas : 0;
+    final bool estouraMes = horasDoMes > 0 && horas > horasDoMes;
     final bool pronto = valor > 0 && horas > 0;
     final SimuladorResult? res = pronto
         ? computeSimulador(
@@ -140,6 +142,36 @@ class _SimuladorScreenState extends ConsumerState<SimuladorScreen> {
                   ),
                 );
               },
+            ),
+            AnimatedSize(
+              duration: reduce ? Duration.zero : Motion.base,
+              curve: MotionCurves.standard,
+              alignment: Alignment.topCenter,
+              child: estouraMes
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: Space.x3),
+                      child: Container(
+                        padding: const EdgeInsets.all(Space.x3),
+                        decoration: BoxDecoration(
+                          color: d.staleBg,
+                          borderRadius: const BorderRadius.all(Radii.md),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Icon(Icons.schedule_outlined, color: d.staleFg, size: 20),
+                            const SizedBox(width: Space.x2),
+                            Expanded(
+                              child: Text(
+                                'Isso é mais hora do que você tem pra cobrar no mês (umas $horasDoMes h). Cobre mais por hora, ou combine um prazo maior.',
+                                style: theme.textTheme.bodyMedium?.copyWith(color: d.staleFg),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
             const SizedBox(height: Space.x4),
             MoneyField(
