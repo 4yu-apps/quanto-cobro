@@ -80,4 +80,42 @@ void main() {
       expect(t.zona, ZonaTeto.verde);
     });
   });
+
+  // O anel do teto (painel) mostra dois números com denominadores diferentes
+  // de propósito: o arco satura na tolerância (97,2k), o % do centro é sobre
+  // o teto puro (81k) e pode passar de 100. Um denominador trocado seria
+  // invisível pro olho, então cada razão trava aqui, sozinha.
+  group('as duas razões do anel do teto', () {
+    test('zero: arco vazio, 0%', () {
+      expect(fracaoDoTetoComTolerancia(0), 0);
+      expect(percentualDoTetoAnual(0), 0);
+    });
+
+    test('abaixo do teto (60k): arco a 61,7%, centro em 74%', () {
+      // O mesmo caso que o teste de widget do cartão usa — as duas contas
+      // concordam aqui, é o caso feliz.
+      expect(fracaoDoTetoComTolerancia(60000), closeTo(0.6173, 0.0001));
+      expect(percentualDoTetoAnual(60000), 74);
+    });
+
+    test('exatamente no teto (81k): arco a 83,3%, centro em 100%', () {
+      expect(
+        fracaoDoTetoComTolerancia(kTetoAnualMei),
+        closeTo(0.8333, 0.0001),
+      );
+      expect(percentualDoTetoAnual(kTetoAnualMei), 100);
+    });
+
+    test('acima do teto, sob a tolerância (90.720 = 112% de 81k)', () {
+      expect(fracaoDoTetoComTolerancia(90720), closeTo(0.9333, 0.0001));
+      expect(percentualDoTetoAnual(90720), 112);
+    });
+
+    test('acima da tolerância: o arco satura em 1, o % continua livre', () {
+      expect(fracaoDoTetoComTolerancia(150000), 1.0);
+      expect(fracaoDoTetoComTolerancia(kTetoMeiComTolerancia), 1.0);
+      // O centro não satura — é o que deixa o anel avisar "furou de vez".
+      expect(percentualDoTetoAnual(150000), 185);
+    });
+  });
 }

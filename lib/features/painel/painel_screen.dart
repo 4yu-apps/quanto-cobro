@@ -1061,8 +1061,8 @@ class _AnelTeto extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final DivisaoColors d = theme.extension<DivisaoColors>()!;
-    final double fill = (faturado / kTetoMeiComTolerancia).clamp(0.0, 1.0);
-    final int pctTeto = (faturado / kTetoAnualMei * 100).round();
+    final double fill = fracaoDoTetoComTolerancia(faturado);
+    final int pctTeto = percentualDoTetoAnual(faturado);
     // O anel é ExcludeSemantics (só decoração), então o % que ele mostra
     // precisa sobreviver em algum lugar audível: o label aqui mesmo.
     return Semantics(

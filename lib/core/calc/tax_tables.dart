@@ -38,6 +38,20 @@ const double kTetoMeiComTolerancia = kTetoAnualMei * 1.2;
 /// Teto mensal proporcional (81.000 / 12).
 const double kTetoMensalMei = kTetoAnualMei / 12;
 
+/// O anel do teto (painel) usa DUAS razões diferentes de propósito, e o nome
+/// de cada função carrega o denominador pra não trocar um pelo outro.
+
+/// Fração preenchida do arco: faturado sobre o teto COM TOLERÂNCIA (97,2 mil).
+/// Satura em 1 quando passa da tolerância — o arco não estoura a volta inteira.
+double fracaoDoTetoComTolerancia(double faturado) =>
+    (faturado / kTetoMeiComTolerancia).clamp(0.0, 1.0);
+
+/// O % no centro do anel: faturado sobre o teto ANUAL puro (81 mil), sem a
+/// tolerância. Passa de 100 na zona amarela/vermelha — de propósito, é o que
+/// avisa que já furou o teto "de verdade".
+int percentualDoTetoAnual(double faturado) =>
+    (faturado / kTetoAnualMei * 100).round();
+
 // ---------------------------------------------------------------------------
 // IRPF mensal (carnê-leão) — tabela progressiva 2026 + redutor Lei 15.270/2025
 // ---------------------------------------------------------------------------
