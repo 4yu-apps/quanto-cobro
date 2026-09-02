@@ -219,6 +219,12 @@ class _Resposta extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
 
+    // A provisão de férias cobre a RENDA que você tira pra você, não os
+    // custos (que continuam correndo mesmo em folga) nem a provisão em si
+    // (ver o comentário em `computeFolga`, `calc_engine.dart`). Então este
+    // card só nasce pra uma área sem custo cadastrado E sem provisão própria
+    // (provisão zerada na mão): o estado inicial antes de editar nada, não um
+    // caso raro, mas mais estreito do que "só sem custo".
     if (f.jaCoberto) {
       return PanelCard(
         accent: ouro,

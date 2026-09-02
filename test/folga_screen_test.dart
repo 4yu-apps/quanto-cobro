@@ -128,4 +128,50 @@ void main() {
       expect(find.byIcon(Icons.help_outline), findsOneWidget);
     });
   });
+
+  // Ruling do coordenador (revisão pós-report): `jaCoberto` é alcançável, e
+  // este teste prova sob que condição. `falta` (calc_engine.dart) reduz a
+  // `fracao * (custos + provisaoEfetiva) / (1 - rate)` quando `custoFolga` é
+  // 0 — os dois termos entram no faturamento que a fração desconta, e
+  // `coberto` só devolve a fatia da RENDA, nunca a da própria provisão. Ou
+  // seja: não basta zerar os custos (confirmado rodando com só
+  // `custos: []`: ainda sobra "Faltam R$ 276", porque a provisão padrão de
+  // `Area.padrao()` é `renda/12`, não zero). É preciso os dois termos zerados
+  // ao mesmo tempo: `custos: []` e a provisão explicitamente em zero
+  // (`provisaoCustom: true, provisao: 0`), com `provisaoOn` ligado (desligado
+  // zera `coberto` também, e o `falta` some por trás não por conta da
+  // provisão).
+  testWidgets('sem custos e sem provisão própria, a folga já está coberta', (
+    WidgetTester tester,
+  ) async {
+    await comTela(tester, Tela.celularEmPe, () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'onboarding_done': true,
+        'regime': 'cpf',
+        'areas_v1': jsonEncode(<String, dynamic>{
+          'activeId': 'a1',
+          'areas': <Map<String, dynamic>>[
+            Area.padrao()
+                .copyWith(
+                  custos: const [],
+                  provisaoOn: true,
+                  provisaoCustom: true,
+                  provisao: 0,
+                )
+                .toJson(),
+          ],
+        }),
+      });
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+          child: MaterialApp(theme: AppTheme.dark, home: const FolgaScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('já cobre'), findsOneWidget);
+    });
+  });
 }

@@ -608,6 +608,16 @@ FolgaResult computeFolga({
 
   final double horasPerdidas = fracao * area.horas;
   final double faturamentoPerdido = fracao * r.faturamento;
+  // A provisão cobre a RENDA que você tiraria pra você nesses dias, não os
+  // custos que continuam correndo (internet, contador, coworking...) nem a
+  // própria provisão embutida no faturamento perdido acima. `coberto` usa
+  // `area.renda`; `faturamentoPerdido` usa `r.faturamento`, que já soma
+  // custos E a provisão (`computeValorHora`). Com `custoFolga` zero, `falta`
+  // reduz a `fracao * (custos + provisaoEfetiva) / (1 - rate)`: só chega a
+  // zero quando os DOIS termos são zero ao mesmo tempo, não só os custos. Uma
+  // área sem custo cadastrado mas com a provisão padrão (`renda/12`) ainda
+  // falta algo; só uma área sem custo E sem provisão própria (provisão
+  // customizada em zero) chega em `jaCoberto`.
   final double coberto = area.provisaoOn
       ? math.min(fracao, 1.0) * area.renda / (1 - rate)
       : 0;
