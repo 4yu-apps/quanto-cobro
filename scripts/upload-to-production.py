@@ -80,18 +80,25 @@ def upload_aab(tok, edit_id, path):
         return None, (e.code, e.read().decode()[:600].replace("\n", " "))
 
 
-NOTES = ("O passo das horas ficou claro: agora o app mostra a conta, quanto "
-         "você trabalha por mês e quanto disso dá pra cobrar.\n\n"
-         "Você também diz quantos dias de folga tira por ano, e isso entra no "
-         "cálculo da sua hora. Férias deixam de ser surpresa.\n\n"
-         "No resultado, o texto ficou mais direto sobre o que você precisa "
-         "cobrar pra fechar o mês.")
+# Espelha a seção "Novidades" de docs/planning/14-FICHA-LOJA.md. As duas
+# precisam dizer a mesma coisa: esta vai pela API, aquela é a que se cola no
+# console. O campo da Play aceita 500 caracteres.
+NOTES = ("O passo das horas ficou claro: agora dá pra ver a conta antes de "
+         "aceitar a resposta.\n\n"
+         "Novo: Simulador de folga. Diga quantos dias quer parar e o app "
+         "mostra quanto a sua hora precisa subir pra pagar essa folga.\n\n"
+         "A proposta ganhou prazo de entrega e forma de pagamento. O trabalho "
+         "ganhou data de entrega, com o quanto falta.\n\n"
+         "O orçamento avisa quando o projeto pede mais hora do que o mês tem."
+         "\n\n"
+         "Visual novo: o Teto do MEI virou anel, o \"Recebi\" agora fica "
+         "sempre à mão, e o Início ganhou atalhos.")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--aab", default="build/app/outputs/bundle/release/app-release.aab")
-    ap.add_argument("--name", default="0.10.0", help="nome da release no console")
+    ap.add_argument("--name", default="0.11.0", help="nome da release no console")
     ap.add_argument("--commit", action="store_true",
                     help="publica de verdade (sem isso: valida e descarta)")
     args = ap.parse_args()
