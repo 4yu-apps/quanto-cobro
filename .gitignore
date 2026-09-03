@@ -45,3 +45,12 @@ ios/.symlinks/
 ios/Flutter/Flutter.framework
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
+
+# ===== Desktop (só preview) =====
+# O produto é Android. A pasta `linux/` existe pra rodar o app numa janela
+# do WSLg durante o desenvolvimento (`flutter run -d linux`) — scaffold que
+# o Flutter regenera sozinho e que ninguém aqui mantém. Versionar seria
+# convidar alguém a tratar Linux como plataforma de entrega, que não é.
+linux/
+windows/
+macos/
