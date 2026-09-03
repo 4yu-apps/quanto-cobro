@@ -1,9 +1,13 @@
-# Handoff, plano 18 (v0.11.0): as 17 tasks entraram, falta publicar
+# Handoff, plano 18 (v0.11.0): fechado e publicado
 
 **Data:** 02/09/2026. **Branch:** `main`.
 **Estado:** `flutter analyze` sem issue, `flutter test` 457 verdes, árvore limpa.
-**Nada de novo foi publicado.** A Play segue com a `0.10.0+21`, que contém só as
-tasks 1 a 4. O `pubspec` local está em `0.11.0+22`, pronto pra subir.
+**`0.11.0+22` está na produção da Play** desde 02/09/2026, com as 17 tasks.
+Confirmado relendo a faixa numa edit nova:
+
+```
+production -> releases[0]: name 0.11.0, versionCodes ["22"], status completed
+```
 
 O plano continua sendo a fonte da verdade:
 [18-PLANO-FLUXO-FOLGA-E-VISUAL.md](18-PLANO-FLUXO-FOLGA-E-VISUAL.md).
@@ -38,9 +42,9 @@ As tasks 1 a 4 saíram numa sessão; 5 a 14 em outra; 15 a 17 em 02/09/2026.
 
 ---
 
-## O que falta: publicar
+## Como foi publicada (e a armadilha que quase passou)
 
-Só isso. O caminho, que já foi percorrido uma vez e funciona:
+O caminho:
 
 ```bash
 export PATH="$HOME/fvm/versions/stable/bin:$PATH"
@@ -57,13 +61,35 @@ fechado, e essa conta já passou por ele (0.9.2, em 23/ago). O que a Play exige
 Depois do commit, **releia a faixa numa edit nova**. Console dizer "publicado"
 não é evidência.
 
-### E a ficha da loja
+### `set -a && . ../.secrets/4yu.env` NÃO é opcional no build
 
-`docs/planning/14-FICHA-LOJA.md` ganhou a seção **Novidades (0.11.0)**: 494 de
-500 caracteres, pronta pra colar. As capturas em `docs/screenshots/loja/` foram
-regeneradas e já mostram o Painel novo (anel, quatro ações, "Recebi" na navbar).
+**Sem as variáveis carregadas, o `flutter build appbundle --release` assina com
+a chave de DEBUG e não avisa.** O `build.gradle.kts` cai no
+`signingConfigs.debug` quando não acha `key.properties` nem
+`QUANTOCOBRO_KEYSTORE_{FILE,PASS}` / `QUANTOCOBRO_KEY_ALIAS` — é fallback
+silencioso, o build responde "✓ Built" igual.
 
-Colar a nota e trocar as capturas na Play é UI, não tem API.
+Aconteceu nesta sessão: o primeiro AAB saiu com `CN=Android Debug`. Confira
+sempre antes de subir:
+
+```bash
+AAB=build/app/outputs/bundle/release/app-release.aab
+CERT=$(unzip -l "$AAB" | grep -oE "META-INF/[A-Z0-9]+\.(RSA|EC|DSA)" | head -1)
+unzip -p "$AAB" "$CERT" | keytool -printcert | grep -E "Owner|SHA256:"
+```
+
+Tem que dizer `CN=4YU Apps` e o SHA256
+`C4:4D:A9:73:...:63`. Se disser `CN=Android Debug`, o env não estava carregado.
+
+### A ficha da loja: falta você
+
+`docs/planning/14-FICHA-LOJA.md` tem a seção **Novidades (0.11.0)**, 494 de 500
+caracteres — e é o mesmo texto que o `upload-to-production.py` mandou pela API,
+então as notas da release **já estão no ar**. Se editar uma, edite a outra.
+
+O que **não** tem API e continua sendo seu: **trocar as capturas** na ficha. As
+novas estão em `docs/screenshots/loja/` e já mostram o Painel de hoje (anel,
+quatro ações, "Recebi" na navbar). As que estão na Play ainda são as antigas.
 
 ### O commit do site que continua esperando
 
