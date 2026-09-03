@@ -91,19 +91,22 @@ O que **não** tem API e continua sendo seu: **trocar as capturas** na ficha. As
 novas estão em `docs/screenshots/loja/` e já mostram o Painel de hoje (anel,
 quatro ações, "Recebi" na navbar). As que estão na Play ainda são as antigas.
 
-### O commit do site que continua esperando
+### O site: quitado
 
-`git -C ../website log origin/main..HEAD` mostra commits não empurrados. Um é do
-agente:
+A política do site foi atualizada e **está no ar**. Conferido em 02/09/2026
+buscando o HTML servido, não o git:
 
-- `2594848` fix(quanto-cobro): política de privacidade espelha a nova cláusula de anúncios
+```bash
+curl -s https://4yu.com.br/quanto-cobro/privacidade/ | grep -oE "<h3>3\.[^<]*</h3>"
+# -> <h3>3. Anúncios</h3>
+```
 
-Os outros são seus, de antes. Nada do site foi empurrado nem publicado.
+O item 3 deixou de se chamar "Este app não exibe anúncios" e agora diz que a
+versão gratuita **pode passar a exibir anúncios**, com a promessa de atualizar
+a política antes e de o Pro seguir sem. É a mesma redação do
+`legal_texts.dart` §3: app e site dizem a mesma coisa, que era o ponto.
 
-**Isto ainda é uma dívida:** a política dentro do app (`legal_texts.dart` §3) já
-não promete "não exibe anúncios", mas a versão pública no site ainda promete. As
-duas precisam dizer a mesma coisa. `git -C ../website push` e depois
-`python3 ../website/scripts/deploy.py site`.
+Não há commit pendente em `../website` (commit `2594848`, já empurrado).
 
 ---
 
